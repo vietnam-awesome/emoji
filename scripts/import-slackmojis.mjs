@@ -4,6 +4,7 @@ import path from 'node:path';
 import { validateImageAsset } from './lib/emojigg-asset.mjs';
 import {
   SLACKMOJIS_JSON_URL,
+  slackmojisCatalogPageUrl,
   selectSlackmojisRecords
 } from './lib/slackmojis.mjs';
 
@@ -19,6 +20,9 @@ const mode = String(valueFor('mode', valueFor('collection', 'recent'))).trim().t
 const rawLimit = Number.parseInt(valueFor('limit', '200'), 10);
 const limit = Number.isFinite(rawLimit) ? Math.max(0, rawLimit) : 200;
 const concurrency = Math.max(1, Math.min(12, Number.parseInt(valueFor('concurrency', '6'), 10) || 6));
+const catalogConcurrency = Math.max(1, Math.min(8, Number.parseInt(valueFor('catalog-concurrency', '4'), 10) || 4));
+const maxCatalogPages = Math.max(1, Math.min(10000, Number.parseInt(valueFor('max-catalog-pages', '10000'), 10) || 10000));
+const requestTimeoutMs = 30000;
 const maxBytes = 8 * 1024 * 1024;
 
 const SOURCE = {
@@ -55,17 +59,82 @@ async function writeJson(file, value) {
   await writeFile(file, `${JSON.stringify(value, null, 2)}\n`);
 }
 
-async function fetchCatalog() {
-  const response = await fetch(SLACKMOJIS_JSON_URL, {
+async function fetchCatalogPage(pageNumber) {
+  const url = slackmojisCatalogPageUrl(pageNumber);
+  const response = await fetch(url, {
     headers: {
       Accept: 'application/json',
       'User-Agent': 'Mozilla/5.0 VietnamAwesomeEmojiBot/1.0'
+    },
+    redirect: 'follow',
+    signal: AbortSignal.timeout(requestTimeoutMs)
+  });
+  if (!response.ok) throw new Error(`Slackmojis catalog page ${pageNumber} returned HTTP ${response.status}`);
+
+  const body = await response.text();
+  let payload;
+  try {
+    payload = JSON.parse(body);
+  } catch {
+    throw new Error(`Slackmojis catalog page ${pageNumber} did not return valid JSON`);
+  }
+  if (!Array.isArray(payload)) {
+    throw new Error(`Slackmojis catalog page ${pageNumber} did not return an array`);
+  }
+  return payload;
+}
+
+async function fetchCatalog() {
+  const pages = [];
+  const signatures = new Map();
+  let cursor = 0;
+  let discoveredEnd = null;
+
+  const workers = Array.from({ length: catalogConcurrency }, async () => {
+    while (true) {
+      if (discoveredEnd !== null && cursor >= discoveredEnd) break;
+      if (cursor >= maxCatalogPages) break;
+
+      const pageNumber = cursor;
+      cursor += 1;
+      const payload = await fetchCatalogPage(pageNumber);
+      console.log(`[${SOURCE.label}] catalog page ${pageNumber}: ${payload.length}`);
+
+      if (payload.length === 0) {
+        if (discoveredEnd === null || pageNumber < discoveredEnd) discoveredEnd = pageNumber;
+        break;
+      }
+
+      const signature = payload
+        .map((item) => String(item?.id ?? ''))
+        .join(',');
+      const previousPage = signatures.get(signature);
+      if (previousPage !== undefined && previousPage !== pageNumber) {
+        throw new Error(`Slackmojis catalog repeated page data at pages ${previousPage} and ${pageNumber}; pagination may be ignored upstream`);
+      }
+      signatures.set(signature, pageNumber);
+      pages[pageNumber] = payload;
     }
   });
-  if (!response.ok) throw new Error(`Slackmojis catalog returned HTTP ${response.status}`);
-  const payload = await response.json();
-  if (!Array.isArray(payload)) throw new Error('Slackmojis emojis.json did not return an array');
-  return selectSlackmojisRecords(payload, mode);
+
+  await Promise.all(workers);
+
+  if (discoveredEnd === null) {
+    throw new Error(`Slackmojis catalog exceeded the safety limit of ${maxCatalogPages} pages without an empty page`);
+  }
+
+  const recordsById = new Map();
+  for (const page of pages.slice(0, discoveredEnd)) {
+    for (const record of page || []) {
+      const id = String(record?.id ?? '').trim();
+      if (id && !recordsById.has(id)) recordsById.set(id, record);
+    }
+  }
+
+  return {
+    records: selectSlackmojisRecords([...recordsById.values()], mode),
+    pages: discoveredEnd
+  };
 }
 
 async function downloadAsset(item) {
@@ -74,7 +143,8 @@ async function downloadAsset(item) {
       Referer: item.url,
       'User-Agent': 'Mozilla/5.0 VietnamAwesomeEmojiBot/1.0'
     },
-    redirect: 'follow'
+    redirect: 'follow',
+    signal: AbortSignal.timeout(requestTimeoutMs)
   });
   if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
@@ -110,14 +180,15 @@ const byId = new Map(existing.map((emoji) => [emoji.id, emoji]));
 const byHash = new Map(existing.filter((emoji) => emoji.assetSha256).map((emoji) => [emoji.assetSha256, emoji.id]));
 const state = await readJson(STATE_FILE, {});
 
-const catalog = await fetchCatalog();
+const catalogResult = await fetchCatalog();
+const catalog = catalogResult.records;
 const missing = catalog.filter((item) => !byId.has(`slackmojis-${item.id}`));
 const chosen = limit === 0 ? missing : missing.slice(0, limit);
 let imported = 0;
 let failed = 0;
 
 console.log(`[${SOURCE.label}] endpoint=${SLACKMOJIS_JSON_URL}`);
-console.log(`[${SOURCE.label}] catalog=${catalog.length}, missing=${missing.length}, selected=${chosen.length}, mode=${mode}`);
+console.log(`[${SOURCE.label}] pages=${catalogResult.pages}, catalog=${catalog.length}, missing=${missing.length}, selected=${chosen.length}, mode=${mode}`);
 
 await runPool(chosen, async (item, index) => {
   try {
@@ -166,6 +237,7 @@ await runPool(chosen, async (item, index) => {
 state[SOURCE.id] = {
   mode,
   endpoint: SLACKMOJIS_JSON_URL,
+  catalogPages: catalogResult.pages,
   discovered: catalog.length,
   missingBeforeRun: missing.length,
   attemptedThisRun: chosen.length,
