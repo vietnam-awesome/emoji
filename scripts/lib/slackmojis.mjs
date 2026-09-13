@@ -12,6 +12,14 @@ function slugify(value) {
     .slice(0, 100);
 }
 
+export function slackmojisCatalogPageUrl(page = 0) {
+  const parsed = Number.parseInt(String(page), 10);
+  const normalizedPage = Number.isFinite(parsed) && parsed >= 0 ? parsed : 0;
+  const url = new URL(SLACKMOJIS_JSON_URL);
+  url.searchParams.set('page', String(normalizedPage));
+  return url.toString();
+}
+
 export function slackmojisDetailInfo(value) {
   try {
     const url = new URL(value, HOME);
