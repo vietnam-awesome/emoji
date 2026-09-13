@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   SLACKMOJIS_JSON_URL,
+  slackmojisCatalogPageUrl,
   slackmojisDetailInfo,
   slackmojisRecordInfo,
   selectSlackmojisRecords
@@ -9,6 +10,9 @@ import {
 
 test('uses the public Slackmojis JSON catalog endpoint', () => {
   assert.equal(SLACKMOJIS_JSON_URL, 'https://slackmojis.com/emojis.json');
+  assert.equal(slackmojisCatalogPageUrl(0), 'https://slackmojis.com/emojis.json?page=0');
+  assert.equal(slackmojisCatalogPageUrl(7), 'https://slackmojis.com/emojis.json?page=7');
+  assert.equal(slackmojisCatalogPageUrl(-1), 'https://slackmojis.com/emojis.json?page=0');
 });
 
 test('parses Slackmojis detail URLs', () => {
