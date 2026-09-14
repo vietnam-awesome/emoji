@@ -13,9 +13,22 @@ on:
           - slackmojis
           - discadia
       limit:
-        description: Maximum missing emoji to import per selected source
+        description: Maximum emoji to import per selected source. Slackmojis accepts 0 for all missing records.
         required: true
         default: '200'
+        type: string
+      slackmojis_mode:
+        description: Slackmojis catalog mode. recent sorts newest first; all keeps full catalog order.
+        required: true
+        default: recent
+        type: choice
+        options:
+          - recent
+          - all
+      slackmojis_concurrency:
+        description: Parallel Slackmojis image downloads (1-12)
+        required: true
+        default: '6'
         type: string
   schedule:
     # Every day at 04:10 UTC = 11:10 Asia/Ho_Chi_Minh
@@ -35,6 +48,8 @@ jobs:
     env:
       IMPORT_SOURCE: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.source || 'all' }}
       IMPORT_LIMIT: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.limit || '75' }}
+      SLACKMOJIS_MODE: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.slackmojis_mode || 'recent' }}
+      SLACKMOJIS_CONCURRENCY: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.slackmojis_concurrency || '6' }}
 
     steps:
       - name: Checkout latest main
@@ -66,11 +81,11 @@ jobs:
           set -euo pipefail
 
           if [ "$IMPORT_SOURCE" = "all" ] || [ "$IMPORT_SOURCE" = "slackmojis" ]; then
-            echo "Importing Slackmojis..."
+            echo "Importing Slackmojis (mode=$SLACKMOJIS_MODE, concurrency=$SLACKMOJIS_CONCURRENCY)..."
             node scripts/import-slackmojis.mjs \
-              --mode=recent \
+              --mode="$SLACKMOJIS_MODE" \
               --limit="$IMPORT_LIMIT" \
-              --concurrency=6
+              --concurrency="$SLACKMOJIS_CONCURRENCY"
           fi
 
           if [ "$IMPORT_SOURCE" = "all" ] || [ "$IMPORT_SOURCE" = "discadia" ]; then
@@ -138,9 +153,9 @@ jobs:
 
             if [ "$IMPORT_SOURCE" = "all" ] || [ "$IMPORT_SOURCE" = "slackmojis" ]; then
               node scripts/import-slackmojis.mjs \
-                --mode=recent \
+                --mode="$SLACKMOJIS_MODE" \
                 --limit="$IMPORT_LIMIT" \
-                --concurrency=6
+                --concurrency="$SLACKMOJIS_CONCURRENCY"
             fi
 
             if [ "$IMPORT_SOURCE" = "all" ] || [ "$IMPORT_SOURCE" = "discadia" ]; then
