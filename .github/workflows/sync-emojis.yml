@@ -19,7 +19,8 @@ on:
         default: '250'
         type: string
   schedule:
-    - cron: '17 3 * * 1'
+    # Sunday 03:30 UTC = 10:30 Asia/Ho_Chi_Minh
+    - cron: '30 3 * * 0'
 
 permissions:
   contents: write
