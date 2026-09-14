@@ -2,13 +2,9 @@ name: CI
 
 on:
   pull_request:
-    # Workflow/docs-only changes do not need to rebuild and verify ~198k static pages.
-    # If any source/data/runtime file changes in the same PR, CI still runs normally.
     paths-ignore:
-      - '.github/**'
-      - 'README.md'
-      - 'LICENSE'
-      - 'docs/**'
+      - '.github/workflows/**'
+      - '**/*.md'
   workflow_dispatch:
 
 permissions:
