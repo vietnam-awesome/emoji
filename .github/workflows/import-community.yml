@@ -31,8 +31,8 @@ on:
         default: '6'
         type: string
   schedule:
-    # Every day at 04:10 UTC = 11:10 Asia/Ho_Chi_Minh
-    - cron: '10 4 * * *'
+    # Sunday 01:30 UTC = 08:30 Asia/Ho_Chi_Minh
+    - cron: '30 1 * * 0'
 
 permissions:
   contents: write
