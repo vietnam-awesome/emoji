@@ -19,7 +19,7 @@ on:
         default: "1500"
         type: string
   schedule:
-    # Sunday 00:30 UTC = 07:30 Asia/Ho_Chi_Minh
+    # Weekly import window: Sunday 00:30 UTC = 07:30 Asia/Ho_Chi_Minh
     - cron: "30 0 * * 0"
 
 permissions:
@@ -27,6 +27,7 @@ permissions:
 
 concurrency:
   group: emoji-data-write
+  queue: max
   cancel-in-progress: false
 
 jobs:
