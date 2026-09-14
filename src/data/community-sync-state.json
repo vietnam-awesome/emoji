@@ -1,8 +1,14 @@
 {
   "slackmojis": {
-    "cursor": 350,
-    "discovered": 665,
-    "lastRunAt": "2026-09-14T08:51:10.450Z"
+    "mode": "all",
+    "endpoint": "https://slackmojis.com/emojis.json",
+    "catalogPages": 210,
+    "discovered": 105000,
+    "missingBeforeRun": 105000,
+    "attemptedThisRun": 105000,
+    "importedThisRun": 104769,
+    "failedThisRun": 231,
+    "lastRunAt": "2026-09-14T11:13:32.585Z"
   },
   "discadia": {
     "cursor": 0,
