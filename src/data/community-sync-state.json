@@ -286,12 +286,12 @@
     "selectedCategory": "all"
   },
   "discords": {
-    "tag": "cats",
-    "discovered": 0,
-    "missingBeforeRun": 0,
-    "attemptedThisRun": 0,
-    "importedThisRun": 0,
+    "tag": "cat",
+    "discovered": 20,
+    "missingBeforeRun": 19,
+    "attemptedThisRun": 19,
+    "importedThisRun": 19,
     "failedThisRun": 0,
-    "lastRunAt": "2026-09-14T01:25:14.701Z"
+    "lastRunAt": "2026-09-14T01:28:30.387Z"
   }
 }
