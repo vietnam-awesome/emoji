@@ -17,11 +17,13 @@ const valueFor = (name, fallback) => {
   return index >= 0 && args[index + 1] ? args[index + 1] : fallback;
 };
 
-const tag = String(valueFor('tag', 'home')).trim();
+const tag = String(valueFor('tag', 'all')).trim();
 const rawLimit = Number.parseInt(valueFor('limit', '200'), 10);
 const limit = Number.isFinite(rawLimit) ? Math.max(0, rawLimit) : 200;
 const concurrency = Math.max(1, Math.min(8, Number.parseInt(valueFor('concurrency', '4'), 10) || 4));
-const maxPages = Math.max(1, Math.min(100, Number.parseInt(valueFor('max-pages', '10'), 10) || 10));
+// Kept as --max-pages for workflow compatibility. On Discords.com this now means
+// the maximum number of rendered batches (initial batch + Load more clicks) per category.
+const maxPages = Math.max(1, Math.min(100, Number.parseInt(valueFor('max-pages', '25'), 10) || 25));
 const delayMs = Math.max(0, Math.min(5000, Number.parseInt(valueFor('delay-ms', '300'), 10) || 0));
 const maxBytes = 8 * 1024 * 1024;
 
@@ -67,14 +69,9 @@ async function writeJson(file, value) {
   await writeFile(file, `${JSON.stringify(value, null, 2)}\n`);
 }
 
-function pagedUrl(url, pageNumber) {
-  const parsed = new URL(url);
-  if (pageNumber > 1) parsed.searchParams.set('page', String(pageNumber));
-  return parsed.toString();
-}
-
 async function discoverTagUrls(page) {
   await page.goto(SOURCE.home, { waitUntil: 'domcontentloaded', timeout: 60000 });
+  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight)).catch(() => {});
   if (delayMs) await page.waitForTimeout(delayMs);
 
   const hrefs = await page.locator('a[href*="/emoji-list/tag/"]').evaluateAll((nodes) =>
@@ -86,53 +83,152 @@ async function discoverTagUrls(page) {
     const info = discordsTagInfo(href);
     if (info) tags.set(info.slug.toLowerCase(), info);
   }
-  return [...tags.values()];
+
+  const discovered = [...tags.values()].sort((a, b) => a.name.localeCompare(b.name));
+  console.log(`[${SOURCE.label}] discovered ${discovered.length} categories from ${SOURCE.home}`);
+  return discovered;
 }
 
 async function resolveTargets(page) {
-  const normalized = tag.toLowerCase();
-  if (normalized === 'home' || normalized === 'trending') {
+  const normalized = slugify(tag);
+  if (!normalized || normalized === 'home' || normalized === 'trending') {
     return [{ slug: 'home', name: 'Trending', url: SOURCE.home }];
   }
-  if (normalized === 'all') {
-    const tags = await discoverTagUrls(page);
-    return [{ slug: 'home', name: 'Trending', url: SOURCE.home }, ...tags];
+
+  const categories = await discoverTagUrls(page);
+  if (normalized === 'all') return categories;
+
+  const exact = categories.find((item) =>
+    item.slug.toLowerCase() === normalized || slugify(item.name) === normalized
+  );
+  if (exact) return [exact];
+
+  // Friendly fallback for inputs such as "cat" when the real upstream category is "Blob Cats".
+  const partial = categories.filter((item) =>
+    item.slug.toLowerCase().includes(normalized) || slugify(item.name).includes(normalized)
+  );
+  if (partial.length === 1) {
+    console.log(`[${SOURCE.label}] resolved category "${tag}" -> "${partial[0].name}" (${partial[0].slug})`);
+    return partial;
   }
-  const info = discordsTagInfo(discordsTagUrl(tag));
-  return [info || { slug: slugify(tag), name: titleize(tag), url: discordsTagUrl(tag) }];
+
+  // If Discords stops exposing its category navigation, retain the old direct-tag behavior
+  // rather than making single-category imports impossible.
+  if (categories.length === 0) {
+    const info = discordsTagInfo(discordsTagUrl(tag));
+    return [info || { slug: normalized, name: titleize(tag), url: discordsTagUrl(tag) }];
+  }
+
+  const suggestions = partial.slice(0, 8).map((item) => item.name).join(', ');
+  throw new Error(
+    `Discords.com category "${tag}" was not found.` +
+    (suggestions ? ` Possible matches: ${suggestions}.` : ' Use --tag=all to import all discovered categories.')
+  );
 }
 
-async function discoverImages(page, target, remainingLimit) {
-  const found = new Map();
-  let consecutiveEmpty = 0;
+async function collectRenderedImages(page, target, found) {
+  const images = await page.locator('img').evaluateAll((nodes) => nodes.map((node) => ({
+    src: node.getAttribute('src') || node.getAttribute('data-src') || node.getAttribute('data-lazy-src') || '',
+    alt: node.getAttribute('alt') || '',
+    title: node.getAttribute('title') || ''
+  })));
 
-  for (let pageNumber = 1; pageNumber <= maxPages; pageNumber += 1) {
-    const url = pagedUrl(target.url, pageNumber);
-    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
+  let added = 0;
+  for (const image of images) {
+    const info = discordEmojiAssetInfo(image.src, image.alt || image.title, target.url);
+    if (!info || found.has(info.id)) continue;
+    found.set(info.id, { ...info, tag: target.slug, tagName: target.name });
+    added += 1;
+  }
+  return added;
+}
+
+async function renderedEmojiCount(page) {
+  return page.locator([
+    'img[src*="cdn.discordapp.com/emojis/"]',
+    'img[src*="media.discordapp.net/emojis/"]',
+    'img[data-src*="cdn.discordapp.com/emojis/"]',
+    'img[data-src*="media.discordapp.net/emojis/"]',
+    'img[data-lazy-src*="cdn.discordapp.com/emojis/"]',
+    'img[data-lazy-src*="media.discordapp.net/emojis/"]'
+  ].join(', ')).count();
+}
+
+async function visibleLoadMoreButton(page) {
+  const candidates = page.getByRole('button', { name: /load more/i });
+  const count = await candidates.count();
+  for (let index = count - 1; index >= 0; index -= 1) {
+    const candidate = candidates.nth(index);
+    if (await candidate.isVisible().catch(() => false)) return candidate;
+  }
+
+  // Fallback for markup where the accessible name is unavailable.
+  const fallback = page.locator('button').filter({ hasText: /load more/i });
+  const fallbackCount = await fallback.count();
+  for (let index = fallbackCount - 1; index >= 0; index -= 1) {
+    const candidate = fallback.nth(index);
+    if (await candidate.isVisible().catch(() => false)) return candidate;
+  }
+  return null;
+}
+
+async function discoverImages(page, target, remainingLimit, ignoreDiscoveryLimit = false) {
+  const found = new Map();
+  let stalledClicks = 0;
+
+  await page.goto(target.url, { waitUntil: 'domcontentloaded', timeout: 60000 });
+  if (delayMs) await page.waitForTimeout(delayMs);
+
+  for (let batchNumber = 1; batchNumber <= maxPages; batchNumber += 1) {
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight)).catch(() => {});
     if (delayMs) await page.waitForTimeout(delayMs);
 
-    const images = await page.locator('img').evaluateAll((nodes) => nodes.map((node) => ({
-      src: node.getAttribute('src') || node.getAttribute('data-src') || node.getAttribute('data-lazy-src') || '',
-      alt: node.getAttribute('alt') || '',
-      title: node.getAttribute('title') || ''
-    })));
+    const added = await collectRenderedImages(page, target, found);
+    console.log(`[${SOURCE.label}/${target.slug}] batch ${batchNumber}: +${added}, total ${found.size}`);
 
-    let added = 0;
-    for (const image of images) {
-      const info = discordEmojiAssetInfo(image.src, image.alt || image.title, url);
-      if (!info || found.has(info.id)) continue;
-      found.set(info.id, { ...info, tag: target.slug, tagName: target.name });
-      added += 1;
-      if (remainingLimit > 0 && found.size >= remainingLimit) break;
+    if (!ignoreDiscoveryLimit && remainingLimit > 0 && found.size >= remainingLimit) break;
+    if (batchNumber >= maxPages) break;
+
+    const loadMore = await visibleLoadMoreButton(page);
+    if (!loadMore) {
+      console.log(`[${SOURCE.label}/${target.slug}] Load more not found; category complete at ${found.size}`);
+      break;
     }
 
-    console.log(`[${SOURCE.label}/${target.slug}] page ${pageNumber}: +${added}, total ${found.size}`);
-    if (remainingLimit > 0 && found.size >= remainingLimit) break;
-    consecutiveEmpty = added === 0 ? consecutiveEmpty + 1 : 0;
-    if (consecutiveEmpty >= 2) break;
+    const beforeCount = await renderedEmojiCount(page);
+    await loadMore.scrollIntoViewIfNeeded().catch(() => {});
+    await loadMore.click({ timeout: 10000 });
+
+    const grew = await page.waitForFunction(
+      (before) => {
+        const selector = [
+          'img[src*="cdn.discordapp.com/emojis/"]',
+          'img[src*="media.discordapp.net/emojis/"]',
+          'img[data-src*="cdn.discordapp.com/emojis/"]',
+          'img[data-src*="media.discordapp.net/emojis/"]',
+          'img[data-lazy-src*="cdn.discordapp.com/emojis/"]',
+          'img[data-lazy-src*="media.discordapp.net/emojis/"]'
+        ].join(', ');
+        return document.querySelectorAll(selector).length > before;
+      },
+      beforeCount,
+      { timeout: 10000 }
+    ).then(() => true).catch(() => false);
+
+    if (!grew) {
+      const afterCount = await renderedEmojiCount(page);
+      stalledClicks = afterCount > beforeCount ? 0 : stalledClicks + 1;
+      if (stalledClicks >= 2) {
+        console.log(`[${SOURCE.label}/${target.slug}] Load more stopped adding emoji; stopping at ${found.size}`);
+        break;
+      }
+    } else {
+      stalledClicks = 0;
+    }
   }
 
+  // Collect once more because the final click may have rendered new images just before the loop stopped.
+  await collectRenderedImages(page, target, found);
   return [...found.values()];
 }
 
@@ -183,16 +279,32 @@ const context = await browser.newContext();
 let discovered = [];
 let imported = 0;
 let failed = 0;
+const categoryStats = {};
 
 try {
   const page = await context.newPage();
   try {
     const targets = await resolveTargets(page);
+    if (targets.length === 0) throw new Error('No Discords.com categories were discovered.');
+
     const seen = new Map();
+    const allCategories = slugify(tag) === 'all';
+
     for (const target of targets) {
-      const remaining = limit === 0 ? 0 : Math.max(0, limit - seen.size);
-      if (limit > 0 && remaining === 0) break;
-      const items = await discoverImages(page, target, remaining);
+      // For --tag=all, discover every category up to maxPages before applying the import limit.
+      // Otherwise a global limit can permanently trap the crawler on the first category.
+      const remaining = allCategories || limit === 0 ? 0 : Math.max(0, limit - seen.size);
+      if (!allCategories && limit > 0 && remaining === 0) break;
+
+      const items = await discoverImages(page, target, remaining, allCategories);
+      categoryStats[target.slug] = {
+        name: target.name,
+        url: target.url,
+        discovered: items.length,
+        maxBatches: maxPages,
+        lastRunAt: new Date().toISOString()
+      };
+
       for (const item of items) if (!seen.has(item.id)) seen.set(item.id, item);
     }
     discovered = [...seen.values()];
@@ -250,6 +362,7 @@ try {
 
   state[SOURCE.id] = {
     tag,
+    categories: categoryStats,
     discovered: discovered.length,
     missingBeforeRun: missing.length,
     attemptedThisRun: chosen.length,
