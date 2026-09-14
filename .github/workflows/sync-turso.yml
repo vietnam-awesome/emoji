@@ -1,0 +1,67 @@
+name: Sync Turso Catalog
+
+on:
+  workflow_dispatch:
+    inputs:
+      force:
+        description: Re-import every shard even when its checksum is unchanged
+        required: false
+        default: false
+        type: boolean
+  push:
+    branches: [main]
+    paths:
+      - 'src/data/emojis/**'
+      - 'scripts/turso-*.sql'
+      - 'scripts/sync-turso.mjs'
+      - 'scripts/verify-turso.mjs'
+      - 'scripts/lib/turso-*.mjs'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: turso-catalog-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+      TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+      TURSO_BATCH_SIZE: '200'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - name: Install database clients
+        run: npm install --ignore-scripts --no-audit --no-fund
+
+      - name: Validate Turso secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$TURSO_DATABASE_URL" || { echo 'TURSO_DATABASE_URL is missing'; exit 1; }
+          test -n "$TURSO_AUTH_TOKEN" || { echo 'TURSO_AUTH_TOKEN is missing'; exit 1; }
+          echo "Turso credentials are configured."
+
+      - name: Sync emoji catalog
+        shell: bash
+        run: |
+          set -euo pipefail
+          args=()
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ inputs.force }}" == "true" ]]; then
+            args+=(--force)
+          fi
+          npm run turso:sync -- "${args[@]}"
+
+      - name: Verify Turso catalog
+        run: npm run turso:verify
