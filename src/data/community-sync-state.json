@@ -286,12 +286,315 @@
     "selectedCategory": "all"
   },
   "discords": {
-    "tag": "cat",
-    "discovered": 20,
-    "missingBeforeRun": 19,
-    "attemptedThisRun": 19,
-    "importedThisRun": 19,
-    "failedThisRun": 0,
-    "lastRunAt": "2026-09-14T01:28:30.387Z"
+    "tag": "all",
+    "categories": {
+      "aesthetic": {
+        "name": "Aesthetic",
+        "url": "https://discords.com/emoji-list/tag/Aesthetic",
+        "discovered": 1785,
+        "maxBatches": 100,
+        "lastRunAt": "2026-09-14T02:07:00.696Z"
+      },
+      "animated": {
+        "name": "Animated",
+        "url": "https://discords.com/emoji-list/tag/Animated",
+        "discovered": 2000,
+        "maxBatches": 100,
+        "lastRunAt": "2026-09-14T02:09:38.410Z"
+      },
+      "anime": {
+        "name": "Anime",
+        "url": "https://discords.com/emoji-list/tag/Anime",
+        "discovered": 2000,
+        "maxBatches": 100,
+        "lastRunAt": "2026-09-14T02:10:59.687Z"
+      },
+      "blobs": {
+        "name": "Blobs",
+        "url": "https://discords.com/emoji-list/tag/Blobs",
+        "discovered": 2000,
+        "maxBatches": 100,
+        "lastRunAt": "2026-09-14T02:12:26.485Z"
+      },
+      "blue": {
+        "name": "Blue",
+        "url": "https://discords.com/emoji-list/tag/Blue",
+        "discovered": 2000,
+        "maxBatches": 100,
+        "lastRunAt": "2026-09-14T02:14:07.785Z"
+      },
+      "blurple": {
+        "name": "Blurple",
+        "url": "https://discords.com/emoji-list/tag/Blurple",
+        "discovered": 2000,
+        "maxBatches": 100,
+        "lastRunAt": "2026-09-14T02:15:20.328Z"
+      },
+      "bunny": {
+        "name": "Bunny",
+        "url": "https://discords.com/emoji-list/tag/Bunny",
+        "discovered": 1180,
+        "maxBatches": 100,
+        "lastRunAt": "2026-09-14T02:16:57.934Z"
+      },
+      "cat": {
+        "name": "Cat",
+        "url": "https://discords.com/emoji-list/tag/Cat",
+        "discovered": 2000,
+        "maxBatches": 100,
+        "lastRunAt": "2026-09-14T02:18:19.240Z"
+      },
+      "celebrity": {
+        "name": "Celebrity",
+        "url": "https://discords.com/emoji-list/tag/Celebrity",
+        "discovered": 817,
+        "maxBatches": 100,
+        "lastRunAt": "2026-09-14T02:18:46.003Z"
+      },
+      "crying": {
+        "name": "Crying",
+        "url": "https://discords.com/emoji-list/tag/Crying",
+        "discovered": 2000,
+        "maxBatches": 100,
+        "lastRunAt": "2026-09-14T02:20:27.312Z"
+      },
+      "crypto": {
+        "name": "Crypto",
+        "url": "https://discords.com/emoji-list/tag/Crypto",
+        "discovered": 380,
+        "maxBatches": 100,
+        "lastRunAt": "2026-09-14T02:21:55.874Z"
+      },
+      "cute": {
+        "name": "Cute",
+        "url": "https://discords.com/emoji-list/tag/Cute",
+        "discovered": 2000,
+        "maxBatches": 100,
+        "lastRunAt": "2026-09-14T02:23:20.196Z"
+      },
+      "dancing": {
+        "name": "Dancing",
+        "url": "https://discords.com/emoji-list/tag/Dancing",
+        "discovered": 2000,
+        "maxBatches": 100,
+        "lastRunAt": "2026-09-14T02:26:41.807Z"
+      },
+      "dog": {
+        "name": "Dog",
+        "url": "https://discords.com/emoji-list/tag/Dog",
+        "discovered": 2000,
+        "maxBatches": 100,
+        "lastRunAt": "2026-09-14T02:29:57.733Z"
+      },
+      "fire": {
+        "name": "Fire",
+        "url": "https://discords.com/emoji-list/tag/Fire",
+        "discovered": 2000,
+        "maxBatches": 100,
+        "lastRunAt": "2026-09-14T02:31:48.469Z"
+      },
+      "furry": {
+        "name": "Furry",
+        "url": "https://discords.com/emoji-list/tag/Furry",
+        "discovered": 2000,
+        "maxBatches": 100,
+        "lastRunAt": "2026-09-14T02:33:25.991Z"
+      },
+      "gaming": {
+        "name": "Gaming",
+        "url": "https://discords.com/emoji-list/tag/Gaming",
+        "discovered": 2000,
+        "maxBatches": 100,
+        "lastRunAt": "2026-09-14T02:34:52.122Z"
+      },
+      "happy": {
+        "name": "Happy",
+        "url": "https://discords.com/emoji-list/tag/Happy",
+        "discovered": 2000,
+        "maxBatches": 100,
+        "lastRunAt": "2026-09-14T02:36:35.424Z"
+      },
+      "head": {
+        "name": "Head",
+        "url": "https://discords.com/emoji-list/tag/Head",
+        "discovered": 2000,
+        "maxBatches": 100,
+        "lastRunAt": "2026-09-14T02:39:43.994Z"
+      },
+      "heart": {
+        "name": "Heart",
+        "url": "https://discords.com/emoji-list/tag/Heart",
+        "discovered": 2000,
+        "maxBatches": 100,
+        "lastRunAt": "2026-09-14T02:41:06.444Z"
+      },
+      "hentai": {
+        "name": "Hentai",
+        "url": "https://discords.com/emoji-list/tag/Hentai",
+        "discovered": 2000,
+        "maxBatches": 100,
+        "lastRunAt": "2026-09-14T02:42:23.846Z"
+      },
+      "laughing": {
+        "name": "Laughing",
+        "url": "https://discords.com/emoji-list/tag/Laughing",
+        "discovered": 2000,
+        "maxBatches": 100,
+        "lastRunAt": "2026-09-14T02:44:11.257Z"
+      },
+      "logo": {
+        "name": "Logo",
+        "url": "https://discords.com/emoji-list/tag/Logo",
+        "discovered": 2000,
+        "maxBatches": 100,
+        "lastRunAt": "2026-09-14T02:45:31.160Z"
+      },
+      "memes": {
+        "name": "Memes",
+        "url": "https://discords.com/emoji-list/tag/Memes",
+        "discovered": 2000,
+        "maxBatches": 100,
+        "lastRunAt": "2026-09-14T02:46:54.987Z"
+      },
+      "minecraft": {
+        "name": "Minecraft",
+        "url": "https://discords.com/emoji-list/tag/Minecraft",
+        "discovered": 460,
+        "maxBatches": 100,
+        "lastRunAt": "2026-09-14T02:47:28.247Z"
+      },
+      "neko": {
+        "name": "Neko",
+        "url": "https://discords.com/emoji-list/tag/Neko",
+        "discovered": 2000,
+        "maxBatches": 100,
+        "lastRunAt": "2026-09-14T02:49:50.661Z"
+      },
+      "orange": {
+        "name": "Orange",
+        "url": "https://discords.com/emoji-list/tag/Orange",
+        "discovered": 2000,
+        "maxBatches": 100,
+        "lastRunAt": "2026-09-14T02:51:09.241Z"
+      },
+      "panda": {
+        "name": "Panda",
+        "url": "https://discords.com/emoji-list/tag/Panda",
+        "discovered": 2000,
+        "maxBatches": 100,
+        "lastRunAt": "2026-09-14T02:52:32.697Z"
+      },
+      "party": {
+        "name": "Party",
+        "url": "https://discords.com/emoji-list/tag/Party",
+        "discovered": 2000,
+        "maxBatches": 100,
+        "lastRunAt": "2026-09-14T02:53:54.348Z"
+      },
+      "pepe": {
+        "name": "Pepe",
+        "url": "https://discords.com/emoji-list/tag/Pepe",
+        "discovered": 2000,
+        "maxBatches": 100,
+        "lastRunAt": "2026-09-14T02:55:18.474Z"
+      },
+      "pixel": {
+        "name": "Pixel",
+        "url": "https://discords.com/emoji-list/tag/Pixel",
+        "discovered": 2000,
+        "maxBatches": 100,
+        "lastRunAt": "2026-09-14T02:56:36.289Z"
+      },
+      "purple": {
+        "name": "Purple",
+        "url": "https://discords.com/emoji-list/tag/Purple",
+        "discovered": 2000,
+        "maxBatches": 100,
+        "lastRunAt": "2026-09-14T02:57:58.472Z"
+      },
+      "red": {
+        "name": "Red",
+        "url": "https://discords.com/emoji-list/tag/Red",
+        "discovered": 2000,
+        "maxBatches": 100,
+        "lastRunAt": "2026-09-14T02:59:32.845Z"
+      },
+      "roblox": {
+        "name": "Roblox",
+        "url": "https://discords.com/emoji-list/tag/Roblox",
+        "discovered": 2000,
+        "maxBatches": 100,
+        "lastRunAt": "2026-09-14T03:00:49.947Z"
+      },
+      "role-icons": {
+        "name": "Role Icons",
+        "url": "https://discords.com/emoji-list/tag/Role%20Icons",
+        "discovered": 2000,
+        "maxBatches": 100,
+        "lastRunAt": "2026-09-14T03:02:05.638Z"
+      },
+      "sad": {
+        "name": "Sad",
+        "url": "https://discords.com/emoji-list/tag/Sad",
+        "discovered": 2000,
+        "maxBatches": 100,
+        "lastRunAt": "2026-09-14T03:03:58.300Z"
+      },
+      "skull": {
+        "name": "Skull",
+        "url": "https://discords.com/emoji-list/tag/Skull",
+        "discovered": 2000,
+        "maxBatches": 100,
+        "lastRunAt": "2026-09-14T03:05:16.358Z"
+      },
+      "sparkle": {
+        "name": "Sparkle",
+        "url": "https://discords.com/emoji-list/tag/Sparkle",
+        "discovered": 2000,
+        "maxBatches": 100,
+        "lastRunAt": "2026-09-14T03:06:37.926Z"
+      },
+      "star": {
+        "name": "Star",
+        "url": "https://discords.com/emoji-list/tag/Star",
+        "discovered": 2000,
+        "maxBatches": 100,
+        "lastRunAt": "2026-09-14T03:08:08.787Z"
+      },
+      "thinking": {
+        "name": "Thinking",
+        "url": "https://discords.com/emoji-list/tag/Thinking",
+        "discovered": 2000,
+        "maxBatches": 100,
+        "lastRunAt": "2026-09-14T03:10:43.629Z"
+      },
+      "utility": {
+        "name": "Utility",
+        "url": "https://discords.com/emoji-list/tag/Utility",
+        "discovered": 1579,
+        "maxBatches": 100,
+        "lastRunAt": "2026-09-14T03:11:39.387Z"
+      },
+      "valorant": {
+        "name": "Valorant",
+        "url": "https://discords.com/emoji-list/tag/Valorant",
+        "discovered": 2000,
+        "maxBatches": 100,
+        "lastRunAt": "2026-09-14T03:12:55.656Z"
+      },
+      "verified": {
+        "name": "Verified",
+        "url": "https://discords.com/emoji-list/tag/Verified",
+        "discovered": 2000,
+        "maxBatches": 100,
+        "lastRunAt": "2026-09-14T03:14:16.256Z"
+      }
+    },
+    "discovered": 69128,
+    "missingBeforeRun": 69083,
+    "attemptedThisRun": 69083,
+    "importedThisRun": 69082,
+    "failedThisRun": 1,
+    "lastRunAt": "2026-09-14T03:31:05.779Z"
   }
 }
