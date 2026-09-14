@@ -8,15 +8,30 @@ const base = (process.env.VERIFY_BASE ?? '').replace(/\/+$/g, '');
 let errors = 0;
 let checked = 0;
 
-async function walk(dir) {
-  const entries = await readdir(dir, { withFileTypes: true });
-  const files = [];
-  for (const entry of entries) {
-    const full = path.join(dir, entry.name);
-    if (entry.isDirectory()) files.push(...await walk(full));
-    else files.push(full);
+async function findHtmlFiles(root) {
+  const pending = [root];
+  const htmlFiles = [];
+
+  while (pending.length) {
+    const dir = pending.pop();
+    const entries = await readdir(dir, { withFileTypes: true });
+
+    for (const entry of entries) {
+      const full = path.join(dir, entry.name);
+
+      if (entry.isDirectory()) {
+        pending.push(full);
+        continue;
+      }
+
+      // Avoid following symlinks and only retain files this verifier actually reads.
+      if (entry.isFile() && entry.name.endsWith('.html')) {
+        htmlFiles.push(full);
+      }
+    }
   }
-  return files;
+
+  return htmlFiles;
 }
 
 async function exists(target) {
@@ -36,7 +51,7 @@ function isExternal(value) {
   return /^(?:[a-z]+:)?\/\//i.test(value) || /^(?:mailto:|tel:|data:|javascript:|#)/i.test(value);
 }
 
-const htmlFiles = (await walk(dist)).filter((file) => file.endsWith('.html'));
+const htmlFiles = await findHtmlFiles(dist);
 
 for (const file of htmlFiles) {
   const html = await readFile(file, 'utf8');
