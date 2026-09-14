@@ -15,9 +15,16 @@
     "import:emojigg": "node scripts/import-emojigg.mjs",
     "import:slackmojis": "node scripts/import-slackmojis.mjs",
     "import:discords": "node scripts/import-discords.mjs",
+    "turso:schema": "node scripts/sync-turso.mjs --schema-only",
+    "turso:sync": "node scripts/sync-turso.mjs",
+    "turso:verify": "node scripts/verify-turso.mjs",
     "test": "node --test tests/*.test.mjs",
     "check:data": "node scripts/verify-data.mjs",
     "check:build": "node scripts/verify-build.mjs"
+  },
+  "dependencies": {
+    "@libsql/client": "0.18.0",
+    "@tursodatabase/serverless": "1.4.0"
   },
   "devDependencies": {
     "astro": "7.3.1",
