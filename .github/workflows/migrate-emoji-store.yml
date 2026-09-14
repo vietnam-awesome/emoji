@@ -1,0 +1,38 @@
+name: Migrate Emoji Store To Shards
+
+on:
+  push:
+    branches:
+      - fix/shard-emoji-index
+    paths:
+      - scripts/emoji-store.mjs
+      - .github/workflows/migrate-emoji-store.yml
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout migration branch
+        uses: actions/checkout@v7
+        with:
+          ref: fix/shard-emoji-index
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - name: Split emoji index into Git-safe shards
+        run: node scripts/emoji-store.mjs shard
+
+      - name: Commit migrated store
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A src/data/emojis.json public/api/emojis.json src/data/emojis
+          git commit -m "chore: shard emoji index"
+          git push origin HEAD:fix/shard-emoji-index
