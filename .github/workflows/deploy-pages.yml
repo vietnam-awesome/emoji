@@ -3,15 +3,19 @@ name: Deploy Pages
 on:
   push:
     branches: [main]
+    # Import workflows can push several data-only commits per day. Do not rebuild
+    # the entire ~198k-page site after each one; the daily schedule publishes the
+    # latest accumulated catalog once.
+    paths-ignore:
+      - 'src/data/emojis/**'
+      - 'src/data/community-sync-state.json'
+      - 'src/data/categories.json'
+      - 'public/api/categories.json'
+      - 'public/emojis/**'
   workflow_dispatch:
-  workflow_run:
-    workflows:
-      - "Import Emoji.gg Catalog"
-      - "Import Community Emoji"
-      - "Import Discords.com Emojis"
-      - "Sync Emoji Sources"
-    types: [completed]
-    branches: [main]
+  schedule:
+    # 12:30 UTC = 19:30 Asia/Ho_Chi_Minh. Turso sync runs at 11:30 UTC first.
+    - cron: '30 12 * * *'
 
 permissions:
   contents: read
@@ -20,33 +24,44 @@ permissions:
 
 concurrency:
   group: pages
+  # If a code deploy or a newer scheduled deploy starts, the stale deployment is
+  # not useful. Keep only the newest Pages build.
   cancel-in-progress: true
 
 jobs:
   build:
-    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout latest main
         uses: actions/checkout@v7
+        with:
+          ref: main
+
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:
           node-version: 22
+
       - name: Install dependencies
         run: npm install --no-audit --no-fund
+
       - name: Sync animated GIF emoji
         env:
           ANIMATED_LIMIT: '32'
         run: node scripts/sync-animated-showcase.mjs
+
       - name: Verify emoji index
         run: npm run check:data
+
       - name: Build site
         run: npm run build
+
       - name: Verify built links
         run: npm run check:build
+
       - name: Configure Pages
         uses: actions/configure-pages@v6
+
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v5
         with:
