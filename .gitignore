@@ -5,3 +5,8 @@ dist/
 .env
 .env.*
 !.env.example
+
+# Generated from src/data/emojis/index.json + chunk-*.json.
+# These working files can exceed GitHub's 100 MB per-file limit.
+src/data/emojis.json
+public/api/emojis.json
