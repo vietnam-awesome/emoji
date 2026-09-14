@@ -3,6 +3,19 @@ name: PR Live Preview
 on:
   pull_request:
     types: [opened, synchronize, reopened]
+    paths:
+      - 'src/components/**'
+      - 'src/config/**'
+      - 'src/layouts/**'
+      - 'src/pages/**'
+      - 'src/styles/**'
+      - 'astro.config.mjs'
+      - 'scripts/prepare-pr-preview.mjs'
+      - 'public/**'
+      - '!public/api/**'
+      - '!public/emojis/**'
+      - '!public/agents.md'
+      - '!public/llms.txt'
 
 permissions:
   contents: write
