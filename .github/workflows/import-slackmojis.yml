@@ -22,7 +22,6 @@ on:
         default: "6"
         type: string
   schedule:
-    # Daily at 11:17 Asia/Ho_Chi_Minh (04:17 UTC).
     - cron: "17 4 * * *"
 
 permissions:
@@ -59,7 +58,7 @@ jobs:
         with:
           node-version: 22
 
-      - name: Install dependencies
+      - name: Install dependencies and hydrate emoji index
         run: npm install --no-audit --no-fund
 
       - name: Import Slackmojis JSON catalog
@@ -86,13 +85,16 @@ jobs:
           console.log(`All emoji indexed: ${emojis.length}`);
           NODE
 
+      - name: Shard emoji index for Git
+        run: npm run emoji-store:shard
+
       - name: Commit imported assets and indexes
         id: import_commit
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          git add public/api/emojis.json src/data/emojis.json src/data/community-sync-state.json
+          git add -A src/data/emojis src/data/community-sync-state.json
           if [ -d public/emojis/community/slackmojis ]; then
             git add public/emojis/community/slackmojis
           fi
@@ -118,14 +120,12 @@ jobs:
             remote_sha="$(git rev-parse origin/main)"
             parent_sha="$(git rev-parse HEAD^)"
 
-            # A PR/manual push can move main while this long-running importer is
-            # downloading assets. Rebasing generated JSON is unsafe because it
-            # can conflict or resurrect records intentionally removed on main.
-            # Rebuild the import from the latest main instead.
             if [ "$parent_sha" != "$remote_sha" ]; then
               echo "main changed during import; rebuilding on latest main..."
               git reset --hard origin/main
               git clean -fd -- public/emojis/community/slackmojis
+              rm -f src/data/emojis.json public/api/emojis.json
+              npm run emoji-store:hydrate
 
               node scripts/import-slackmojis.mjs \
                 --mode="$IMPORT_MODE" \
@@ -133,8 +133,9 @@ jobs:
                 --concurrency="$IMPORT_CONCURRENCY"
 
               npm run check:data
+              npm run emoji-store:shard
 
-              git add public/api/emojis.json src/data/emojis.json src/data/community-sync-state.json
+              git add -A src/data/emojis src/data/community-sync-state.json
               if [ -d public/emojis/community/slackmojis ]; then
                 git add public/emojis/community/slackmojis
               fi

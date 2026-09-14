@@ -29,8 +29,6 @@ on:
         default: "4"
         type: string
   schedule:
-    # Daily at 12:17 Asia/Ho_Chi_Minh (05:17 UTC).
-    # Auto-discover all safe Discords categories and scan from batch 1.
     - cron: "17 5 * * *"
 
 permissions:
@@ -69,7 +67,7 @@ jobs:
         with:
           node-version: 22
 
-      - name: Install dependencies
+      - name: Install dependencies and hydrate emoji index
         run: npm install --no-audit --no-fund
 
       - name: Install Chromium
@@ -112,13 +110,16 @@ jobs:
           console.log(`All emoji indexed: ${emojis.length}`);
           NODE
 
+      - name: Shard emoji index for Git
+        run: npm run emoji-store:shard
+
       - name: Commit imported assets and indexes
         id: import_commit
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          git add public/api/emojis.json src/data/emojis.json src/data/community-sync-state.json
+          git add -A src/data/emojis src/data/community-sync-state.json
           if [ -d public/emojis/community/discords ]; then
             git add public/emojis/community/discords
           fi
