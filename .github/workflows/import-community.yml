@@ -24,12 +24,14 @@ on:
     paths:
       - '.github/workflows/import-community.yml'
       - 'scripts/import-community.mjs'
+      - 'scripts/catalog-storage.mjs'
+      - 'scripts/run-catalog-task.mjs'
       - 'package.json'
 
 permissions:
   contents: write
 
-# Shared with Pepe importer so both workflows never write emoji JSON at once.
+# Shared by every workflow that mutates the emoji catalog.
 concurrency:
   group: emoji-data-write
   cancel-in-progress: false
@@ -81,10 +83,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          git add public/api/emojis.json src/data/emojis.json
-          if [ -f src/data/community-sync-state.json ]; then
-            git add src/data/community-sync-state.json
-          fi
+          git add -A src/data public/api
           if [ -d public/emojis/community ]; then
             git add public/emojis/community
           fi
