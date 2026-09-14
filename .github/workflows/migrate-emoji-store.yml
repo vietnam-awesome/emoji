@@ -29,10 +29,13 @@ jobs:
       - name: Split emoji index into Git-safe shards
         run: node scripts/emoji-store.mjs shard
 
-      - name: Commit migrated store
+      - name: Commit migrated store safely
         run: |
+          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A src/data/emojis.json public/api/emojis.json src/data/emojis
           git commit -m "chore: shard emoji index"
+          git fetch origin fix/shard-emoji-index
+          git rebase origin/fix/shard-emoji-index
           git push origin HEAD:fix/shard-emoji-index
