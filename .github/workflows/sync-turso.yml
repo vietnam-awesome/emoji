@@ -8,15 +8,15 @@ on:
         required: false
         default: false
         type: boolean
-  # Data importers can push several times per day. Batch those changes into one
-  # incremental Turso sync to protect the free-tier row read/write allowance.
+  # Scheduled importers run once per week. Sync the accumulated data once after
+  # that weekly import window to minimize Turso free-tier reads/writes.
   schedule:
-    # 11:30 UTC = 18:30 Asia/Ho_Chi_Minh, after the scheduled import window.
-    - cron: '30 11 * * *'
+    # Monday 00:30 UTC = 07:30 Asia/Ho_Chi_Minh
+    - cron: '30 0 * * 1'
   push:
     branches: [main]
     # Schema/client changes should still reach Turso immediately. Data-only pushes
-    # are intentionally handled by the daily scheduled sync above.
+    # are intentionally handled by the weekly scheduled sync above.
     paths:
       - 'scripts/turso-*.sql'
       - 'scripts/sync-turso.mjs'
