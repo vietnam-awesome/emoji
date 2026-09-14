@@ -31,14 +31,15 @@ on:
         default: '6'
         type: string
   schedule:
-    # Every day at 04:10 UTC = 11:10 Asia/Ho_Chi_Minh
-    - cron: '10 4 * * *'
+    # Weekly import window: Sunday 00:30 UTC = 07:30 Asia/Ho_Chi_Minh
+    - cron: '30 0 * * 0'
 
 permissions:
   contents: write
 
 concurrency:
   group: emoji-data-write
+  queue: max
   cancel-in-progress: false
 
 jobs:
