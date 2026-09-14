@@ -4,17 +4,22 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Category to import. Use all to auto-discover every Discords category; home/trending is also supported."
+        description: "Category to import. Use all to auto-discover every safe Discords category; home/trending is also supported."
         required: true
         default: "all"
         type: string
       limit:
-        description: "Maximum missing emoji to download. Use 0 for all discovered emoji. Discovery still scans all selected categories."
+        description: "Maximum missing emoji to download. Use 0 for all discovered emoji in the selected batch range."
         required: true
         default: "200"
         type: string
+      start_batch:
+        description: "First Load more batch to collect. Use 1 from the beginning, or 101 after finishing batches 1-100."
+        required: true
+        default: "1"
+        type: string
       max_pages:
-        description: "Maximum rendered batches per category (initial batch + Load more clicks)"
+        description: "Number of batches to scan starting at Start batch. Example: start 101 + 100 scans batches 101-200."
         required: true
         default: "25"
         type: string
@@ -25,7 +30,7 @@ on:
         type: string
   schedule:
     # Daily at 12:17 Asia/Ho_Chi_Minh (05:17 UTC).
-    # Auto-discover all current Discords categories and progressively import missing emoji.
+    # Auto-discover all safe Discords categories and scan from batch 1.
     - cron: "17 5 * * *"
 
 permissions:
@@ -42,6 +47,7 @@ jobs:
     env:
       IMPORT_TAG: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || 'all' }}
       IMPORT_LIMIT: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.limit || '75' }}
+      IMPORT_START_BATCH: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.start_batch || '1' }}
       IMPORT_MAX_PAGES: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.max_pages || '25' }}
       IMPORT_CONCURRENCY: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.concurrency || '4' }}
 
@@ -73,12 +79,15 @@ jobs:
         run: |
           echo "Category: $IMPORT_TAG"
           echo "Download limit: $IMPORT_LIMIT"
-          echo "Max batches/category: $IMPORT_MAX_PAGES"
+          echo "Start batch: $IMPORT_START_BATCH"
+          echo "Batches to scan: $IMPORT_MAX_PAGES"
           echo "Concurrency: $IMPORT_CONCURRENCY"
+          echo "18+ filter: enabled"
 
           node scripts/import-discords.mjs \
             --tag="$IMPORT_TAG" \
             --limit="$IMPORT_LIMIT" \
+            --start-batch="$IMPORT_START_BATCH" \
             --max-pages="$IMPORT_MAX_PAGES" \
             --concurrency="$IMPORT_CONCURRENCY" \
             --delay-ms=350
@@ -95,7 +104,10 @@ jobs:
           const discords = emojis.filter((item) => item.source === 'discords');
           const categories = Object.keys(state.discords?.categories || {});
           console.log(`Discords.com categories scanned: ${categories.length}`);
+          console.log(`Batch range: ${state.discords?.startBatch || 1}-${state.discords?.endBatch || '?'}`);
           console.log(`Discords.com discovered this run: ${state.discords?.discovered || 0}`);
+          console.log(`18+ emoji filtered this run: ${state.discords?.adultFilteredThisRun || 0}`);
+          console.log(`Existing 18+ records purged: ${state.discords?.purgedAdultRecords || 0}`);
           console.log(`Discords.com indexed: ${discords.length}`);
           console.log(`All emoji indexed: ${emojis.length}`);
           NODE
