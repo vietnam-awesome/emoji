@@ -24,12 +24,12 @@ jobs:
 
     steps:
       - name: Checkout PR
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 22
 
@@ -82,7 +82,7 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Post or update live preview link on PR
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         env:
           PREVIEW_URL: ${{ env.PREVIEW_URL }}
         with:
