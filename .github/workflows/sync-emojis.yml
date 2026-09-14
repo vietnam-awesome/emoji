@@ -43,12 +43,16 @@ jobs:
         uses: actions/setup-node@v7
         with:
           node-version: 22
+      - name: Hydrate emoji index
+        run: node scripts/emoji-store.mjs hydrate
       - name: Sync licensed emoji assets
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: node scripts/sync.mjs --source="$SYNC_SOURCE" --limit="$SYNC_LIMIT"
       - name: Verify index
         run: node scripts/verify-data.mjs
+      - name: Shard emoji index for Git
+        run: node scripts/emoji-store.mjs shard
       - name: Commit changes
         run: |
           if git diff --quiet && [ -z "$(git status --porcelain)" ]; then
@@ -57,7 +61,8 @@ jobs:
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add public/emojis public/api/emojis.json src/data/emojis.json
+          git add public/emojis
+          git add -A src/data/emojis
           git commit -m "chore: sync emoji sources"
           git fetch origin main
           git rebase origin/main
