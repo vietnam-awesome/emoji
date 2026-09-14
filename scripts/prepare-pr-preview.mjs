@@ -6,18 +6,32 @@ const base = String(process.env.PR_PREVIEW_BASE || process.argv[2] || '/')
   .replace(/^\/+|\/+$/g, '');
 const publicBase = base ? `/${base}/` : '/';
 
-async function walk(dir) {
-  const entries = await readdir(dir, { withFileTypes: true });
+async function collectHtmlFiles(root) {
   const files = [];
-  for (const entry of entries) {
-    const full = path.join(dir, entry.name);
-    if (entry.isDirectory()) files.push(...await walk(full));
-    else files.push(full);
+  const pending = [root];
+
+  while (pending.length) {
+    const dir = pending.pop();
+    const entries = await readdir(dir, { withFileTypes: true });
+
+    for (const entry of entries) {
+      const full = path.join(dir, entry.name);
+
+      if (entry.isDirectory()) {
+        pending.push(full);
+        continue;
+      }
+
+      if (entry.isFile() && entry.name.endsWith('.html')) {
+        files.push(full);
+      }
+    }
   }
+
   return files;
 }
 
-const htmlFiles = (await walk(dist)).filter((file) => file.endsWith('.html'));
+const htmlFiles = await collectHtmlFiles(dist);
 const routeMap = new Map();
 
 for (const file of htmlFiles) {
