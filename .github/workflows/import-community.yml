@@ -29,7 +29,6 @@ on:
 permissions:
   contents: write
 
-# Shared with Pepe importer so both workflows never write emoji JSON at once.
 concurrency:
   group: emoji-data-write
   cancel-in-progress: false
@@ -60,7 +59,7 @@ jobs:
         with:
           node-version: 22
 
-      - name: Install dependencies
+      - name: Install dependencies and hydrate emoji index
         run: npm install --no-audit --no-fund
 
       - name: Install Chromium
@@ -76,12 +75,15 @@ jobs:
       - name: Verify emoji index
         run: npm run check:data
 
+      - name: Shard emoji index for Git
+        run: npm run emoji-store:shard
+
       - name: Commit imported assets
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          git add public/api/emojis.json src/data/emojis.json
+          git add -A src/data/emojis
           if [ -f src/data/community-sync-state.json ]; then
             git add src/data/community-sync-state.json
           fi
