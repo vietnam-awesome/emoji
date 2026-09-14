@@ -109,15 +109,42 @@ jobs:
       - name: Push imported commit safely
         if: steps.import_commit.outputs.created == 'true'
         run: |
-          set -e
+          set -euo pipefail
+
           for attempt in 1 2 3; do
             echo "Push attempt $attempt/3"
             git fetch origin main
 
-            if ! git rebase origin/main; then
-              git rebase --abort || true
-              echo "Could not rebase import commit onto latest main." >&2
-              exit 1
+            remote_sha="$(git rev-parse origin/main)"
+            parent_sha="$(git rev-parse HEAD^)"
+
+            # A PR/manual push can move main while this long-running importer is
+            # downloading assets. Rebasing generated JSON is unsafe because it
+            # can conflict or resurrect records intentionally removed on main.
+            # Rebuild the import from the latest main instead.
+            if [ "$parent_sha" != "$remote_sha" ]; then
+              echo "main changed during import; rebuilding on latest main..."
+              git reset --hard origin/main
+              git clean -fd -- public/emojis/community/slackmojis
+
+              node scripts/import-slackmojis.mjs \
+                --mode="$IMPORT_MODE" \
+                --limit="$IMPORT_LIMIT" \
+                --concurrency="$IMPORT_CONCURRENCY"
+
+              npm run check:data
+
+              git add public/api/emojis.json src/data/emojis.json src/data/community-sync-state.json
+              if [ -d public/emojis/community/slackmojis ]; then
+                git add public/emojis/community/slackmojis
+              fi
+
+              if git diff --cached --quiet; then
+                echo "Latest main already contains the requested Slackmojis updates."
+                exit 0
+              fi
+
+              git commit -m "chore: import Slackmojis"
             fi
 
             if git push origin HEAD:main; then
@@ -125,7 +152,7 @@ jobs:
               exit 0
             fi
 
-            echo "main changed while pushing; retrying..."
+            echo "main changed while pushing; rebuilding and retrying..."
             sleep $((attempt * 5))
           done
 
