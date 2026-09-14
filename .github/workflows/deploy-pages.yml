@@ -8,6 +8,8 @@ on:
     workflows:
       - "Import Emoji.gg Catalog"
       - "Import Community Emoji"
+      - "Import Discords.com Emojis"
+      - "Import Slackmojis"
       - "Sync Emoji Sources"
     types: [completed]
     branches: [main]
