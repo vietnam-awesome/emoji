@@ -5,3 +5,8 @@ dist/
 .env
 .env.*
 !.env.example
+
+# Generated from src/data/emoji-shards during CI/dev. These aggregate files can
+# exceed GitHub's hard 100 MiB per-file limit and must never be committed again.
+src/data/emojis.json
+public/api/emojis.json
