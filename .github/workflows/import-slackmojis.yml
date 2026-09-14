@@ -22,7 +22,6 @@ on:
         default: "6"
         type: string
   schedule:
-    # Daily at 11:17 Asia/Ho_Chi_Minh (04:17 UTC).
     - cron: "17 4 * * *"
 
 permissions:
@@ -95,7 +94,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          git add -A src/data/emojis src/data/emojis.json public/api/emojis.json src/data/community-sync-state.json
+          git add -A src/data/emojis src/data/community-sync-state.json
           if [ -d public/emojis/community/slackmojis ]; then
             git add public/emojis/community/slackmojis
           fi
@@ -121,8 +120,6 @@ jobs:
             remote_sha="$(git rev-parse origin/main)"
             parent_sha="$(git rev-parse HEAD^)"
 
-            # Rebuild from the newest canonical shards if main moved while the
-            # long-running importer was downloading assets.
             if [ "$parent_sha" != "$remote_sha" ]; then
               echo "main changed during import; rebuilding on latest main..."
               git reset --hard origin/main
@@ -138,7 +135,7 @@ jobs:
               npm run check:data
               npm run emoji-store:shard
 
-              git add -A src/data/emojis src/data/emojis.json public/api/emojis.json src/data/community-sync-state.json
+              git add -A src/data/emojis src/data/community-sync-state.json
               if [ -d public/emojis/community/slackmojis ]; then
                 git add public/emojis/community/slackmojis
               fi
