@@ -3,9 +3,9 @@ name: Deploy Pages
 on:
   push:
     branches: [main]
-    # Import workflows can push several data-only commits per day. Do not rebuild
-    # the entire ~198k-page site after each one; the daily schedule publishes the
-    # latest accumulated catalog once.
+    # Scheduled importers can push several data-only commits during the weekly
+    # refresh window. Do not rebuild the entire ~198k-page site after each one;
+    # the weekly schedule publishes the accumulated catalog once.
     paths-ignore:
       - 'src/data/emojis/**'
       - 'src/data/community-sync-state.json'
@@ -14,8 +14,8 @@ on:
       - 'public/emojis/**'
   workflow_dispatch:
   schedule:
-    # 12:30 UTC = 19:30 Asia/Ho_Chi_Minh. Turso sync runs at 11:30 UTC first.
-    - cron: '30 12 * * *'
+    # Monday 01:30 UTC = 08:30 Asia/Ho_Chi_Minh, one hour after Turso sync.
+    - cron: '30 1 * * 1'
 
 permissions:
   contents: read
