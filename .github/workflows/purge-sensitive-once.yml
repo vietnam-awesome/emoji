@@ -1,0 +1,55 @@
+name: Purge Sensitive Emoji Assets Once
+
+on:
+  push:
+    branches:
+      - cleanup/remove-sensitive-assets
+    paths:
+      - '.github/workflows/purge-sensitive-once.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: purge-sensitive-assets-once
+  cancel-in-progress: false
+
+jobs:
+  purge:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout cleanup branch
+        uses: actions/checkout@v7
+        with:
+          ref: cleanup/remove-sensitive-assets
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - name: Purge sensitive records and image files
+        run: node scripts/purge-sensitive-emojis-once.mjs
+
+      - name: Verify emoji data
+        run: node scripts/verify-data.mjs
+
+      - name: Remove one-time cleanup helpers
+        run: |
+          rm -f scripts/purge-sensitive-emojis-once.mjs
+          rm -f .github/workflows/purge-sensitive-once.yml
+
+      - name: Commit cleanup result
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No cleanup changes found."
+            exit 0
+          fi
+          git commit -m "chore: remove sensitive emoji assets"
+          git push origin HEAD:cleanup/remove-sensitive-assets
