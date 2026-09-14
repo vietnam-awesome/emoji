@@ -1,7 +1,8 @@
-import { access, readFile } from 'node:fs/promises';
+import { access } from 'node:fs/promises';
 import path from 'node:path';
+import { loadCatalog } from './catalog-storage.mjs';
 
-const emojis = JSON.parse(await readFile('src/data/emojis.json', 'utf8'));
+const emojis = await loadCatalog({ preferMonolith: true });
 const ids = new Set();
 const slugs = new Set();
 let errors = 0;
