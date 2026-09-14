@@ -1,4 +1,4 @@
-import { mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
+import { access, mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
 const DATA_FILE = path.resolve('src/data/emojis.json');
@@ -9,7 +9,7 @@ const DEFAULT_CHUNK_SIZE = 2500;
 
 async function exists(file) {
   try {
-    await readFile(file);
+    await access(file);
     return true;
   } catch {
     return false;
