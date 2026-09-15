@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { validateImageAsset } from './lib/emojigg-asset.mjs';
+import { isSensitiveImportCandidate } from './lib/import-content-safety.mjs';
 import {
   SLACKMOJIS_JSON_URL,
   slackmojisCatalogPageUrl,
@@ -182,13 +183,22 @@ const state = await readJson(STATE_FILE, {});
 
 const catalogResult = await fetchCatalog();
 const catalog = catalogResult.records;
-const missing = catalog.filter((item) => !byId.has(`slackmojis-${item.id}`));
+const safeCatalog = [];
+let sensitiveFiltered = 0;
+for (const item of catalog) {
+  if (isSensitiveImportCandidate(item)) {
+    sensitiveFiltered += 1;
+    continue;
+  }
+  safeCatalog.push(item);
+}
+const missing = safeCatalog.filter((item) => !byId.has(`slackmojis-${item.id}`));
 const chosen = limit === 0 ? missing : missing.slice(0, limit);
 let imported = 0;
 let failed = 0;
 
 console.log(`[${SOURCE.label}] endpoint=${SLACKMOJIS_JSON_URL}`);
-console.log(`[${SOURCE.label}] pages=${catalogResult.pages}, catalog=${catalog.length}, missing=${missing.length}, selected=${chosen.length}, mode=${mode}`);
+console.log(`[${SOURCE.label}] pages=${catalogResult.pages}, catalog=${catalog.length}, sensitiveFiltered=${sensitiveFiltered}, safe=${safeCatalog.length}, missing=${missing.length}, selected=${chosen.length}, mode=${mode}`);
 
 await runPool(chosen, async (item, index) => {
   try {
@@ -239,6 +249,8 @@ state[SOURCE.id] = {
   endpoint: SLACKMOJIS_JSON_URL,
   catalogPages: catalogResult.pages,
   discovered: catalog.length,
+  sensitiveFilteredThisRun: sensitiveFiltered,
+  safeCandidates: safeCatalog.length,
   missingBeforeRun: missing.length,
   attemptedThisRun: chosen.length,
   importedThisRun: imported,
@@ -254,4 +266,4 @@ const all = [...byId.values()].sort((a, b) => {
 await writeJson(DATA_FILE, all);
 await writeJson(API_FILE, all);
 await writeJson(STATE_FILE, state);
-console.log(`[${SOURCE.label}] done. imported=${imported}, failed=${failed}, total=${all.length}`);
+console.log(`[${SOURCE.label}] done. imported=${imported}, sensitiveFiltered=${sensitiveFiltered}, failed=${failed}, total=${all.length}`);

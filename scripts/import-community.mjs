@@ -2,6 +2,7 @@ import { chromium } from 'playwright';
 import { createHash } from 'node:crypto';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import { isSensitiveImportCandidate } from './lib/import-content-safety.mjs';
 
 const args = process.argv.slice(2);
 const valueFor = (name, fallback) => {
@@ -69,6 +70,16 @@ function normalizeDetailUrl(url, source) {
   }
 }
 
+function urlCandidate(url) {
+  try {
+    const parsed = new URL(url);
+    const name = path.basename(parsed.pathname).replace(/\.[^.]+$/, '').replace(/^\d+-/, '');
+    return { name, slug: slugify(name), detailUrl: url };
+  } catch {
+    return { detailUrl: url };
+  }
+}
+
 function hashBuffer(buffer) {
   return createHash('sha256').update(buffer).digest('hex');
 }
@@ -101,6 +112,7 @@ async function discoverFromSitemap(source) {
   ];
   const seenSitemaps = new Set();
   const pageUrls = new Set();
+  let sensitiveSkipped = 0;
 
   async function visit(url, depth = 0) {
     if (depth > 1 || seenSitemaps.has(url) || seenSitemaps.size >= 12) return;
@@ -118,7 +130,12 @@ async function discoverFromSitemap(source) {
         const normalized = normalizeDetailUrl(loc, source);
         if (!normalized) continue;
         const pathname = new URL(normalized).pathname;
-        if (source.detailPattern.test(pathname)) pageUrls.add(normalized);
+        if (!source.detailPattern.test(pathname)) continue;
+        if (isSensitiveImportCandidate(urlCandidate(normalized))) {
+          sensitiveSkipped += 1;
+          continue;
+        }
+        pageUrls.add(normalized);
       }
     } catch (error) {
       console.warn(`[${source.label}] sitemap skipped ${url}: ${error.message}`);
@@ -126,6 +143,7 @@ async function discoverFromSitemap(source) {
   }
 
   for (const candidate of candidates) await visit(candidate);
+  if (sensitiveSkipped) console.log(`[${source.label}] sitemap filtered ${sensitiveSkipped} sensitive candidate URL(s) before detail crawl.`);
   return [...pageUrls];
 }
 
@@ -137,10 +155,13 @@ async function discoverFromPage(page, source) {
     await page.waitForTimeout(350);
   }
   const hrefs = await page.locator('a[href]').evaluateAll((nodes) => nodes.map((node) => node.getAttribute('href')).filter(Boolean));
-  return [...new Set(hrefs
+  const urls = [...new Set(hrefs
     .map((href) => normalizeDetailUrl(absoluteUrl(href, source.home), source))
     .filter(Boolean)
     .filter((url) => source.detailPattern.test(new URL(url).pathname)))];
+  const safe = urls.filter((url) => !isSensitiveImportCandidate(urlCandidate(url)));
+  if (safe.length !== urls.length) console.log(`[${source.label}] page discovery filtered ${urls.length - safe.length} sensitive candidate URL(s).`);
+  return safe;
 }
 
 async function discoverDiscadiaAssets(page, source) {
@@ -164,6 +185,7 @@ async function discoverDiscadiaAssets(page, source) {
   const ignored = /logo|avatar|banner|favicon|discord server|advert/i;
   const assets = [];
   const seen = new Set();
+  let sensitiveSkipped = 0;
 
   for (const item of raw) {
     const assetUrl = absoluteUrl(item.src, source.home);
@@ -183,6 +205,10 @@ async function discoverDiscadiaAssets(page, source) {
       .trim()
       .slice(0, 120) || fallbackName;
     if (!name) continue;
+    if (isSensitiveImportCandidate({ name, detailUrl, url: assetUrl })) {
+      sensitiveSkipped += 1;
+      continue;
+    }
 
     seen.add(assetUrl);
     assets.push({
@@ -194,6 +220,7 @@ async function discoverDiscadiaAssets(page, source) {
     });
   }
 
+  if (sensitiveSkipped) console.log(`[${source.label}] direct discovery filtered ${sensitiveSkipped} sensitive candidate asset(s) before download.`);
   return assets;
 }
 
@@ -302,7 +329,7 @@ try {
     items = deduped.sort((a, b) => String(a.detailUrl || a.assetUrl).localeCompare(String(b.detailUrl || b.assetUrl)));
 
     if (!items.length) {
-      console.warn(`[${source.label}] no emoji assets discovered.`);
+      console.warn(`[${source.label}] no safe emoji assets discovered.`);
       continue;
     }
 
@@ -310,18 +337,36 @@ try {
     const start = previousCursor % items.length;
     const chosen = Array.from({ length: Math.min(limit, items.length) }, (_, index) => items[(start + index) % items.length]);
     state[source.id] = { cursor: (start + chosen.length) % items.length, discovered: items.length, lastRunAt: new Date().toISOString() };
-    console.log(`[${source.label}] discovered ${items.length}; importing ${chosen.length} from cursor ${start}.`);
+    console.log(`[${source.label}] discovered ${items.length} safe candidates; importing ${chosen.length} from cursor ${start}.`);
 
+    let sensitiveFiltered = 0;
     await runPool(chosen, async (item) => {
       const page = await browser.newPage();
       try {
         const detailUrl = normalizeDetailUrl(item.detailUrl || source.list, source) || source.list;
+        if (isSensitiveImportCandidate({ ...item, detailUrl })) {
+          sensitiveFiltered += 1;
+          console.warn(`[${source.label}] blocked sensitive candidate before detail/asset download: ${item.name || detailUrl}`);
+          return;
+        }
+
         const detail = item.direct
           ? { name: item.name, assetUrl: item.assetUrl }
           : await extractDetail(page, source, detailUrl);
         const remoteKey = item.remoteKey
           || path.basename(new URL(detailUrl).pathname).replace(/[^a-zA-Z0-9_-]+/g, '-')
           || slugify(detail.name);
+        if (isSensitiveImportCandidate({
+          name: detail.name,
+          slug: slugify(remoteKey || detail.name),
+          detailUrl,
+          url: detail.assetUrl
+        })) {
+          sensitiveFiltered += 1;
+          console.warn(`[${source.label}] blocked sensitive candidate before asset download: ${detail.name}`);
+          return;
+        }
+
         const stableId = `${source.id}-${slugify(remoteKey || detail.name)}`;
         const asset = await downloadAsset(page.context(), source, detailUrl, detail.assetUrl, stableId);
         const duplicateOf = byHash.get(asset.hash);
@@ -360,6 +405,9 @@ try {
         await page.close();
       }
     }, concurrency);
+
+    state[source.id].sensitiveFilteredThisRun = sensitiveFiltered;
+    console.log(`[${source.label}] sensitive candidates filtered before asset download: ${sensitiveFiltered}`);
   }
 } finally {
   await browser.close();
