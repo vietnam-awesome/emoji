@@ -63,6 +63,7 @@ const end = Math.min(result.page * PAGE_SIZE, result.total);
 const nextUrl = result.page < result.totalPages ? browseUrl({ page: result.page + 1 }) : '';
 const prevUrl = result.page > 1 ? browseUrl({ page: result.page - 1 }) : '';
 const pageItems = paginationItems(result.totalPages, result.page);
+const hasActiveFilters = Boolean(q || source || category || motion);
 ---
 <Layout
   title="Browse all emoji — ePlus Emoji"
@@ -90,20 +91,23 @@ const pageItems = paginationItems(result.totalPages, result.page);
         <span class="search-icon" aria-hidden="true">⌕</span>
         <span class="sr-only">Search emoji</span>
         <input id="emoji-search" name="q" value={q} type="search" placeholder="Search emoji, :shortcode:, tag or category" autocomplete="off" />
-        <button type="submit" aria-label="Search">Search</button>
+        <button class="catalog-search-submit" type="submit" aria-label="Search">
+          <span class="search-submit-label">Search</span>
+          <span class="search-submit-spinner" aria-hidden="true"></span>
+        </button>
       </label>
 
       <div class="filter-row">
-        <select id="source-filter" name="source" aria-label="Filter by source">
-          <option value="">All sources</option>
-          {facets.sources.map((item) => (
-            <option value={item.slug} selected={source === item.slug}>{item.name}</option>
-          ))}
-        </select>
         <select id="category-filter" name="category" aria-label="Filter by category">
           <option value="">All categories</option>
           {facets.categories.map((item) => (
-            <option value={item.slug} selected={category === item.slug}>{item.name}</option>
+            <option value={item.slug} selected={category === item.slug}>{item.name} · {item.count.toLocaleString('en-US')}</option>
+          ))}
+        </select>
+        <select id="source-filter" name="source" aria-label="Filter by source">
+          <option value="">All sources</option>
+          {facets.sources.map((item) => (
+            <option value={item.slug} selected={source === item.slug}>{item.name} · {item.count.toLocaleString('en-US')}</option>
           ))}
         </select>
         <select id="motion-filter" name="motion" aria-label="Filter by animation">
@@ -111,9 +115,14 @@ const pageItems = paginationItems(result.totalPages, result.page);
           <option value="yes" selected={motion === 'yes'}>Animated only</option>
           <option value="no" selected={motion === 'no'}>Static only</option>
         </select>
-        {(q || source || category || motion) && <a class="clear-filters" href={browseUrl({ q: '', source: '', category: '', motion: '', page: 1 })}>Clear</a>}
+        {hasActiveFilters && <a class="clear-filters" href={browseUrl({ q: '', source: '', category: '', motion: '', page: 1 })}>Clear</a>}
       </div>
     </form>
+
+    <div class="catalog-request-state" id="catalog-request-state" role="status" aria-live="polite" hidden>
+      <span class="catalog-request-spinner" aria-hidden="true"></span>
+      <span id="catalog-request-text">Updating results…</span>
+    </div>
 
     <div class="results-toolbar">
       <p class="results-summary" id="range-count" aria-live="polite">
@@ -179,28 +188,71 @@ const pageItems = paginationItems(result.totalPages, result.page);
     const source = document.querySelector('#source-filter');
     const category = document.querySelector('#category-filter');
     const motion = document.querySelector('#motion-filter');
+    const searchInput = document.querySelector('#emoji-search');
+    const searchSubmit = document.querySelector('.catalog-search-submit');
+    const requestState = document.querySelector('#catalog-request-state');
+    const requestText = document.querySelector('#catalog-request-text');
     const loader = document.querySelector('#infinite-loader');
+    const loaderSpinner = document.querySelector('#infinite-loader-spinner');
     const loadMore = document.querySelector('#load-more-fallback');
     const loaderStatus = document.querySelector('#infinite-loader-status');
     const pageSize = Math.max(1, Number.parseInt(explorer?.dataset.pageSize || '48', 10));
     const total = Math.max(0, Number.parseInt(explorer?.dataset.total || '0', 10));
     let nextUrl = explorer?.dataset.nextUrl || '';
-    let loading = false;
+    let pageLoading = false;
+    let navigationLoading = false;
+
+    function setNavigationLoading(message = 'Updating results…') {
+      if (navigationLoading) return;
+      navigationLoading = true;
+      explorer?.classList.add('is-query-loading');
+      explorer?.setAttribute('aria-busy', 'true');
+      grid?.setAttribute('aria-busy', 'true');
+      if (requestState) requestState.hidden = false;
+      if (requestText) requestText.textContent = message;
+      searchSubmit?.classList.add('is-loading');
+      searchSubmit?.setAttribute('aria-disabled', 'true');
+    }
+
+    function resetNavigationLoading() {
+      navigationLoading = false;
+      explorer?.classList.remove('is-query-loading');
+      explorer?.removeAttribute('aria-busy');
+      grid?.removeAttribute('aria-busy');
+      if (requestState) requestState.hidden = true;
+      searchSubmit?.classList.remove('is-loading');
+      searchSubmit?.removeAttribute('aria-disabled');
+    }
 
     for (const control of [source, category, motion]) {
       control?.addEventListener('change', () => filterForm?.requestSubmit());
     }
 
+    filterForm?.addEventListener('submit', () => {
+      const term = String(searchInput?.value || '').trim();
+      setNavigationLoading(term ? `Searching for “${term}”…` : 'Updating results…');
+    });
+
     document.addEventListener('click', async (event) => {
-      const button = event.target.closest('[data-copy]');
-      if (!button) return;
-      await navigator.clipboard.writeText(button.dataset.copy || '');
+      const copyButton = event.target.closest('[data-copy]');
+      if (copyButton) {
+        await navigator.clipboard.writeText(copyButton.dataset.copy || '');
+        return;
+      }
+
+      const navigationLink = event.target.closest('.clear-filters, .browse-mode-button, .pagination a');
+      if (navigationLink && !event.defaultPrevented && event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey) {
+        setNavigationLoading('Loading results…');
+      }
     });
 
     async function loadNextPage() {
-      if (!nextUrl || loading || !grid) return;
-      loading = true;
-      loader?.classList.add('is-loading');
+      if (!nextUrl || pageLoading || !grid) return;
+      pageLoading = true;
+      loaderSpinner?.classList.add('is-loading');
+      if (loadMore) loadMore.disabled = true;
+      if (loaderStatus) loaderStatus.textContent = 'Loading more emoji…';
+
       try {
         const response = await fetch(nextUrl, { headers: { Accept: 'text/html' } });
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -222,9 +274,11 @@ const pageItems = paginationItems(result.totalPages, result.page);
         if (!nextUrl && loader) loader.hidden = true;
       } catch (error) {
         console.error('Could not load the next emoji page', error);
+        if (loaderStatus) loaderStatus.textContent = 'Could not load more emoji. Try again.';
       } finally {
-        loading = false;
-        loader?.classList.remove('is-loading');
+        pageLoading = false;
+        loaderSpinner?.classList.remove('is-loading');
+        if (loadMore) loadMore.disabled = false;
       }
     }
 
@@ -236,5 +290,7 @@ const pageItems = paginationItems(result.totalPages, result.page);
       }, { rootMargin: explorer?.dataset.scrollRootMargin || '700px 0px' });
       observer.observe(loader);
     }
+
+    window.addEventListener('pageshow', resetNavigationLoading);
   </script>
 </Layout>
