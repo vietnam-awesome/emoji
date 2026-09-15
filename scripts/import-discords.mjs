@@ -3,6 +3,7 @@ import { createHash } from 'node:crypto';
 import { mkdir, readFile, unlink, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { validateImageAsset } from './lib/emojigg-asset.mjs';
+import { isSensitiveText } from './lib/content-safety.mjs';
 import {
   discordEmojiAssetInfo,
   discordsTagInfo,
@@ -41,13 +42,6 @@ const API_FILE = path.resolve('public/api/emojis.json');
 const STATE_FILE = path.resolve('src/data/community-sync-state.json');
 const OUT_ROOT = path.resolve('public/emojis/community', SOURCE.id);
 
-const ADULT_TOKENS = new Set([
-  '18+', '18plus', 'adult', 'bdsm', 'blowjob', 'boob', 'boobs', 'cock', 'cum',
-  'dick', 'erotic', 'fetish', 'fuck', 'hentai', 'horny', 'lewd', 'naked', 'nude',
-  'nudity', 'nsfw', 'onlyfans', 'porn', 'porno', 'pornographic', 'pussy', 'r34',
-  'rule34', 'sex', 'sexual', 'tits', 'xxx'
-]);
-
 function slugify(value) {
   return String(value || '')
     .toLowerCase()
@@ -67,17 +61,7 @@ function titleize(value) {
 }
 
 function isAdultText(...values) {
-  for (const value of values.flat(Infinity)) {
-    const raw = String(value || '').toLowerCase();
-    if (raw.includes('18+')) return true;
-    const normalized = slugify(value);
-    if (!normalized) continue;
-    const tokens = normalized.split('-').filter(Boolean);
-    if (tokens.some((token) => ADULT_TOKENS.has(token))) return true;
-    if (/^(?:18-?plus|rule-?34)$/.test(normalized)) return true;
-    if (normalized.includes('18-plus') || normalized.includes('rule-34')) return true;
-  }
-  return false;
+  return isSensitiveText(...values);
 }
 
 function isAdultRecord(item) {
