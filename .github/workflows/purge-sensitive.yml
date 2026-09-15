@@ -20,10 +20,6 @@ jobs:
   purge:
     runs-on: ubuntu-latest
     timeout-minutes: 60
-    env:
-      TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
-      TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
-      TURSO_BATCH_SIZE: '200'
 
     steps:
       - name: Checkout latest main
@@ -82,11 +78,8 @@ jobs:
           echo "Cleanup push failed after 3 attempts." >&2
           exit 1
 
-      - name: Sync sanitized catalog to Turso
-        shell: bash
+      - name: Note Turso sync policy
         run: |
-          set -euo pipefail
-          test -n "$TURSO_DATABASE_URL" || { echo 'TURSO_DATABASE_URL is missing'; exit 1; }
-          test -n "$TURSO_AUTH_TOKEN" || { echo 'TURSO_AUTH_TOKEN is missing'; exit 1; }
-          npm run turso:sync
-          npm run turso:verify
+          echo "Catalog cleanup is persisted in Git."
+          echo "Turso is intentionally not synced here to protect the Free-plan write quota."
+          echo "The next scheduled sync runs on the 1st or 15th, or use the Sync Turso Catalog workflow manually."
