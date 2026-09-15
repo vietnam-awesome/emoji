@@ -145,6 +145,11 @@ const compatibilityJson = JSON.stringify({
     reconcile();
     updateOptions();
 
+    window.addEventListener('DOMContentLoaded', () => {
+      reconcile();
+      updateOptions();
+    }, { once: true });
+
     document.addEventListener('change', (event) => {
       const target = event.target;
       if (target !== category && target !== source && target !== motion) return;
