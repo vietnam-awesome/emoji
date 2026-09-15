@@ -212,9 +212,6 @@ const hasActiveFilters = Boolean(q || source || category || motion);
       if (requestText) requestText.textContent = message;
       searchSubmit?.classList.add('is-loading');
       searchSubmit?.setAttribute('aria-disabled', 'true');
-      for (const control of [searchInput, source, category, motion]) {
-        if (control) control.disabled = true;
-      }
     }
 
     function resetNavigationLoading() {
@@ -225,9 +222,6 @@ const hasActiveFilters = Boolean(q || source || category || motion);
       if (requestState) requestState.hidden = true;
       searchSubmit?.classList.remove('is-loading');
       searchSubmit?.removeAttribute('aria-disabled');
-      for (const control of [searchInput, source, category, motion]) {
-        if (control) control.disabled = false;
-      }
     }
 
     for (const control of [source, category, motion]) {
