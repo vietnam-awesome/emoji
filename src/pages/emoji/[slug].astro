@@ -39,6 +39,12 @@ export function getStaticPaths() {
   }));
 }
 
+const normalizeIdentity = (value) => String(value || '')
+  .toLowerCase()
+  .normalize('NFKD')
+  .replace(/[\u0300-\u036f]/g, '')
+  .replace(/[^a-z0-9]+/g, '');
+
 const { emoji } = Astro.props;
 const base = import.meta.env.BASE_URL;
 const imageUrl = emojiAssetUrl(emoji, base);
@@ -47,7 +53,12 @@ const title = `${emoji.name} — ${emoji.sourceLabel} | ePlus Emoji`;
 const category = emoji.category || String(emoji.group || '').replaceAll('-', ' ');
 const categorySlug = emojiCategorySlug(emoji);
 const categoryUrl = withBase(`/categories/${categorySlug}`, base);
-const description = `Download ${emoji.name} from ${emoji.sourceLabel}, copy :${emoji.shortcode}: and view source, format and license metadata.`;
+const hasDistinctShortcode = Boolean(
+  emoji.shortcode && normalizeIdentity(emoji.shortcode) !== normalizeIdentity(emoji.name)
+);
+const description = hasDistinctShortcode
+  ? `Download ${emoji.name} from ${emoji.sourceLabel}, copy :${emoji.shortcode}: and view source, format and license metadata.`
+  : `Download ${emoji.name} from ${emoji.sourceLabel} and view source, format and license metadata.`;
 ---
 <Layout title={title} description={description}>
   <section class="shell detail-page">
@@ -65,17 +76,20 @@ const description = `Download ${emoji.name} from ${emoji.sourceLabel}, copy :${e
           {emoji.emoji && <span class="detail-native" aria-hidden="true">{emoji.emoji}</span>}
         </div>
 
-        <button class="copy-large" type="button" data-copy={`:${emoji.shortcode}:`}>
-          <span>:{emoji.shortcode}:</span>
-          <strong>Copy shortcode</strong>
-        </button>
+        {hasDistinctShortcode && (
+          <button class="copy-large" type="button" data-copy={`:${emoji.shortcode}:`}>
+            <span>:{emoji.shortcode}:</span>
+            <strong>Copy shortcode</strong>
+          </button>
+        )}
 
-        <div class="tag-list">
+        <div class:list={['tag-list', { 'without-shortcode': !hasDistinctShortcode }]}>
           {(emoji.tags || []).slice(0, 12).map((tag) => <span>{tag}</span>)}
         </div>
 
         <dl class="metadata-list">
           <div><dt>Category</dt><dd><a href={categoryUrl}>{category}</a></dd></div>
+          {hasDistinctShortcode && <div><dt>Shortcode</dt><dd>:{emoji.shortcode}:</dd></div>}
           {emoji.collection && <div><dt>Collection</dt><dd>{emoji.collection}</dd></div>}
           {emoji.style && <div><dt>Style</dt><dd>{emoji.style}</dd></div>}
           <div><dt>Source</dt><dd>{emoji.sourceLabel}</dd></div>
@@ -106,3 +120,7 @@ const description = `Download ${emoji.name} from ${emoji.sourceLabel}, copy :${e
     });
   </script>
 </Layout>
+
+<style>
+  .tag-list.without-shortcode { margin-top: 24px; }
+</style>
