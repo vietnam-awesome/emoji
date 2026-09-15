@@ -1,5 +1,5 @@
 /* Shared EmojiCard styles.
- * Keep the card visual contract here so Home, Browse and category surfaces
+ * Keep the card visual contract here so Home, Browse and hero picks
  * render the same component instead of maintaining page-specific variants.
  * The body prefix intentionally outranks legacy page-level card overrides.
  */
@@ -62,9 +62,20 @@ body .emoji-card[data-emoji-card] .card-motion-badge {
 
 body .emoji-card[data-emoji-card] .emoji-card-body { padding: 9px; }
 body .emoji-card[data-emoji-card] .emoji-title-row { gap: 7px; }
-body .emoji-card[data-emoji-card] .emoji-name { font-size: .74rem; font-weight: 730; }
+body .emoji-card[data-emoji-card] .emoji-name {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ink);
+  font-size: .74rem;
+  font-weight: 730;
+  text-decoration: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 body .emoji-card[data-emoji-card] .native-emoji { font-size: .82rem; }
 
+body .emoji-card[data-emoji-card] .emoji-category,
 body .emoji-card[data-emoji-card] .shortcode {
   display: block;
   width: 100%;
@@ -77,13 +88,34 @@ body .emoji-card[data-emoji-card] .shortcode {
   background: #f4f4f5;
   color: #667085;
   font-size: .58rem;
+  font-weight: 650;
+  line-height: 1.25;
   text-align: left;
+  text-decoration: none;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-body .emoji-card[data-emoji-card] .shortcode:hover { background: #fff; color: var(--ink); }
-body .emoji-card[data-emoji-card] .emoji-meta { margin-top: 7px; font-size: .53rem; }
+body .emoji-card[data-emoji-card] .emoji-category:hover,
+body .emoji-card[data-emoji-card] .shortcode:hover {
+  background: #eeeef0;
+  color: var(--ink);
+}
+
+body .emoji-card[data-emoji-card] .emoji-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 7px;
+  color: var(--muted-light);
+  font-size: .53rem;
+}
+body .emoji-card[data-emoji-card] .emoji-meta span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
 body .emoji-card[data-emoji-card] .emoji-select-control,
 body .emoji-card[data-emoji-card] .emoji-card-download {
@@ -133,6 +165,33 @@ body .emoji-card[data-emoji-card].is-selected .emoji-select-control span {
   color: #fff;
 }
 
+/* Compact variant used by Emoji picks. Same component, reduced chrome. */
+body .emoji-card[data-emoji-card].emoji-card--compact {
+  border-radius: 10px;
+  box-shadow: none;
+}
+body .emoji-card[data-emoji-card].emoji-card--compact .emoji-preview {
+  aspect-ratio: 1;
+  padding: 10px;
+}
+body .emoji-card[data-emoji-card].emoji-card--compact .emoji-preview img {
+  width: 54px;
+  height: 54px;
+}
+body .emoji-card[data-emoji-card].emoji-card--compact .emoji-card-body { padding: 7px; }
+body .emoji-card[data-emoji-card].emoji-card--compact .emoji-name { font-size: .64rem; }
+body .emoji-card[data-emoji-card].emoji-card--compact .emoji-category {
+  margin-top: 4px;
+  padding: 4px 5px;
+  font-size: .5rem;
+}
+body .emoji-card[data-emoji-card].emoji-card--compact .card-motion-badge {
+  top: 5px;
+  right: 5px;
+  padding: 2px 4px;
+  font-size: .38rem;
+}
+
 @media (hover: hover) and (pointer: fine) {
   body .emoji-card[data-emoji-card] .emoji-select-control,
   body .emoji-card[data-emoji-card] .emoji-card-download {
@@ -159,8 +218,15 @@ body .emoji-card[data-emoji-card].is-selected .emoji-select-control span {
   body .emoji-card[data-emoji-card] .emoji-card-body { padding: 8px; }
   body .emoji-card[data-emoji-card] .emoji-name { font-size: .69rem; }
   body .emoji-card[data-emoji-card] .native-emoji { display: none; }
+  body .emoji-card[data-emoji-card] .emoji-category,
   body .emoji-card[data-emoji-card] .shortcode { padding: 5px 6px; font-size: .54rem; }
   body .emoji-card[data-emoji-card] .emoji-meta { display: none; }
+
+  body .emoji-card[data-emoji-card].emoji-card--compact .emoji-preview { padding: 8px; }
+  body .emoji-card[data-emoji-card].emoji-card--compact .emoji-preview img { width: 48px; height: 48px; }
+  body .emoji-card[data-emoji-card].emoji-card--compact .emoji-card-body { padding: 6px; }
+  body .emoji-card[data-emoji-card].emoji-card--compact .emoji-name { font-size: .6rem; }
+  body .emoji-card[data-emoji-card].emoji-card--compact .emoji-category { font-size: .48rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {
