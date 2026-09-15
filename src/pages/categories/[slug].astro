@@ -1,6 +1,7 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import EmojiCard from '../../components/EmojiCard.astro';
+import { catalogConfig } from '../../config/catalog';
 import categories from '../../data/categories.json';
 import emojis from '../../data/emojis.json';
 import { categoryIcon, emojiCategorySlug } from '../../lib/category';
@@ -16,8 +17,10 @@ export function getStaticPaths() {
 
 const { category } = Astro.props;
 const base = import.meta.env.BASE_URL;
+const PAGE_SIZE = catalogConfig.pageSize;
 const categoryItems = emojis.filter((emoji) => emojiCategorySlug(emoji) === category.slug);
-const previewItems = categoryItems.slice(0, 48);
+const previewItems = categoryItems.slice(0, PAGE_SIZE);
+const hasMoreItems = categoryItems.length > previewItems.length;
 const browseUrl = withBase('/emojis', base);
 const categoriesUrl = withBase('/categories', base);
 const browseCategoryUrl = `${browseUrl}?category=${encodeURIComponent(category.slug)}`;
@@ -49,27 +52,66 @@ const description = `Browse ${category.count.toLocaleString('en-US')} ${category
     </div>
 
     <div class="category-actions">
-      <a class="primary-action" href={browseCategoryUrl}>Browse all {category.name}</a>
+      <a class="primary-action" href={browseCategoryUrl}>Open full catalog</a>
       {category.animated > 0 && <a class="secondary-action" href={animatedCategoryUrl}>Animated only</a>}
       <a class="secondary-action" href={browseUrl}>Search entire library</a>
     </div>
 
-    <section class="category-preview-section" aria-labelledby="preview-title">
+    <section
+      class="category-preview-section"
+      id="category-explorer"
+      aria-labelledby="preview-title"
+      data-category={category.slug}
+      data-total={categoryItems.length}
+      data-page-size={PAGE_SIZE}
+      data-search-root={`${import.meta.env.BASE_URL.replace(/\/$/, '')}/search`}
+      data-base={import.meta.env.BASE_URL}
+    >
       <div class="category-preview-heading">
         <div>
-          <p class="section-kicker">Preview</p>
-          <h2 id="preview-title">Explore {category.name}</h2>
-          <p>Showing a lightweight preview; use Browse all for the complete filtered catalog.</p>
+          <p class="section-kicker">Explore</p>
+          <h2 id="preview-title">{category.name} emoji</h2>
+          <p>Browse continuously or switch to numbered pages without leaving this category.</p>
         </div>
-        <a class="secondary-action" href={browseCategoryUrl}>View all →</a>
+        <a class="secondary-action" href={browseCategoryUrl}>Advanced filters →</a>
+      </div>
+
+      <div class="category-results-toolbar">
+        <p class="category-results-summary" id="category-range-count" aria-live="polite">
+          {categoryItems.length > 0
+            ? `Showing 1–${Math.min(PAGE_SIZE, categoryItems.length).toLocaleString('en-US')} of ${categoryItems.length.toLocaleString('en-US')}`
+            : 'No emoji found'}
+        </p>
+        {hasMoreItems && (
+          <div class="browse-mode-switcher" role="group" aria-label="Choose how category emoji are loaded">
+            <button class="browse-mode-button is-active" type="button" data-browse-mode="scroll" aria-pressed="true"><span aria-hidden="true">↕</span> Scroll</button>
+            <button class="browse-mode-button" type="button" data-browse-mode="pagination" aria-pressed="false"><span aria-hidden="true">☷</span> Pages</button>
+          </div>
+        )}
       </div>
 
       {previewItems.length > 0 ? (
-        <div class="emoji-grid">
+        <div class="emoji-grid" id="category-emoji-grid">
           {previewItems.map((emoji) => <EmojiCard emoji={emoji} />)}
         </div>
       ) : (
-        <div class="category-empty">No preview items are available in this build. Open the filtered catalog to browse the category.</div>
+        <div class="category-empty">No emoji are available in this category.</div>
+      )}
+
+      {hasMoreItems && (
+        <>
+          <div class="infinite-loader" id="category-infinite-loader">
+            <span class="infinite-loader-spinner" id="category-infinite-spinner" aria-hidden="true"></span>
+            <span id="category-infinite-status">{previewItems.length.toLocaleString('en-US')} of {categoryItems.length.toLocaleString('en-US')} loaded</span>
+            <button class="load-more-fallback" id="category-load-more" type="button">Load {PAGE_SIZE} more</button>
+          </div>
+
+          <nav class="pagination" id="category-pagination" aria-label={`${category.name} pagination`} hidden>
+            <button class="pagination-nav" type="button" data-page-action="prev">← Prev</button>
+            <div class="pagination-pages" id="category-pagination-pages"></div>
+            <button class="pagination-nav" type="button" data-page-action="next">Next →</button>
+          </nav>
+        </>
       )}
     </section>
 
@@ -85,14 +127,347 @@ const description = `Browse ${category.count.toLocaleString('en-US')} ${category
   </section>
 
   <script>
-    document.addEventListener('click', async (event) => {
-      const button = event.target.closest('[data-copy]');
-      if (!button) return;
-      const value = button.dataset.copy || '';
-      await navigator.clipboard.writeText(value);
-      const previous = button.textContent;
-      button.textContent = 'Copied!';
-      setTimeout(() => { button.textContent = previous; }, 850);
-    });
+    const explorer = document.querySelector('#category-explorer');
+    const grid = document.querySelector('#category-emoji-grid');
+    const rangeCount = document.querySelector('#category-range-count');
+    const infiniteLoader = document.querySelector('#category-infinite-loader');
+    const infiniteSpinner = document.querySelector('#category-infinite-spinner');
+    const infiniteStatus = document.querySelector('#category-infinite-status');
+    const loadMoreButton = document.querySelector('#category-load-more');
+    const pagination = document.querySelector('#category-pagination');
+    const paginationPages = document.querySelector('#category-pagination-pages');
+    const previousButton = pagination?.querySelector('[data-page-action="prev"]');
+    const nextButton = pagination?.querySelector('[data-page-action="next"]');
+    const modeButtons = [...document.querySelectorAll('#category-explorer [data-browse-mode]')];
+
+    if (explorer && grid && rangeCount) {
+      const PAGE_SIZE = Math.max(1, Number.parseInt(explorer.dataset.pageSize || '48', 10));
+      const resultTotal = Math.max(0, Number.parseInt(explorer.dataset.total || '0', 10));
+      const categorySlug = explorer.dataset.category || 'other';
+      const searchRoot = explorer.dataset.searchRoot || '/search';
+      const base = explorer.dataset.base || '/';
+      const basePrefix = base === '/' ? '' : base.replace(/\/$/, '');
+      const jsonCache = new Map();
+      const chunkCache = new Map();
+      let manifestPromise;
+      let categoryIdsPromise;
+      let visibleCount = Math.min(PAGE_SIZE, resultTotal);
+      let currentPage = 1;
+      let mode = 'scroll';
+      let busy = false;
+      let observer;
+
+      const params = new URLSearchParams(window.location.search);
+      mode = params.get('view') === 'pagination' ? 'pagination' : 'scroll';
+      currentPage = Math.max(1, Number.parseInt(params.get('page') || '1', 10) || 1);
+
+      function searchUrl(path) {
+        return `${searchRoot}/${String(path).replace(/^\/+/, '')}`;
+      }
+
+      async function fetchJson(path) {
+        const url = searchUrl(path);
+        if (!jsonCache.has(url)) {
+          jsonCache.set(url, fetch(url).then((response) => {
+            if (!response.ok) throw new Error(`Search asset ${url} returned HTTP ${response.status}`);
+            return response.json();
+          }).catch((error) => {
+            jsonCache.delete(url);
+            throw error;
+          }));
+        }
+        return jsonCache.get(url);
+      }
+
+      function getManifest() {
+        if (!manifestPromise) manifestPromise = fetchJson('manifest.json');
+        return manifestPromise;
+      }
+
+      function getCategoryIds() {
+        if (!categoryIdsPromise) {
+          categoryIdsPromise = getManifest().then(async (manifest) => {
+            const item = manifest.categories.find((entry) => entry.value === categorySlug);
+            if (!item) return [];
+            return fetchJson(`facets/category/${item.file}`);
+          });
+        }
+        return categoryIdsPromise;
+      }
+
+      function expandRecord(row) {
+        return {
+          slug: row.s,
+          name: row.n,
+          shortcode: row.c,
+          group: row.g,
+          category: row.ca,
+          image: row.i,
+          format: row.f,
+          animated: Boolean(row.a),
+          emoji: row.e || ''
+        };
+      }
+
+      async function getChunk(chunkIndex) {
+        if (!chunkCache.has(chunkIndex)) {
+          chunkCache.set(chunkIndex, fetchJson(`chunks/${String(chunkIndex).padStart(4, '0')}.json`));
+        }
+        return chunkCache.get(chunkIndex);
+      }
+
+      async function recordsForIds(ids) {
+        const manifest = await getManifest();
+        const needed = [...new Set(ids.map((id) => Math.floor(id / manifest.chunkSize)))];
+        await Promise.all(needed.map(getChunk));
+        return Promise.all(ids.map(async (id) => {
+          const chunkIndex = Math.floor(id / manifest.chunkSize);
+          const chunk = await getChunk(chunkIndex);
+          return expandRecord(chunk[id % manifest.chunkSize]);
+        }));
+      }
+
+      function assetUrl(emoji) {
+        if (!emoji.image) return '';
+        return emoji.image.startsWith('/') ? `${basePrefix}${emoji.image}` : emoji.image;
+      }
+
+      function createEmojiCard(emoji) {
+        const article = document.createElement('article');
+        article.className = 'emoji-card';
+        article.dataset.emojiCard = '';
+
+        const preview = document.createElement('a');
+        preview.className = 'emoji-preview';
+        preview.href = `${basePrefix}/emoji/${encodeURIComponent(emoji.slug)}`;
+        preview.setAttribute('aria-label', `Open ${emoji.name}`);
+
+        const image = document.createElement('img');
+        image.src = assetUrl(emoji);
+        image.alt = emoji.name;
+        image.loading = 'lazy';
+        image.width = 128;
+        image.height = 128;
+        preview.append(image);
+
+        if (emoji.animated) {
+          const badge = document.createElement('span');
+          badge.className = 'card-motion-badge';
+          badge.textContent = 'GIF';
+          preview.append(badge);
+        }
+
+        const body = document.createElement('div');
+        body.className = 'emoji-card-body';
+        const titleRow = document.createElement('div');
+        titleRow.className = 'emoji-title-row';
+        const name = document.createElement('a');
+        name.className = 'emoji-name';
+        name.href = preview.href;
+        name.textContent = emoji.name;
+        const nativeEmoji = document.createElement('span');
+        nativeEmoji.className = 'native-emoji';
+        nativeEmoji.setAttribute('aria-hidden', 'true');
+        nativeEmoji.textContent = emoji.emoji || '';
+        titleRow.append(name, nativeEmoji);
+
+        const shortcode = document.createElement('button');
+        shortcode.className = 'shortcode';
+        shortcode.type = 'button';
+        shortcode.dataset.copy = `:${emoji.shortcode}:`;
+        shortcode.title = 'Copy shortcode';
+        shortcode.textContent = `:${emoji.shortcode}:`;
+
+        const meta = document.createElement('div');
+        meta.className = 'emoji-meta';
+        const categoryText = document.createElement('span');
+        categoryText.textContent = emoji.category || emoji.group || 'Other';
+        const formatText = document.createElement('span');
+        formatText.textContent = emoji.animated ? 'Animated' : String(emoji.format || 'Static').toUpperCase();
+        meta.append(categoryText, formatText);
+        body.append(titleRow, shortcode, meta);
+        article.append(preview, body);
+        return article;
+      }
+
+      function syncUrl() {
+        const url = new URL(window.location.href);
+        if (mode === 'pagination') {
+          url.searchParams.set('view', 'pagination');
+          if (currentPage > 1) url.searchParams.set('page', String(currentPage));
+          else url.searchParams.delete('page');
+        } else {
+          url.searchParams.delete('view');
+          url.searchParams.delete('page');
+        }
+        window.history.replaceState({}, '', url);
+      }
+
+      function paginationItems(totalPages) {
+        if (totalPages <= 7) return Array.from({ length: totalPages }, (_, index) => index + 1);
+        const values = [1];
+        const start = Math.max(2, currentPage - 1);
+        const end = Math.min(totalPages - 1, currentPage + 1);
+        if (start > 2) values.push('ellipsis-start');
+        for (let page = start; page <= end; page += 1) values.push(page);
+        if (end < totalPages - 1) values.push('ellipsis-end');
+        values.push(totalPages);
+        return values;
+      }
+
+      function renderPagination() {
+        if (!paginationPages) return;
+        const totalPages = Math.max(1, Math.ceil(resultTotal / PAGE_SIZE));
+        paginationPages.replaceChildren();
+        if (previousButton) previousButton.disabled = currentPage <= 1;
+        if (nextButton) nextButton.disabled = currentPage >= totalPages;
+        for (const item of paginationItems(totalPages)) {
+          if (typeof item === 'string') {
+            const span = document.createElement('span');
+            span.className = 'pagination-ellipsis';
+            span.textContent = '…';
+            paginationPages.append(span);
+            continue;
+          }
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.className = `pagination-page${item === currentPage ? ' is-active' : ''}`;
+          button.textContent = String(item);
+          button.addEventListener('click', () => renderPage(item, true));
+          paginationPages.append(button);
+        }
+      }
+
+      function updateModeUi() {
+        for (const button of modeButtons) {
+          const active = button.dataset.browseMode === mode;
+          button.classList.toggle('is-active', active);
+          button.setAttribute('aria-pressed', active ? 'true' : 'false');
+        }
+        if (pagination) pagination.hidden = mode !== 'pagination' || resultTotal <= PAGE_SIZE;
+        if (infiniteLoader) infiniteLoader.hidden = mode !== 'scroll' || visibleCount >= resultTotal;
+      }
+
+      function updateScrollSummary() {
+        const shown = Math.min(visibleCount, resultTotal);
+        rangeCount.textContent = resultTotal
+          ? `Showing 1–${shown.toLocaleString('en-US')} of ${resultTotal.toLocaleString('en-US')}`
+          : 'No emoji found';
+        if (infiniteStatus) infiniteStatus.textContent = `${shown.toLocaleString('en-US')} of ${resultTotal.toLocaleString('en-US')} loaded`;
+      }
+
+      async function loadMore() {
+        if (busy || mode !== 'scroll' || visibleCount >= resultTotal) return;
+        busy = true;
+        infiniteSpinner?.classList.add('is-loading');
+        if (loadMoreButton) loadMoreButton.disabled = true;
+        if (infiniteStatus) infiniteStatus.textContent = 'Loading more emoji…';
+        const start = visibleCount;
+        const end = Math.min(start + PAGE_SIZE, resultTotal);
+        try {
+          const ids = await getCategoryIds();
+          const records = await recordsForIds(ids.slice(start, end));
+          const fragment = document.createDocumentFragment();
+          for (const record of records) fragment.append(createEmojiCard(record));
+          grid.append(fragment);
+          visibleCount = end;
+          updateScrollSummary();
+          updateModeUi();
+        } catch (error) {
+          console.error('Could not load more category emoji', error);
+          if (infiniteStatus) infiniteStatus.textContent = 'Could not load more. Try again.';
+        } finally {
+          busy = false;
+          infiniteSpinner?.classList.remove('is-loading');
+          if (loadMoreButton) loadMoreButton.disabled = false;
+        }
+      }
+
+      async function renderPage(page, scrollIntoView = false) {
+        if (busy) return;
+        busy = true;
+        const totalPages = Math.max(1, Math.ceil(resultTotal / PAGE_SIZE));
+        currentPage = Math.max(1, Math.min(page, totalPages));
+        const start = (currentPage - 1) * PAGE_SIZE;
+        const end = Math.min(start + PAGE_SIZE, resultTotal);
+        try {
+          const ids = await getCategoryIds();
+          const records = await recordsForIds(ids.slice(start, end));
+          const fragment = document.createDocumentFragment();
+          for (const record of records) fragment.append(createEmojiCard(record));
+          grid.replaceChildren(fragment);
+          rangeCount.textContent = resultTotal
+            ? `Showing ${(start + 1).toLocaleString('en-US')}–${end.toLocaleString('en-US')} of ${resultTotal.toLocaleString('en-US')}`
+            : 'No emoji found';
+          renderPagination();
+          updateModeUi();
+          syncUrl();
+          if (scrollIntoView) explorer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } catch (error) {
+          console.error('Could not load category page', error);
+          rangeCount.textContent = 'Could not load this page. Please retry.';
+        } finally {
+          busy = false;
+        }
+      }
+
+      async function renderScrollStart() {
+        if (busy) return;
+        busy = true;
+        try {
+          const ids = await getCategoryIds();
+          const end = Math.min(PAGE_SIZE, resultTotal);
+          const records = await recordsForIds(ids.slice(0, end));
+          const fragment = document.createDocumentFragment();
+          for (const record of records) fragment.append(createEmojiCard(record));
+          grid.replaceChildren(fragment);
+          visibleCount = end;
+          updateScrollSummary();
+          updateModeUi();
+          syncUrl();
+        } catch (error) {
+          console.error('Could not restore category scroll view', error);
+        } finally {
+          busy = false;
+        }
+      }
+
+      for (const button of modeButtons) {
+        button.addEventListener('click', async () => {
+          const nextMode = button.dataset.browseMode === 'pagination' ? 'pagination' : 'scroll';
+          if (nextMode === mode) return;
+          mode = nextMode;
+          currentPage = 1;
+          if (mode === 'pagination') await renderPage(1);
+          else await renderScrollStart();
+        });
+      }
+
+      previousButton?.addEventListener('click', () => renderPage(currentPage - 1, true));
+      nextButton?.addEventListener('click', () => renderPage(currentPage + 1, true));
+      loadMoreButton?.addEventListener('click', loadMore);
+
+      document.addEventListener('click', async (event) => {
+        const button = event.target.closest('[data-copy]');
+        if (!button) return;
+        const value = button.dataset.copy || '';
+        await navigator.clipboard.writeText(value);
+        const previous = button.textContent;
+        button.textContent = 'Copied!';
+        setTimeout(() => { button.textContent = previous; }, 850);
+      });
+
+      if ('IntersectionObserver' in window && infiniteLoader) {
+        observer = new IntersectionObserver((entries) => {
+          if (entries.some((entry) => entry.isIntersecting)) loadMore();
+        }, { rootMargin: '700px 0px' });
+        observer.observe(infiniteLoader);
+      }
+
+      renderPagination();
+      updateModeUi();
+      if (mode === 'pagination') requestAnimationFrame(() => renderPage(currentPage));
+      else updateScrollSummary();
+    }
   </script>
 </Layout>
