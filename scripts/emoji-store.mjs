@@ -82,6 +82,37 @@ async function sanitizeCatalog(records, phase) {
   return allowed;
 }
 
+function logOtherBreakdown(classified, phase) {
+  const otherRecords = classified.filter((record) => record.categorySlug === 'other');
+  if (!otherRecords.length) return;
+
+  const bySource = new Map();
+  const samples = new Map();
+  for (const record of otherRecords) {
+    const source = String(record.source || 'unknown');
+    bySource.set(source, (bySource.get(source) || 0) + 1);
+    if (!samples.has(source)) samples.set(source, []);
+    if (samples.get(source).length < 5) {
+      samples.get(source).push(
+        `${record.name || record.shortcode || record.id}` +
+        (record.sourceCategory ? ` [${record.sourceCategory}]` : '')
+      );
+    }
+  }
+
+  const ordered = [...bySource.entries()].sort((a, b) => b[1] - a[1]);
+  console.log(
+    `[taxonomy] ${phase}: Other by source: ` +
+    ordered.map(([source, count]) => `${source}=${count.toLocaleString('en-US')}`).join(', ')
+  );
+  for (const [source, count] of ordered.slice(0, 8)) {
+    console.log(
+      `[taxonomy] ${phase}: Other samples ${source} (${count.toLocaleString('en-US')}): ` +
+      samples.get(source).join(' | ')
+    );
+  }
+}
+
 function classifyCatalog(records, phase) {
   const classified = records.map(applyEmojiTaxonomy);
   const summary = summarizeTaxonomy(classified);
@@ -90,6 +121,7 @@ function classifyCatalog(records, phase) {
     `[taxonomy] ${phase}: v${TAXONOMY_VERSION}, ${classified.length.toLocaleString('en-US')} records, ` +
     `${summary.categories.length} canonical categories, ${other.toLocaleString('en-US')} in Other`
   );
+  logOtherBreakdown(classified, phase);
   return { classified, summary };
 }
 
