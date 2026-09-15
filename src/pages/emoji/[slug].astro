@@ -158,4 +158,32 @@ const description = hasDistinctShortcode
     background: var(--surface-subtle);
     color: var(--ink);
   }
+
+  /* Preserve the source asset's natural size on detail pages instead of upscaling small emoji. */
+  .detail-preview {
+    min-height: 360px;
+    padding: 36px;
+  }
+  .detail-preview img {
+    width: auto;
+    height: auto;
+    max-width: min(240px, 70%);
+    max-height: 240px;
+    object-fit: contain;
+  }
+
+  @media (max-width: 960px) {
+    .detail-preview { min-height: 320px; }
+  }
+
+  @media (max-width: 680px) {
+    .detail-preview {
+      min-height: 240px;
+      padding: 24px;
+    }
+    .detail-preview img {
+      max-width: min(200px, 72%);
+      max-height: 200px;
+    }
+  }
 </style>
