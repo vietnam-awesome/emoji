@@ -358,6 +358,67 @@
 .button-secondary { border: 1px solid #344054; color: #eaecf0; }
 .button-secondary:hover { border-color: #667085; }
 
+/* Home live search: these rules must be global because result rows are created by JavaScript. */
+.home-search-item {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  min-height: 62px;
+  padding: 7px 12px;
+  border-bottom: 1px solid #f2f4f7;
+  color: inherit;
+  text-decoration: none;
+}
+.home-search-item:hover { background: #f9fafb; }
+.home-search-thumb {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fafafa;
+}
+.home-search-thumb img { width: 34px; height: 34px; object-fit: contain; }
+.home-search-thumb small {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  padding: 1px 3px;
+  border-radius: 3px;
+  background: #1d2939;
+  color: #fff;
+  font-size: .38rem;
+  font-weight: 800;
+  letter-spacing: .04em;
+}
+.home-search-copy { min-width: 0; display: grid; gap: 3px; }
+.home-search-copy strong,
+.home-search-copy span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.home-search-copy strong { color: var(--ink); font-size: .76rem; }
+.home-search-copy span {
+  color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: .61rem;
+}
+.home-search-meta {
+  max-width: 125px;
+  overflow: hidden;
+  color: var(--muted-light);
+  font-size: .6rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.home-search-empty {
+  padding: 24px 14px;
+  color: var(--muted);
+  font-size: .74rem;
+  line-height: 1.5;
+  text-align: center;
+}
+
 @media (max-width: 1040px) {
   .home-hero-grid { grid-template-columns: 1fr; gap: 40px; padding: 62px 0; }
   .hero-content { max-width: 780px; }
@@ -380,6 +441,8 @@
   .developer-banner { flex-direction: column; align-items: stretch; padding: 24px; }
   .developer-actions { width: 100%; }
   .developer-actions a { flex: 1; }
+  .home-search-meta { display: none; }
+  .home-search-item { grid-template-columns: 48px minmax(0, 1fr); }
 }
 
 @media (max-width: 520px) {
