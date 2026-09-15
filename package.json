@@ -23,6 +23,7 @@
     "check:build": "node scripts/verify-build.mjs"
   },
   "dependencies": {
+    "@astrojs/cloudflare": "14.1.7",
     "@libsql/client": "0.18.0",
     "@tursodatabase/serverless": "1.4.0"
   },
