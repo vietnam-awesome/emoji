@@ -18,6 +18,16 @@ const dryRun = args.has('--dry-run');
 const optimizeFts = args.has('--optimize-fts');
 const batchSize = Math.max(25, Number.parseInt(process.env.TURSO_BATCH_SIZE || '200', 10) || 200);
 
+const TAXONOMY_COLUMNS = [
+  ['collection', 'TEXT'],
+  ['style', 'TEXT'],
+  ['topics_json', "TEXT NOT NULL DEFAULT '[]'"],
+  ['topics_search', "TEXT NOT NULL DEFAULT ''"],
+  ['source_category', 'TEXT'],
+  ['source_category_slug', 'TEXT'],
+  ['taxonomy_version', 'INTEGER NOT NULL DEFAULT 1']
+];
+
 function sha256(value) {
   return createHash('sha256').update(value).digest('hex');
 }
@@ -33,6 +43,24 @@ async function applySqlFile(client, filename) {
   const sql = await readFile(filename, 'utf8');
   const statements = splitSql(sql);
   if (statements.length) await client.batch(statements);
+}
+
+async function ensureTaxonomySchema(client) {
+  const columns = await client.query('PRAGMA table_info(emojis)');
+  const existing = new Set(columns.map((row) => String(row.name)));
+  let added = 0;
+
+  for (const [name, definition] of TAXONOMY_COLUMNS) {
+    if (existing.has(name)) continue;
+    console.log(`[turso] adding taxonomy column: ${name}`);
+    await client.run(`ALTER TABLE emojis ADD COLUMN ${name} ${definition}`);
+    added += 1;
+  }
+
+  await client.run('CREATE INDEX IF NOT EXISTS idx_emojis_collection ON emojis(collection, id)');
+  await client.run('CREATE INDEX IF NOT EXISTS idx_emojis_style ON emojis(style, id)');
+  await client.run('CREATE INDEX IF NOT EXISTS idx_emojis_source_category ON emojis(source_category_slug, id)');
+  if (added) console.log(`[turso] taxonomy schema migrated: ${added} column(s) added`);
 }
 
 function chunkEntry(entry) {
@@ -151,6 +179,7 @@ console.log(`[turso] database flavor: ${client.flavor}`);
 if (schemaOnly) {
   console.log('[turso] applying core schema...');
   await applySqlFile(client, CORE_SCHEMA_FILE);
+  await ensureTaxonomySchema(client);
   await ensureFts(client);
   console.log('[turso] schema ready.');
   process.exit(0);
@@ -159,6 +188,7 @@ if (schemaOnly) {
 if (!dryRun) {
   console.log('[turso] applying core schema...');
   await applySqlFile(client, CORE_SCHEMA_FILE);
+  await ensureTaxonomySchema(client);
 } else {
   console.log('[turso] dry run: schema writes and all mutations are disabled.');
 }
