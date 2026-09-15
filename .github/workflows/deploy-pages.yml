@@ -3,9 +3,8 @@ name: Deploy Pages
 on:
   push:
     branches: [main]
-    # Scheduled importers can push several data-only commits during the weekly
-    # refresh window. Do not rebuild the entire ~198k-page site after each one;
-    # the weekly schedule publishes the accumulated catalog once.
+    # Data import workflows may commit state-only changes. Those do not need a
+    # production rebuild; the scheduled run below checks the real catalog hash.
     paths-ignore:
       - 'src/data/emojis/**'
       - 'src/data/community-sync-state.json'
@@ -14,7 +13,9 @@ on:
       - 'public/emojis/**'
   workflow_dispatch:
   schedule:
-    # Monday 01:30 UTC = 08:30 Asia/Ho_Chi_Minh, one hour after Turso sync.
+    # Monday 01:30 UTC = 08:30 Asia/Ho_Chi_Minh.
+    # The run is lightweight and exits before npm/build/deploy when the emoji
+    # catalog fingerprint has already been deployed successfully.
     - cron: '30 1 * * 1'
 
 permissions:
@@ -24,50 +25,101 @@ permissions:
 
 concurrency:
   group: pages
-  # If a code deploy or a newer scheduled deploy starts, the stale deployment is
-  # not useful. Keep only the newest Pages build.
   cancel-in-progress: true
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      should_build: ${{ steps.decision.outputs.should_build }}
+      catalog_hash: ${{ steps.catalog.outputs.hash }}
+      catalog_cached: ${{ steps.catalog_cache.outputs.cache-hit }}
     steps:
       - name: Checkout latest main
         uses: actions/checkout@v7
         with:
           ref: main
 
+      - name: Compute emoji catalog fingerprint
+        id: catalog
+        shell: bash
+        run: |
+          set -euo pipefail
+          HASH="$({
+            find src/data/emojis -maxdepth 1 -type f -name 'chunk-*.json' -print0 | sort -z | xargs -0 sha256sum
+            if [ -f src/data/categories.json ]; then sha256sum src/data/categories.json; fi
+            if [ -f public/api/categories.json ]; then sha256sum public/api/categories.json; fi
+          } | sha256sum | awk '{print $1}')"
+          echo "hash=$HASH" >> "$GITHUB_OUTPUT"
+          echo "Catalog fingerprint: $HASH"
+
+      - name: Check whether this catalog was already deployed
+        id: catalog_cache
+        uses: actions/cache/restore@v4
+        with:
+          path: .pages-catalog-state
+          key: pages-catalog-${{ steps.catalog.outputs.hash }}
+          lookup-only: true
+
+      - name: Decide whether a full build is needed
+        id: decision
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          CATALOG_CACHE_HIT: ${{ steps.catalog_cache.outputs.cache-hit }}
+        run: |
+          set -euo pipefail
+          SHOULD_BUILD=true
+
+          if [ "$EVENT_NAME" = "schedule" ] && [ "$CATALOG_CACHE_HIT" = "true" ]; then
+            SHOULD_BUILD=false
+            echo "Catalog is unchanged since a successful deployment; skipping the expensive Pages build."
+          else
+            echo "Pages build required (event=$EVENT_NAME, catalog_cached=${CATALOG_CACHE_HIT:-false})."
+          fi
+
+          echo "should_build=$SHOULD_BUILD" >> "$GITHUB_OUTPUT"
+
       - name: Setup Node.js
+        if: steps.decision.outputs.should_build == 'true'
         uses: actions/setup-node@v7
         with:
           node-version: 22
 
       - name: Install dependencies
+        if: steps.decision.outputs.should_build == 'true'
         run: npm install --no-audit --no-fund
 
       - name: Sync animated GIF emoji
+        if: steps.decision.outputs.should_build == 'true'
         env:
           ANIMATED_LIMIT: '32'
         run: node scripts/sync-animated-showcase.mjs
 
       - name: Verify emoji index
+        if: steps.decision.outputs.should_build == 'true'
         run: npm run check:data
 
       - name: Build site
+        if: steps.decision.outputs.should_build == 'true'
         run: npm run build
 
       - name: Verify built links
+        if: steps.decision.outputs.should_build == 'true'
         run: npm run check:build
 
       - name: Configure Pages
+        if: steps.decision.outputs.should_build == 'true'
         uses: actions/configure-pages@v6
 
       - name: Upload Pages artifact
+        if: steps.decision.outputs.should_build == 'true'
         uses: actions/upload-pages-artifact@v5
         with:
           path: dist
 
   deploy:
+    if: needs.build.outputs.should_build == 'true'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -77,3 +129,24 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v5
+
+  mark-catalog-deployed:
+    if: >-
+      always() &&
+      needs.build.outputs.should_build == 'true' &&
+      needs.deploy.result == 'success' &&
+      needs.build.outputs.catalog_cached != 'true'
+    runs-on: ubuntu-latest
+    needs: [build, deploy]
+    steps:
+      - name: Create deployment marker
+        shell: bash
+        run: |
+          mkdir -p .pages-catalog-state
+          printf '%s\n' '${{ needs.build.outputs.catalog_hash }}' > .pages-catalog-state/catalog-sha256
+
+      - name: Remember successfully deployed catalog
+        uses: actions/cache/save@v4
+        with:
+          path: .pages-catalog-state
+          key: pages-catalog-${{ needs.build.outputs.catalog_hash }}
