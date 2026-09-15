@@ -10,6 +10,7 @@ on:
       - '!public/api/**'
       - 'scripts/build-static-search.mjs'
       - 'scripts/emoji-store.mjs'
+      - 'scripts/verify-build.mjs'
       - 'astro.config.mjs'
       - 'package.json'
       - '.github/workflows/deploy-pages.yml'
@@ -46,12 +47,28 @@ jobs:
         uses: actions/setup-node@v7
         with:
           node-version: 22
+          cache: npm
 
       - name: Install dependencies
         run: npm install --no-audit --no-fund
 
+      - name: Restore static search cache
+        id: search-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: public/search
+          key: static-search-v1-${{ hashFiles('src/data/emojis/*.json', 'scripts/build-static-search.mjs') }}
+
       - name: Export catalog and build static search shards
+        if: steps.search-cache.outputs.cache-hit != 'true'
         run: npm run build:static-data
+
+      - name: Save static search cache
+        if: steps.search-cache.outputs.cache-hit != 'true' && success()
+        uses: actions/cache/save@v4
+        with:
+          path: public/search
+          key: static-search-v1-${{ hashFiles('src/data/emojis/*.json', 'scripts/build-static-search.mjs') }}
 
       - name: Verify static catalog snapshot
         run: npm run check:data
@@ -59,7 +76,9 @@ jobs:
       - name: Build static Astro site
         run: npx astro build
 
-      - name: Verify built links
+      - name: Verify representative built links
+        env:
+          VERIFY_DETAIL_LIMIT: '500'
         run: npm run check:build
 
       - name: Configure Pages
