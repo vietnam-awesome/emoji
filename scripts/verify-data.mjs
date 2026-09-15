@@ -6,6 +6,7 @@ const emojis = JSON.parse(await readFile('src/data/emojis.json', 'utf8'));
 const ids = new Set();
 const slugs = new Set();
 const canonicalCategories = new Set(Object.keys(CANONICAL_CATEGORIES));
+const verifyAssets = process.env.VERIFY_DATA_SKIP_ASSETS !== '1';
 let errors = 0;
 
 function twemojiFilename(hexcode) {
@@ -58,6 +59,8 @@ for (const emoji of emojis) {
     continue;
   }
 
+  if (!verifyAssets) continue;
+
   const localPath = path.resolve('public', image.replace(/^\//, ''));
   try {
     await access(localPath);
@@ -71,4 +74,6 @@ if (errors) {
   console.error(`\nData verification failed with ${errors} error(s).`);
   process.exit(1);
 }
-console.log(`Verified ${emojis.length} emoji records, canonical taxonomy v${TAXONOMY_VERSION}, and local assets.`);
+
+const assetSummary = verifyAssets ? 'and local assets' : '(metadata-only; local asset checks skipped)';
+console.log(`Verified ${emojis.length} emoji records, canonical taxonomy v${TAXONOMY_VERSION}, ${assetSummary}.`);
