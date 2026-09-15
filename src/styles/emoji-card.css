@@ -1,9 +1,10 @@
 /* Shared EmojiCard styles.
  * Keep the card visual contract here so Home, Browse and category surfaces
  * render the same component instead of maintaining page-specific variants.
+ * The body prefix intentionally outranks legacy page-level card overrides.
  */
 
-.emoji-card[data-emoji-card] {
+body .emoji-card[data-emoji-card] {
   position: relative;
   min-width: 0;
   overflow: hidden;
@@ -14,13 +15,13 @@
   transition: border-color .16s ease, box-shadow .16s ease, transform .16s ease;
 }
 
-.emoji-card[data-emoji-card]:hover {
+body .emoji-card[data-emoji-card]:hover {
   transform: translateY(-2px);
   border-color: #cfd5df;
   box-shadow: 0 12px 28px rgba(15, 23, 42, .07);
 }
 
-.emoji-card[data-emoji-card] .emoji-preview {
+body .emoji-card[data-emoji-card] .emoji-preview {
   position: relative;
   display: grid;
   place-items: center;
@@ -36,16 +37,16 @@
   background-position: 0 0, 0 9px;
 }
 
-.emoji-card[data-emoji-card] .emoji-preview img {
+body .emoji-card[data-emoji-card] .emoji-preview img {
   width: 78px;
   height: 78px;
   object-fit: contain;
   transition: transform .15s ease;
 }
 
-.emoji-card[data-emoji-card]:hover .emoji-preview img { transform: scale(1.04); }
+body .emoji-card[data-emoji-card]:hover .emoji-preview img { transform: scale(1.04); }
 
-.emoji-card[data-emoji-card] .card-motion-badge {
+body .emoji-card[data-emoji-card] .card-motion-badge {
   position: absolute;
   top: 7px;
   right: 7px;
@@ -59,12 +60,12 @@
   letter-spacing: .06em;
 }
 
-.emoji-card[data-emoji-card] .emoji-card-body { padding: 9px; }
-.emoji-card[data-emoji-card] .emoji-title-row { gap: 7px; }
-.emoji-card[data-emoji-card] .emoji-name { font-size: .74rem; font-weight: 730; }
-.emoji-card[data-emoji-card] .native-emoji { font-size: .82rem; }
+body .emoji-card[data-emoji-card] .emoji-card-body { padding: 9px; }
+body .emoji-card[data-emoji-card] .emoji-title-row { gap: 7px; }
+body .emoji-card[data-emoji-card] .emoji-name { font-size: .74rem; font-weight: 730; }
+body .emoji-card[data-emoji-card] .native-emoji { font-size: .82rem; }
 
-.emoji-card[data-emoji-card] .shortcode {
+body .emoji-card[data-emoji-card] .shortcode {
   display: block;
   width: 100%;
   min-width: 0;
@@ -81,11 +82,11 @@
   white-space: nowrap;
 }
 
-.emoji-card[data-emoji-card] .shortcode:hover { background: #fff; color: var(--ink); }
-.emoji-card[data-emoji-card] .emoji-meta { margin-top: 7px; font-size: .53rem; }
+body .emoji-card[data-emoji-card] .shortcode:hover { background: #fff; color: var(--ink); }
+body .emoji-card[data-emoji-card] .emoji-meta { margin-top: 7px; font-size: .53rem; }
 
-.emoji-card[data-emoji-card] .emoji-select-control,
-.emoji-card[data-emoji-card] .emoji-card-download {
+body .emoji-card[data-emoji-card] .emoji-select-control,
+body .emoji-card[data-emoji-card] .emoji-card-download {
   position: absolute;
   z-index: 4;
   top: 8px;
@@ -101,11 +102,11 @@
   backdrop-filter: blur(8px);
 }
 
-.emoji-card[data-emoji-card] .emoji-select-control { left: 8px; cursor: pointer; }
-.emoji-card[data-emoji-card] .emoji-card-download { right: 8px; text-decoration: none; }
-.emoji-card[data-emoji-card] .emoji-card-download svg { width: 15px; height: 15px; }
+body .emoji-card[data-emoji-card] .emoji-select-control { left: 8px; cursor: pointer; }
+body .emoji-card[data-emoji-card] .emoji-card-download { right: 8px; text-decoration: none; }
+body .emoji-card[data-emoji-card] .emoji-card-download svg { width: 15px; height: 15px; }
 
-.emoji-card[data-emoji-card] .emoji-select-control input {
+body .emoji-card[data-emoji-card] .emoji-select-control input {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -113,7 +114,7 @@
   pointer-events: none;
 }
 
-.emoji-card[data-emoji-card] .emoji-select-control span {
+body .emoji-card[data-emoji-card] .emoji-select-control span {
   display: grid;
   width: 16px;
   height: 16px;
@@ -125,27 +126,27 @@
   font-weight: 800;
 }
 
-.emoji-card[data-emoji-card] .emoji-select-control input:checked + span,
-.emoji-card[data-emoji-card].is-selected .emoji-select-control span {
+body .emoji-card[data-emoji-card] .emoji-select-control input:checked + span,
+body .emoji-card[data-emoji-card].is-selected .emoji-select-control span {
   border-color: #18181b;
   background: #18181b;
   color: #fff;
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .emoji-card[data-emoji-card] .emoji-select-control,
-  .emoji-card[data-emoji-card] .emoji-card-download {
+  body .emoji-card[data-emoji-card] .emoji-select-control,
+  body .emoji-card[data-emoji-card] .emoji-card-download {
     opacity: 0;
     transform: translateY(-4px) scale(.96);
     pointer-events: none;
     transition: opacity .14s ease, transform .14s ease;
   }
 
-  .emoji-card[data-emoji-card]:hover .emoji-select-control,
-  .emoji-card[data-emoji-card]:hover .emoji-card-download,
-  .emoji-card[data-emoji-card]:focus-within .emoji-select-control,
-  .emoji-card[data-emoji-card]:focus-within .emoji-card-download,
-  .emoji-card[data-emoji-card].is-selected .emoji-select-control {
+  body .emoji-card[data-emoji-card]:hover .emoji-select-control,
+  body .emoji-card[data-emoji-card]:hover .emoji-card-download,
+  body .emoji-card[data-emoji-card]:focus-within .emoji-select-control,
+  body .emoji-card[data-emoji-card]:focus-within .emoji-card-download,
+  body .emoji-card[data-emoji-card].is-selected .emoji-select-control {
     opacity: 1;
     transform: none;
     pointer-events: auto;
@@ -153,18 +154,18 @@
 }
 
 @media (max-width: 680px) {
-  .emoji-card[data-emoji-card] .emoji-preview { padding: 12px; }
-  .emoji-card[data-emoji-card] .emoji-preview img { width: 65px; height: 65px; }
-  .emoji-card[data-emoji-card] .emoji-card-body { padding: 8px; }
-  .emoji-card[data-emoji-card] .emoji-name { font-size: .69rem; }
-  .emoji-card[data-emoji-card] .native-emoji { display: none; }
-  .emoji-card[data-emoji-card] .shortcode { padding: 5px 6px; font-size: .54rem; }
-  .emoji-card[data-emoji-card] .emoji-meta { display: none; }
+  body .emoji-card[data-emoji-card] .emoji-preview { padding: 12px; }
+  body .emoji-card[data-emoji-card] .emoji-preview img { width: 65px; height: 65px; }
+  body .emoji-card[data-emoji-card] .emoji-card-body { padding: 8px; }
+  body .emoji-card[data-emoji-card] .emoji-name { font-size: .69rem; }
+  body .emoji-card[data-emoji-card] .native-emoji { display: none; }
+  body .emoji-card[data-emoji-card] .shortcode { padding: 5px 6px; font-size: .54rem; }
+  body .emoji-card[data-emoji-card] .emoji-meta { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .emoji-card[data-emoji-card],
-  .emoji-card[data-emoji-card] .emoji-preview img,
-  .emoji-card[data-emoji-card] .emoji-select-control,
-  .emoji-card[data-emoji-card] .emoji-card-download { transition: none; }
+  body .emoji-card[data-emoji-card],
+  body .emoji-card[data-emoji-card] .emoji-preview img,
+  body .emoji-card[data-emoji-card] .emoji-select-control,
+  body .emoji-card[data-emoji-card] .emoji-card-download { transition: none; }
 }
