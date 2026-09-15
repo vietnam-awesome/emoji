@@ -6,7 +6,7 @@ import {
 } from './lib/content-safety.mjs';
 import {
   applyEmojiTaxonomy,
-  summarizeTaxonomy,
+  CANONICAL_CATEGORIES,
   TAXONOMY_VERSION
 } from './lib/emoji-taxonomy.mjs';
 
@@ -15,6 +15,7 @@ const CATEGORY_DATA_FILE = path.resolve('src/data/categories.json');
 const SHARD_DIR = path.resolve('src/data/emojis');
 const MANIFEST_FILE = path.join(SHARD_DIR, 'index.json');
 const DEFAULT_CHUNK_SIZE = 2500;
+const CANONICAL_CATEGORY_SLUGS = new Set(Object.keys(CANONICAL_CATEGORIES));
 
 async function exists(file) {
   try {
@@ -82,13 +83,14 @@ async function sanitizeCatalog(records, phase) {
   return allowed;
 }
 
-function logOtherBreakdown(classified, phase) {
-  const otherRecords = classified.filter((record) => record.categorySlug === 'other');
-  if (!otherRecords.length) return;
-
+function logOtherBreakdown(records, phase) {
   const bySource = new Map();
   const samples = new Map();
-  for (const record of otherRecords) {
+  let otherCount = 0;
+
+  for (const record of records) {
+    if (record.categorySlug !== 'other') continue;
+    otherCount += 1;
     const source = String(record.source || 'unknown');
     bySource.set(source, (bySource.get(source) || 0) + 1);
     if (!samples.has(source)) samples.set(source, []);
@@ -100,29 +102,62 @@ function logOtherBreakdown(classified, phase) {
     }
   }
 
+  if (!otherCount) return;
   const ordered = [...bySource.entries()].sort((a, b) => b[1] - a[1]);
   console.log(
-    `[taxonomy] ${phase}: Other by source: ` +
+    `[taxonomy] ${phase}: ${otherCount.toLocaleString('en-US')} in Other; ` +
     ordered.map(([source, count]) => `${source}=${count.toLocaleString('en-US')}`).join(', ')
   );
-  for (const [source, count] of ordered.slice(0, 8)) {
-    console.log(
-      `[taxonomy] ${phase}: Other samples ${source} (${count.toLocaleString('en-US')}): ` +
-      samples.get(source).join(' | ')
-    );
-  }
 }
 
-function classifyCatalog(records, phase) {
-  const classified = records.map(applyEmojiTaxonomy);
-  const summary = summarizeTaxonomy(classified);
-  const other = summary.categories.find((item) => item.slug === 'other')?.count || 0;
-  console.log(
-    `[taxonomy] ${phase}: v${TAXONOMY_VERSION}, ${classified.length.toLocaleString('en-US')} records, ` +
-    `${summary.categories.length} canonical categories, ${other.toLocaleString('en-US')} in Other`
+function summarizeExistingTaxonomy(records) {
+  const summary = new Map(
+    Object.entries(CANONICAL_CATEGORIES).map(([slug, name]) => [slug, {
+      slug,
+      name,
+      count: 0,
+      animated: 0,
+      static: 0
+    }])
   );
-  logOtherBreakdown(classified, phase);
-  return { classified, summary };
+
+  for (const record of records) {
+    const slug = CANONICAL_CATEGORY_SLUGS.has(String(record.categorySlug || ''))
+      ? String(record.categorySlug)
+      : 'other';
+    const bucket = summary.get(slug);
+    bucket.count += 1;
+    if (record.animated) bucket.animated += 1;
+    else bucket.static += 1;
+  }
+
+  return {
+    version: TAXONOMY_VERSION,
+    categories: [...summary.values()]
+      .filter((item) => item.count > 0)
+      .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
+  };
+}
+
+function ensureCurrentTaxonomy(records, phase) {
+  let classifiedCount = 0;
+  const normalized = records.map((record) => {
+    const categorySlug = String(record?.categorySlug || '');
+    const isCurrent = Number(record?.taxonomyVersion) === TAXONOMY_VERSION
+      && CANONICAL_CATEGORY_SLUGS.has(categorySlug);
+    if (isCurrent) return record;
+    classifiedCount += 1;
+    return applyEmojiTaxonomy(record);
+  });
+
+  const summary = summarizeExistingTaxonomy(normalized);
+  console.log(
+    `[taxonomy] ${phase}: v${TAXONOMY_VERSION}, preserved ` +
+    `${(normalized.length - classifiedCount).toLocaleString('en-US')} current record(s), ` +
+    `classified ${classifiedCount.toLocaleString('en-US')} new/outdated record(s)`
+  );
+  logOtherBreakdown(normalized, phase);
+  return { classified: normalized, summary };
 }
 
 async function writeCategorySummary(summary) {
@@ -139,10 +174,10 @@ async function hydrate() {
   }
 
   emojis = await sanitizeCatalog(emojis, 'hydrate');
-  const { classified, summary } = classifyCatalog(emojis, 'hydrate');
+  const { classified, summary } = ensureCurrentTaxonomy(emojis, 'hydrate');
   await writeJson(DATA_FILE, classified);
   await writeCategorySummary(summary);
-  console.log(`[emoji-store] hydrated ${classified.length.toLocaleString('en-US')} safe, classified records into the working JSON file`);
+  console.log(`[emoji-store] hydrated ${classified.length.toLocaleString('en-US')} safe records into the working JSON file`);
 }
 
 async function shard() {
@@ -155,7 +190,7 @@ async function shard() {
   if (!Array.isArray(emojis)) throw new Error('Emoji data is not an array.');
 
   emojis = await sanitizeCatalog(emojis, 'shard');
-  const { classified, summary } = classifyCatalog(emojis, 'shard');
+  const { classified, summary } = ensureCurrentTaxonomy(emojis, 'shard');
   emojis = classified;
 
   const chunkSizeArg = Number.parseInt(process.env.EMOJI_SHARD_SIZE || '', 10);
@@ -184,7 +219,7 @@ async function shard() {
   await rm(DATA_FILE, { force: true });
 
   const files = await readdir(SHARD_DIR);
-  console.log(`[emoji-store] sharded ${emojis.length.toLocaleString('en-US')} safe, classified records into ${chunks.length} chunks (${files.length} files including manifest)`);
+  console.log(`[emoji-store] sharded ${emojis.length.toLocaleString('en-US')} safe records into ${chunks.length} chunks (${files.length} files including manifest)`);
 }
 
 const command = String(process.argv[2] || '').toLowerCase();
