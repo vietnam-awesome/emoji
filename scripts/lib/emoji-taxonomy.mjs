@@ -61,7 +61,7 @@ const UNICODE_GROUP_RULES = Object.freeze({
 
 const CATEGORY_KEYWORDS = Object.freeze({
   reactions: [
-    'reaction', 'smile', 'happy', 'laugh', 'lol', 'lmao', 'cry', 'sad', 'angry', 'rage', 'mad',
+    'reaction', 'reactions', 'smile', 'happy', 'laugh', 'lol', 'lmao', 'cry', 'sad', 'angry', 'rage', 'mad',
     'thinking', 'think', 'wow', 'shock', 'shocked', 'surprise', 'surprised', 'clap', 'wave', 'hug',
     'kiss', 'heart', 'love', 'blush', 'wink', 'facepalm', 'shrug', 'pray', 'thumbsup', 'thumbsdown',
     'pog', 'kekw', 'monka', 'copium', 'face'
@@ -71,7 +71,7 @@ const CATEGORY_KEYWORDS = Object.freeze({
     'body', 'hair', 'beard', 'celebrity', 'human'
   ],
   animals: [
-    'animal', 'cat', 'dog', 'frog', 'bunny', 'rabbit', 'bear', 'fox', 'wolf', 'bird', 'fish', 'shark',
+    'animal', 'animals', 'cat', 'dog', 'frog', 'bunny', 'rabbit', 'bear', 'fox', 'wolf', 'bird', 'fish', 'shark',
     'snake', 'horse', 'cow', 'pig', 'monkey', 'lion', 'tiger', 'hamster', 'duck', 'chicken', 'bee',
     'butterfly', 'spider', 'paw'
   ],
@@ -84,33 +84,33 @@ const CATEGORY_KEYWORDS = Object.freeze({
     'cookie', 'candy', 'fruit', 'apple', 'banana', 'bread', 'cheese', 'rice'
   ],
   activities: [
-    'activity', 'sport', 'soccer', 'football', 'basketball', 'baseball', 'tennis', 'golf', 'medal',
+    'activity', 'activities', 'sport', 'soccer', 'football', 'basketball', 'baseball', 'tennis', 'golf', 'medal',
     'trophy', 'running', 'swimming', 'cycling', 'workout', 'exercise', 'party', 'dance'
   ],
   'travel-places': [
-    'travel', 'place', 'car', 'taxi', 'bus', 'train', 'plane', 'airplane', 'ship', 'boat', 'rocket',
+    'travel', 'place', 'places', 'car', 'taxi', 'bus', 'train', 'plane', 'airplane', 'ship', 'boat', 'rocket',
     'map', 'building', 'house', 'hotel', 'city', 'airport', 'station'
   ],
   objects: [
-    'object', 'phone', 'computer', 'laptop', 'keyboard', 'camera', 'bell', 'gift', 'tool', 'hammer',
+    'object', 'objects', 'phone', 'computer', 'laptop', 'keyboard', 'camera', 'bell', 'gift', 'tool', 'hammer',
     'book', 'money', 'key', 'lock', 'clock', 'light', 'bulb', 'microphone', 'headphone', 'headphones'
   ],
   symbols: [
-    'symbol', 'letter', 'alphabet', 'number', 'arrow', 'check', 'cross', 'warning', 'question',
+    'symbol', 'symbols', 'letter', 'alphabet', 'number', 'arrow', 'check', 'cross', 'warning', 'question',
     'exclamation', 'plus', 'minus', 'circle', 'square', 'button'
   ],
-  flags: ['flag', 'country-flag', 'nation-flag'],
+  flags: ['flag', 'flags', 'country-flag', 'nation-flag'],
   gaming: [
     'gaming', 'game', 'gamer', 'xbox', 'playstation', 'nintendo', 'steam', 'minecraft', 'roblox',
     'fortnite', 'valorant', 'league', 'dota', 'overwatch', 'genshin', 'pokemon'
   ],
   entertainment: [
-    'anime', 'movie', 'film', 'television', 'tv', 'music', 'song', 'singer', 'artist', 'kpop',
+    'entertainment', 'anime', 'movie', 'film', 'television', 'tv', 'music', 'song', 'singer', 'artist', 'kpop',
     'cartoon', 'disney', 'marvel', 'character'
   ],
-  brands: ['brand', 'logo', 'company-logo'],
+  brands: ['brand', 'brands', 'logo', 'logos', 'company-logo'],
   meme: [
-    'meme', 'pepe', 'wojak', 'troll', 'sus', 'amongus', 'among-us', 'sigma', 'gigachad', 'kekw',
+    'meme', 'memes', 'pepe', 'wojak', 'troll', 'sus', 'amongus', 'among-us', 'sigma', 'gigachad', 'kekw',
     'monka', 'copium', 'poggers', 'rage-comic'
   ]
 });
@@ -310,7 +310,7 @@ export function applyEmojiTaxonomy(record) {
     taxonomyVersion: classified.version
   };
 
-  if (classified.sourceCategory && slugify(classified.sourceCategory) !== classified.category) {
+  if (classified.sourceCategory) {
     next.sourceCategory = classified.sourceCategory;
     next.sourceCategorySlug = classified.sourceCategorySlug;
   } else {
