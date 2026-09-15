@@ -2,12 +2,6 @@ name: Purge Sensitive Emoji
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - 'scripts/lib/content-safety.mjs'
-      - 'scripts/emoji-store.mjs'
-      - '.github/workflows/purge-sensitive.yml'
 
 permissions:
   contents: write
