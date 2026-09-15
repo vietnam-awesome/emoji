@@ -136,8 +136,9 @@ for (const file of htmlFiles) {
     const routeHtml = path.join(dist, `${relative}.html`);
 
     if (!await exists(direct) && !await exists(routeIndex) && !await exists(routeHtml)) {
-      // Fast CI intentionally builds only a representative detail sample.
-      if (fastVerify && url.startsWith('/emoji/')) continue;
+      // Fast CI intentionally builds only a representative detail sample and does
+      // not checkout the large public/emojis asset tree.
+      if (fastVerify && (url.startsWith('/emoji/') || url.startsWith('/emojis/'))) continue;
       console.error(`[missing target] ${path.relative(dist, file)} -> ${url}`);
       errors += 1;
     }
