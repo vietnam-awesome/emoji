@@ -109,15 +109,25 @@ async function loadTursoCatalog(url, authToken) {
 }
 
 async function loadCatalog() {
-  const url = String(process.env.TURSO_DATABASE_URL || '').trim();
-  const authToken = String(process.env.TURSO_AUTH_TOKEN || '').trim();
-  if (url && authToken) {
-    console.log('[static-data] exporting catalog from Turso for this build');
-    return loadTursoCatalog(url, authToken);
+  const source = String(process.env.STATIC_DATA_SOURCE || 'local').trim().toLowerCase();
+
+  if (source === 'local') {
+    console.log('[static-data] using hydrated repository shards (zero Turso reads)');
+    return loadLocalCatalog();
   }
 
-  console.log('[static-data] Turso credentials unavailable; using hydrated repository shards');
-  return loadLocalCatalog();
+  if (source !== 'turso') {
+    throw new Error(`Unsupported STATIC_DATA_SOURCE=${source}; expected local or turso`);
+  }
+
+  const url = String(process.env.TURSO_DATABASE_URL || '').trim();
+  const authToken = String(process.env.TURSO_AUTH_TOKEN || '').trim();
+  if (!url || !authToken) {
+    throw new Error('STATIC_DATA_SOURCE=turso requires TURSO_DATABASE_URL and TURSO_AUTH_TOKEN');
+  }
+
+  console.log('[static-data] explicitly exporting catalog from Turso');
+  return loadTursoCatalog(url, authToken);
 }
 
 function addFacet(map, key, name, id, animated) {
