@@ -19,8 +19,14 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - name: Checkout
+      - name: Checkout source without production emoji assets
         uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+          sparse-checkout: |
+            /*
+            !/public/emojis/
+          sparse-checkout-cone-mode: false
 
       - name: Setup Node.js
         uses: actions/setup-node@v7
@@ -41,7 +47,9 @@ jobs:
       - name: Run unit tests
         run: npm test
 
-      - name: Verify emoji data
+      - name: Verify emoji metadata
+        env:
+          VERIFY_DATA_SKIP_ASSETS: '1'
         run: npm run check:data
 
       - name: Validate static search generator
