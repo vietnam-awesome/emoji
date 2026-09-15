@@ -1,20 +1,22 @@
 ---
 import emojis from '../data/emojis.json';
 
-function bucket() {
+type Counts = { total: number; animated: number; static: number };
+
+function bucket(): Counts {
   return { total: 0, animated: 0, static: 0 };
 }
 
-function increment(target, animated) {
+function increment(target: Counts, animated: boolean) {
   target.total += 1;
   if (animated) target.animated += 1;
   else target.static += 1;
 }
 
 const totals = bucket();
-const categories = {};
-const sources = {};
-const categorySource = {};
+const categories: Record<string, Counts> = {};
+const sources: Record<string, Counts> = {};
+const categorySource: Record<string, Record<string, Counts>> = {};
 
 for (const emoji of emojis) {
   const category = String(emoji.categorySlug || emoji.category || 'other').toLowerCase();
