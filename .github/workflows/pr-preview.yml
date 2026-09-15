@@ -7,10 +7,13 @@ on:
       - 'src/components/**'
       - 'src/config/**'
       - 'src/layouts/**'
+      - 'src/lib/**'
       - 'src/pages/**'
       - 'src/styles/**'
       - 'astro.config.mjs'
+      - 'package.json'
       - 'scripts/prepare-pr-preview.mjs'
+      - 'scripts/prepare-preview-data.mjs'
       - '.github/workflows/pr-preview.yml'
       - 'public/**'
       - '!public/api/**'
@@ -30,19 +33,31 @@ jobs:
   preview:
     if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 15
     env:
       PREVIEW_BRANCH: pr-preview-${{ github.event.pull_request.number }}
       PR_PREVIEW_BASE: /${{ github.repository }}/pr-preview-${{ github.event.pull_request.number }}/
       PR_PREVIEW_SITE: https://raw.githack.com/${{ github.repository }}/pr-preview-${{ github.event.pull_request.number }}/
       PREVIEW_URL: https://raw.githack.com/${{ github.repository }}/pr-preview-${{ github.event.pull_request.number }}/index.html
+      PR_PREVIEW_ASSET_ORIGIN: https://emoji.eplus.dev
 
     steps:
-      - name: Checkout PR
+      - name: Checkout representative preview source
         uses: actions/checkout@v7
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 1
+          sparse-checkout: |
+            /*
+            !/public/emojis/*
+            !/src/data/emojis/*
+            /src/data/emojis/chunk-0001.json
+            /src/data/emojis/chunk-0020.json
+            /src/data/emojis/chunk-0040.json
+            /src/data/emojis/chunk-0060.json
+            /src/data/emojis/chunk-0070.json
+            /src/data/emojis/chunk-0079.json
+          sparse-checkout-cone-mode: false
 
       - name: Setup Node.js
         uses: actions/setup-node@v7
@@ -57,13 +72,19 @@ jobs:
           restore-keys: |
             npm-${{ runner.os }}-
 
-      - name: Install dependencies
-        run: npm install --no-audit --no-fund
+      - name: Install dependencies without full catalog hydration
+        run: npm install --ignore-scripts --no-audit --no-fund
 
-      - name: Verify emoji data
-        run: npm run check:data
+      - name: Prepare representative emoji catalog
+        env:
+          PREVIEW_EMOJI_LIMIT: '600'
+        run: node scripts/prepare-preview-data.mjs
 
-      - name: Build live preview
+      - name: Build lightweight live preview
+        env:
+          STATIC_DATA_SOURCE: local
+          FAST_BUILD: '1'
+          FAST_BUILD_DETAIL_LIMIT: '80'
         run: npm run build
 
       - name: Prepare preview routes
@@ -74,7 +95,7 @@ jobs:
           set -euo pipefail
           test -s dist/index.html
           grep -q 'ePlus Emoji' dist/index.html
-          echo "Preview build validated locally."
+          echo "Representative preview build validated locally."
 
       - name: Publish preview branch
         env:
@@ -102,7 +123,7 @@ jobs:
             echo
             echo "[Open the live site]($PREVIEW_URL)"
             echo
-            echo 'This is a real static deployment of the PR build. Navigation, search, filters, pagination, detail pages, downloads, and responsive behavior can be tested in the browser.'
+            echo 'This preview intentionally uses a representative sample (~600 emoji, ~80 detail pages) and production-hosted emoji assets so UI review stays fast and cheap.'
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Post or update live preview link on PR
@@ -113,7 +134,7 @@ jobs:
           script: |
             const marker = '<!-- emoji-live-pr-preview -->';
             const shortSha = context.payload.pull_request.head.sha.slice(0, 7);
-            const body = `${marker}\n## 🌐 Live Preview\n\n**[Open PR preview →](${process.env.PREVIEW_URL})**\n\nBuilt from commit \`${shortSha}\`. This is an interactive site, not a screenshot — you can test navigation, search, filters, pagination, emoji detail pages and responsive layout.\n\n> The preview updates automatically when this PR receives a new commit. It is served from a disposable \`pr-preview-${context.issue.number}\` branch through raw.githack and is not the production site.`;
+            const body = `${marker}\n## 🌐 Live Preview\n\n**[Open PR preview →](${process.env.PREVIEW_URL})**\n\nBuilt from commit \`${shortSha}\`. This is an interactive representative build for UI review: about 600 emoji records, about 80 detail pages, with emoji images reused from production instead of rebuilding the full catalog.\n\n> The preview updates automatically when this PR receives a new commit and is not the production site.`;
 
             const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner,
