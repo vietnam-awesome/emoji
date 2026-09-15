@@ -56,6 +56,22 @@ const categoryUrl = withBase(`/categories/${categorySlug}`, base);
 const hasDistinctShortcode = Boolean(
   emoji.shortcode && normalizeIdentity(emoji.shortcode) !== normalizeIdentity(emoji.name)
 );
+const tagTargetUrl = (tag) => {
+  const tagIdentity = normalizeIdentity(tag);
+  if (tagIdentity === 'animated') return `${browseUrl}?motion=yes`;
+
+  const sourceIdentity = normalizeIdentity(emoji.source);
+  const sourceLabelIdentity = normalizeIdentity(emoji.sourceLabel);
+  if (emoji.source && tagIdentity && (tagIdentity === sourceIdentity || tagIdentity === sourceLabelIdentity)) {
+    return `${browseUrl}?source=${encodeURIComponent(String(emoji.source).toLowerCase())}`;
+  }
+
+  if (tagIdentity && (tagIdentity === normalizeIdentity(category) || tagIdentity === normalizeIdentity(categorySlug))) {
+    return categoryUrl;
+  }
+
+  return `${browseUrl}?q=${encodeURIComponent(tag)}`;
+};
 const description = hasDistinctShortcode
   ? `Download ${emoji.name} from ${emoji.sourceLabel}, copy :${emoji.shortcode}: and view source, format and license metadata.`
   : `Download ${emoji.name} from ${emoji.sourceLabel} and view source, format and license metadata.`;
@@ -83,8 +99,10 @@ const description = hasDistinctShortcode
           </button>
         )}
 
-        <div class:list={['tag-list', { 'without-shortcode': !hasDistinctShortcode }]}>
-          {(emoji.tags || []).slice(0, 12).map((tag) => <span>{tag}</span>)}
+        <div class:list={['tag-list', { 'without-shortcode': !hasDistinctShortcode }]} aria-label="Related emoji tags">
+          {(emoji.tags || []).slice(0, 12).map((tag) => (
+            <a href={tagTargetUrl(tag)} title={`Browse emoji related to ${tag}`}>{tag}</a>
+          ))}
         </div>
 
         <dl class="metadata-list">
@@ -123,4 +141,21 @@ const description = hasDistinctShortcode
 
 <style>
   .tag-list.without-shortcode { margin-top: 24px; }
+  .tag-list a {
+    padding: 5px 8px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: #fff;
+    color: var(--muted);
+    font-size: .64rem;
+    font-weight: 650;
+    text-decoration: none;
+    transition: transform .14s ease, border-color .14s ease, background .14s ease, color .14s ease;
+  }
+  .tag-list a:hover {
+    transform: translateY(-1px);
+    border-color: var(--line-strong);
+    background: var(--surface-subtle);
+    color: var(--ink);
+  }
 </style>
