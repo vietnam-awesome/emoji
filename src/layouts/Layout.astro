@@ -2,6 +2,7 @@
 import '../styles/global.css';
 import { withBase } from '../lib/url';
 import CatalogDownload from '../components/CatalogDownload.astro';
+import FilterCompatibility from '../components/FilterCompatibility.astro';
 
 interface Props {
   title?: string;
@@ -143,6 +144,7 @@ const schemaJson = JSON.stringify({
     </header>
 
     <main><slot /></main>
+    {isBrowseIndex && <FilterCompatibility />}
     {isBrowseIndex && <CatalogDownload />}
 
     <footer class="site-footer">

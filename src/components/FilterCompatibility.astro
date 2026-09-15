@@ -1,0 +1,165 @@
+---
+import emojis from '../data/emojis.json';
+
+type Counts = { total: number; animated: number; static: number };
+
+function bucket(): Counts {
+  return { total: 0, animated: 0, static: 0 };
+}
+
+function increment(target: Counts, animated: boolean) {
+  target.total += 1;
+  if (animated) target.animated += 1;
+  else target.static += 1;
+}
+
+const totals = bucket();
+const categories: Record<string, Counts> = {};
+const sources: Record<string, Counts> = {};
+const categorySource: Record<string, Record<string, Counts>> = {};
+
+for (const emoji of emojis) {
+  const category = String(emoji.categorySlug || emoji.category || 'other').toLowerCase();
+  const source = String(emoji.source || '').toLowerCase();
+  const animated = Boolean(emoji.animated);
+
+  increment(totals, animated);
+
+  if (!categories[category]) categories[category] = bucket();
+  increment(categories[category], animated);
+
+  if (source) {
+    if (!sources[source]) sources[source] = bucket();
+    increment(sources[source], animated);
+
+    if (!categorySource[category]) categorySource[category] = {};
+    if (!categorySource[category][source]) categorySource[category][source] = bucket();
+    increment(categorySource[category][source], animated);
+  }
+}
+
+const compatibilityJson = JSON.stringify({
+  version: 1,
+  totals,
+  categories,
+  sources,
+  categorySource
+}).replace(/</g, '\\u003c');
+---
+<script id="filter-compatibility-data" type="application/json" set:html={compatibilityJson}></script>
+<script is:inline>
+  (() => {
+    const dataNode = document.querySelector('#filter-compatibility-data');
+    const category = document.querySelector('#category-filter');
+    const source = document.querySelector('#source-filter');
+    const motion = document.querySelector('#motion-filter');
+    const clear = document.querySelector('#clear-filters');
+    if (!dataNode || !category || !source || !motion) return;
+
+    let data;
+    try {
+      data = JSON.parse(dataNode.textContent || '{}');
+    } catch {
+      return;
+    }
+
+    const empty = { total: 0, animated: 0, static: 0 };
+    const number = new Intl.NumberFormat('en-US');
+
+    function metric(bucket, motionValue = motion.value) {
+      if (!bucket) return 0;
+      if (motionValue === 'yes') return Number(bucket.animated || 0);
+      if (motionValue === 'no') return Number(bucket.static || 0);
+      return Number(bucket.total || 0);
+    }
+
+    function combo(categoryValue = category.value, sourceValue = source.value) {
+      if (categoryValue && sourceValue) return data.categorySource?.[categoryValue]?.[sourceValue] || empty;
+      if (categoryValue) return data.categories?.[categoryValue] || empty;
+      if (sourceValue) return data.sources?.[sourceValue] || empty;
+      return data.totals || empty;
+    }
+
+    function optionBaseLabel(option) {
+      if (!option.dataset.filterLabel) {
+        option.dataset.filterLabel = String(option.textContent || '').split('·')[0].trim();
+      }
+      return option.dataset.filterLabel;
+    }
+
+    function updateSelect(select, countForValue) {
+      for (const option of select.options) {
+        const count = countForValue(option.value);
+        const label = optionBaseLabel(option);
+        option.textContent = `${label} · ${number.format(count)}`;
+        option.disabled = Boolean(option.value) && count === 0 && !option.selected;
+      }
+    }
+
+    function updateOptions() {
+      const selectedSource = source.value;
+      const selectedCategory = category.value;
+
+      updateSelect(category, (value) => {
+        if (!value) return metric(selectedSource ? data.sources?.[selectedSource] : data.totals);
+        return metric(selectedSource ? data.categorySource?.[value]?.[selectedSource] : data.categories?.[value]);
+      });
+
+      updateSelect(source, (value) => {
+        if (!value) return metric(selectedCategory ? data.categories?.[selectedCategory] : data.totals);
+        return metric(selectedCategory ? data.categorySource?.[selectedCategory]?.[value] : data.sources?.[value]);
+      });
+
+      const current = combo();
+      for (const option of motion.options) {
+        const label = optionBaseLabel(option);
+        const count = option.value === 'yes'
+          ? Number(current.animated || 0)
+          : option.value === 'no'
+            ? Number(current.static || 0)
+            : Number(current.total || 0);
+        option.textContent = `${label} · ${number.format(count)}`;
+        option.disabled = Boolean(option.value) && count === 0 && !option.selected;
+      }
+    }
+
+    function reconcile(preferred = '') {
+      if (metric(combo()) > 0) return;
+
+      if (preferred === 'category' && source.value) source.value = '';
+      else if (preferred === 'source' && category.value) category.value = '';
+      else if (preferred === 'motion') {
+        if (source.value) source.value = '';
+        if (metric(combo()) === 0 && category.value) category.value = '';
+      } else if (source.value) {
+        source.value = '';
+      }
+
+      if (metric(combo()) === 0 && motion.value) motion.value = '';
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    category.value = params.get('category') || category.value;
+    source.value = params.get('source') || source.value;
+    motion.value = params.get('motion') || motion.value;
+    reconcile();
+    updateOptions();
+
+    window.addEventListener('DOMContentLoaded', () => {
+      reconcile();
+      updateOptions();
+    }, { once: true });
+
+    document.addEventListener('change', (event) => {
+      const target = event.target;
+      if (target !== category && target !== source && target !== motion) return;
+      const preferred = target === category ? 'category' : target === source ? 'source' : 'motion';
+      reconcile(preferred);
+      updateOptions();
+    }, true);
+
+    clear?.addEventListener('click', () => {
+      queueMicrotask(updateOptions);
+    }, true);
+  })();
+</script>
