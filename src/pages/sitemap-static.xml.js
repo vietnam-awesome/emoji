@@ -1,3 +1,5 @@
+import categories from '../data/categories.json';
+
 const SITE = 'https://emoji.eplus.dev';
 
 function escapeXml(value) {
@@ -23,6 +25,12 @@ export function GET() {
   const entries = [
     { loc: `${SITE}/`, changefreq: 'daily', priority: '1.0' },
     { loc: `${SITE}/emojis`, changefreq: 'daily', priority: '0.9' },
+    { loc: `${SITE}/categories`, changefreq: 'weekly', priority: '0.8' },
+    ...categories.map((category) => ({
+      loc: `${SITE}/categories/${category.slug}`,
+      changefreq: 'weekly',
+      priority: '0.7'
+    })),
     { loc: `${SITE}/llms.txt`, changefreq: 'weekly', priority: '0.4' },
     { loc: `${SITE}/agents.md`, changefreq: 'weekly', priority: '0.4' }
   ];
