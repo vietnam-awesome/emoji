@@ -13,7 +13,10 @@ export function isSensitiveImportCandidate(candidate = {}) {
     candidate.tags || [],
     candidate.url,
     candidate.detailUrl,
-    candidate.sourceUrl
+    candidate.sourceUrl,
+    candidate.imageUrl,
+    candidate.assetUrl,
+    candidate.upstreamAssetUrl
   );
 }
 
