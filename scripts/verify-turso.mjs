@@ -1,5 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { createTursoClient } from './lib/turso-client.mjs';
+import { CANONICAL_CATEGORIES, TAXONOMY_VERSION } from './lib/emoji-taxonomy.mjs';
 
 const manifest = JSON.parse(await readFile('src/data/emojis/index.json', 'utf8'));
 const client = await createTursoClient();
@@ -41,6 +42,24 @@ if (invalidRows.length) {
   errors += 1;
 } else {
   console.log('[turso] required fields OK');
+}
+
+const allowedCategories = Object.keys(CANONICAL_CATEGORIES);
+const taxonomyPlaceholders = allowedCategories.map(() => '?').join(', ');
+const invalidTaxonomy = await client.query(
+  `SELECT id, category, category_slug, taxonomy_version
+   FROM emojis
+   WHERE category_slug NOT IN (${taxonomyPlaceholders})
+      OR taxonomy_version IS NULL
+      OR taxonomy_version != ?
+   LIMIT 5`,
+  [...allowedCategories, TAXONOMY_VERSION]
+);
+if (invalidTaxonomy.length) {
+  console.error('[turso] canonical taxonomy validation failed:', invalidTaxonomy);
+  errors += 1;
+} else {
+  console.log(`[turso] canonical taxonomy v${TAXONOMY_VERSION} OK`);
 }
 
 const duplicateRows = await client.query(`

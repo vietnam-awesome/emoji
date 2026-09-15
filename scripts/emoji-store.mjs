@@ -4,8 +4,14 @@ import {
   filterSensitiveEmojiRecords,
   removeSensitiveLocalAssets
 } from './lib/content-safety.mjs';
+import {
+  applyEmojiTaxonomy,
+  summarizeTaxonomy,
+  TAXONOMY_VERSION
+} from './lib/emoji-taxonomy.mjs';
 
 const DATA_FILE = path.resolve('src/data/emojis.json');
+const CATEGORY_DATA_FILE = path.resolve('src/data/categories.json');
 const SHARD_DIR = path.resolve('src/data/emojis');
 const MANIFEST_FILE = path.join(SHARD_DIR, 'index.json');
 const DEFAULT_CHUNK_SIZE = 2500;
@@ -76,6 +82,53 @@ async function sanitizeCatalog(records, phase) {
   return allowed;
 }
 
+function logOtherBreakdown(classified, phase) {
+  const otherRecords = classified.filter((record) => record.categorySlug === 'other');
+  if (!otherRecords.length) return;
+
+  const bySource = new Map();
+  const samples = new Map();
+  for (const record of otherRecords) {
+    const source = String(record.source || 'unknown');
+    bySource.set(source, (bySource.get(source) || 0) + 1);
+    if (!samples.has(source)) samples.set(source, []);
+    if (samples.get(source).length < 5) {
+      samples.get(source).push(
+        `${record.name || record.shortcode || record.id}` +
+        (record.sourceCategory ? ` [${record.sourceCategory}]` : '')
+      );
+    }
+  }
+
+  const ordered = [...bySource.entries()].sort((a, b) => b[1] - a[1]);
+  console.log(
+    `[taxonomy] ${phase}: Other by source: ` +
+    ordered.map(([source, count]) => `${source}=${count.toLocaleString('en-US')}`).join(', ')
+  );
+  for (const [source, count] of ordered.slice(0, 8)) {
+    console.log(
+      `[taxonomy] ${phase}: Other samples ${source} (${count.toLocaleString('en-US')}): ` +
+      samples.get(source).join(' | ')
+    );
+  }
+}
+
+function classifyCatalog(records, phase) {
+  const classified = records.map(applyEmojiTaxonomy);
+  const summary = summarizeTaxonomy(classified);
+  const other = summary.categories.find((item) => item.slug === 'other')?.count || 0;
+  console.log(
+    `[taxonomy] ${phase}: v${TAXONOMY_VERSION}, ${classified.length.toLocaleString('en-US')} records, ` +
+    `${summary.categories.length} canonical categories, ${other.toLocaleString('en-US')} in Other`
+  );
+  logOtherBreakdown(classified, phase);
+  return { classified, summary };
+}
+
+async function writeCategorySummary(summary) {
+  await writeJson(CATEGORY_DATA_FILE, summary.categories);
+}
+
 async function hydrate() {
   let emojis;
   if (await exists(DATA_FILE)) {
@@ -86,8 +139,10 @@ async function hydrate() {
   }
 
   emojis = await sanitizeCatalog(emojis, 'hydrate');
-  await writeJson(DATA_FILE, emojis);
-  console.log(`[emoji-store] hydrated ${emojis.length.toLocaleString('en-US')} safe records into the working JSON file`);
+  const { classified, summary } = classifyCatalog(emojis, 'hydrate');
+  await writeJson(DATA_FILE, classified);
+  await writeCategorySummary(summary);
+  console.log(`[emoji-store] hydrated ${classified.length.toLocaleString('en-US')} safe, classified records into the working JSON file`);
 }
 
 async function shard() {
@@ -100,6 +155,8 @@ async function shard() {
   if (!Array.isArray(emojis)) throw new Error('Emoji data is not an array.');
 
   emojis = await sanitizeCatalog(emojis, 'shard');
+  const { classified, summary } = classifyCatalog(emojis, 'shard');
+  emojis = classified;
 
   const chunkSizeArg = Number.parseInt(process.env.EMOJI_SHARD_SIZE || '', 10);
   const chunkSize = Number.isFinite(chunkSizeArg) && chunkSizeArg > 0 ? chunkSizeArg : DEFAULT_CHUNK_SIZE;
@@ -117,15 +174,17 @@ async function shard() {
 
   await writeJson(MANIFEST_FILE, {
     version: 1,
+    taxonomyVersion: TAXONOMY_VERSION,
     total: emojis.length,
     chunkSize,
     chunks
   });
+  await writeCategorySummary(summary);
 
   await rm(DATA_FILE, { force: true });
 
   const files = await readdir(SHARD_DIR);
-  console.log(`[emoji-store] sharded ${emojis.length.toLocaleString('en-US')} safe records into ${chunks.length} chunks (${files.length} files including manifest)`);
+  console.log(`[emoji-store] sharded ${emojis.length.toLocaleString('en-US')} safe, classified records into ${chunks.length} chunks (${files.length} files including manifest)`);
 }
 
 const command = String(process.argv[2] || '').toLowerCase();

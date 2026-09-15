@@ -1,0 +1,62 @@
+name: Classify Emoji Taxonomy
+
+on:
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: Write canonical taxonomy back to emoji shards
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+
+concurrency:
+  group: emoji-data-write
+  queue: max
+  cancel-in-progress: false
+
+jobs:
+  classify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout latest main
+        uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - name: Generate taxonomy report
+        if: inputs.apply != true
+        run: npm run taxonomy:report
+
+      - name: Apply taxonomy to shards
+        if: inputs.apply == true
+        run: npm run taxonomy:apply
+
+      - name: Run taxonomy tests
+        run: node --test tests/emoji-taxonomy.test.mjs tests/turso-record.test.mjs
+
+      - name: Commit taxonomy backfill
+        if: inputs.apply == true
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- src/data/emojis src/data/categories.json; then
+            echo 'Taxonomy already up to date; nothing to commit.'
+            exit 0
+          fi
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/data/emojis src/data/categories.json
+          git commit -m 'data: backfill canonical emoji taxonomy'
+          git pull --rebase origin main
+          git push origin HEAD:main

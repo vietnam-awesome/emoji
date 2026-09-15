@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { applyEmojiTaxonomy } from './emoji-taxonomy.mjs';
 
 function text(value) {
   if (value === null || value === undefined) return null;
@@ -8,19 +9,6 @@ function text(value) {
 
 function bool(value) {
   return value ? 1 : 0;
-}
-
-function categoryFor(record) {
-  return text(record.category) || text(record.group)?.replaceAll('-', ' ') || 'other';
-}
-
-function categorySlugFor(record, category) {
-  if (text(record.categorySlug)) return text(record.categorySlug);
-  return String(category)
-    .toLowerCase()
-    .normalize('NFKD')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '') || 'other';
 }
 
 function tagsFor(record) {
@@ -33,15 +21,21 @@ function tagsFor(record) {
   return [];
 }
 
-export function normalizeEmojiRecord(record, shardFile) {
+function topicsFor(record) {
+  if (!Array.isArray(record.topics)) return [];
+  return [...new Set(record.topics.map((topic) => String(topic).trim()).filter(Boolean))];
+}
+
+export function normalizeEmojiRecord(inputRecord, shardFile) {
   for (const field of ['id', 'slug', 'name', 'shortcode', 'image', 'source', 'license']) {
-    if (!text(record[field])) {
-      throw new Error(`Emoji ${record.id || '(unknown)'} is missing required field: ${field}`);
+    if (!text(inputRecord[field])) {
+      throw new Error(`Emoji ${inputRecord.id || '(unknown)'} is missing required field: ${field}`);
     }
   }
 
+  const record = applyEmojiTaxonomy(inputRecord);
   const tags = tagsFor(record);
-  const category = categoryFor(record);
+  const topics = topicsFor(record);
   const recordJson = JSON.stringify(record);
 
   return {
@@ -53,8 +47,15 @@ export function normalizeEmojiRecord(record, shardFile) {
     hexcode: text(record.hexcode),
     groupName: text(record.group),
     subgroup: text(record.subgroup),
-    category,
-    categorySlug: categorySlugFor(record, category),
+    category: String(record.category),
+    categorySlug: String(record.categorySlug),
+    collection: text(record.collection),
+    style: text(record.style),
+    topicsJson: JSON.stringify(topics),
+    topicsSearch: topics.join(' '),
+    sourceCategory: text(record.sourceCategory),
+    sourceCategorySlug: text(record.sourceCategorySlug),
+    taxonomyVersion: Number(record.taxonomyVersion || 1),
     tagsJson: JSON.stringify(tags),
     tagsSearch: tags.join(' '),
     source: String(record.source),
@@ -86,6 +87,13 @@ export const EMOJI_COLUMNS = [
   'subgroup',
   'category',
   'category_slug',
+  'collection',
+  'style',
+  'topics_json',
+  'topics_search',
+  'source_category',
+  'source_category_slug',
+  'taxonomy_version',
   'tags_json',
   'tags_search',
   'source',
@@ -117,6 +125,13 @@ export function emojiArgs(row) {
     row.subgroup,
     row.category,
     row.categorySlug,
+    row.collection,
+    row.style,
+    row.topicsJson,
+    row.topicsSearch,
+    row.sourceCategory,
+    row.sourceCategorySlug,
+    row.taxonomyVersion,
     row.tagsJson,
     row.tagsSearch,
     row.source,
