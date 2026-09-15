@@ -1,32 +1,49 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import { getHomeCatalog } from '../lib/catalog-db.mjs';
 import { emojiAssetUrl } from '../lib/emojiAsset';
 import { withBase } from '../lib/url';
+import emojis from '../data/emojis.json';
+import categories from '../data/categories.json';
 import '../styles/home.css';
 
 const base = import.meta.env.BASE_URL;
 const allEmojiUrl = withBase('/emojis', base);
-const catalog = await getHomeCatalog();
+const animatedCount = emojis.filter((emoji) => emoji.animated).length;
+const sourceCount = new Set(emojis.map((emoji) => emoji.source)).size;
 
-Astro.response.headers.set(
-  'Cache-Control',
-  'public, max-age=60, s-maxage=600, stale-while-revalidate=3600'
-);
+const shuffle = (items) => {
+  const pool = [...items];
+  for (let index = pool.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [pool[index], pool[swapIndex]] = [pool[swapIndex], pool[index]];
+  }
+  return pool;
+};
 
-const heroPool = catalog.heroPool.map((emoji) => ({
-  id: emoji.id,
-  slug: emoji.slug,
-  name: emoji.name,
-  image: emojiAssetUrl(emoji, base),
-  animated: Boolean(emoji.animated)
-}));
+const heroPool = shuffle(emojis)
+  .slice(0, Math.min(120, emojis.length))
+  .map((emoji) => ({
+    id: emoji.id,
+    slug: emoji.slug,
+    name: emoji.name,
+    image: emojiAssetUrl(emoji, base),
+    animated: Boolean(emoji.animated)
+  }));
 const showcase = heroPool.slice(0, 12);
+const heroPoolIds = new Set(heroPool.map((emoji) => emoji.id));
 const heroPoolJson = JSON.stringify(heroPool).replaceAll('<', '\\u003c');
-const topCategories = catalog.categories;
+const recent = [...emojis]
+  .sort((a, b) => {
+    const date = String(b.syncedAt || b.addedAt || '').localeCompare(String(a.syncedAt || a.addedAt || ''));
+    return date || String(a.id || '').localeCompare(String(b.id || ''));
+  })
+  .slice(0, 12);
+const animated = emojis.filter((emoji) => emoji.animated && !heroPoolIds.has(emoji.id)).slice(0, 12);
+const topCategories = [...categories].sort((a, b) => b.count - a.count).slice(0, 10);
+
 const sections = [
-  { title: 'Recently added', subtitle: 'The newest emoji from recent catalog syncs.', items: catalog.recent, href: allEmojiUrl },
-  { title: 'Animated reactions', subtitle: 'GIFs and moving emoji for expressive conversations.', items: catalog.animated, href: `${allEmojiUrl}?motion=yes` }
+  { title: 'Recently added', subtitle: 'The newest emoji from recent catalog syncs.', items: recent, href: allEmojiUrl },
+  { title: 'Animated reactions', subtitle: 'GIFs and moving emoji for expressive conversations.', items: animated, href: `${allEmojiUrl}?motion=yes` }
 ];
 ---
 <Layout
@@ -47,32 +64,20 @@ const sections = [
         </form>
 
         <div class="hero-meta" aria-label="Library statistics">
-          <span><strong>{catalog.stats.total.toLocaleString('en-US')}</strong> emoji</span>
-          <span><strong>{catalog.stats.animated.toLocaleString('en-US')}</strong> animated</span>
-          <span><strong>{catalog.stats.categories.toLocaleString('en-US')}</strong> categories</span>
-          <span><strong>{catalog.stats.sources.toLocaleString('en-US')}</strong> sources</span>
+          <span><strong>{emojis.length.toLocaleString('en-US')}</strong> emoji</span>
+          <span><strong>{animatedCount.toLocaleString('en-US')}</strong> animated</span>
+          <span><strong>{categories.length.toLocaleString('en-US')}</strong> categories</span>
+          <span><strong>{sourceCount.toLocaleString('en-US')}</strong> sources</span>
         </div>
       </div>
 
       <div class="hero-library" aria-label="Emoji picks">
         <div class="hero-library-head">
-          <div>
-            <span class="status-dot" aria-hidden="true"></span>
-            <strong>Emoji picks</strong>
-          </div>
+          <div><span class="status-dot" aria-hidden="true"></span><strong>Emoji picks</strong></div>
           <div class="hero-library-actions">
-            <span>{catalog.stats.total.toLocaleString('en-US')} assets</span>
-            <button
-              class="hero-shuffle"
-              id="hero-shuffle"
-              type="button"
-              aria-controls="hero-random-grid"
-              aria-label="Show another set of emoji"
-              title="Shuffle emoji"
-            >
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
+            <span>{emojis.length.toLocaleString('en-US')} assets</span>
+            <button class="hero-shuffle" id="hero-shuffle" type="button" aria-controls="hero-random-grid" aria-label="Show another set of emoji" title="Shuffle emoji">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
               <span>Shuffle</span>
             </button>
           </div>
@@ -86,7 +91,7 @@ const sections = [
           ))}
         </div>
         <div class="hero-library-foot">
-          <span>Server-rendered from Turso</span>
+          <span>Static build from the catalog snapshot</span>
           <a href={allEmojiUrl}>Browse all →</a>
         </div>
       </div>
@@ -98,7 +103,6 @@ const sections = [
     const poolNode = document.querySelector('#hero-random-pool');
     const randomGrid = document.querySelector('#hero-random-grid');
     const shuffleButton = document.querySelector('#hero-shuffle');
-
     if (poolNode && randomGrid) {
       try {
         const pool = JSON.parse(poolNode.textContent || '[]');
@@ -110,7 +114,7 @@ const sections = [
           const fragment = document.createDocumentFragment();
           for (const emoji of pool.slice(0, 12)) {
             const link = document.createElement('a');
-            link.href = `/emoji/${encodeURIComponent(emoji.slug)}`;
+            link.href = `${import.meta.env.BASE_URL.replace(/\/$/, '')}/emoji/${encodeURIComponent(emoji.slug)}`;
             link.title = emoji.name;
             const image = document.createElement('img');
             image.src = emoji.image;
@@ -137,17 +141,13 @@ const sections = [
 
   <section class="shell category-section" aria-labelledby="category-title">
     <div class="section-heading-modern category-heading">
-      <div>
-        <p class="section-kicker">Categories</p>
-        <h2 id="category-title">Browse popular collections</h2>
-      </div>
+      <div><p class="section-kicker">Categories</p><h2 id="category-title">Browse popular collections</h2></div>
       <a href={allEmojiUrl}>View all <span>→</span></a>
     </div>
     <div class="category-list">
       {topCategories.map((category) => (
-        <a class="category-chip" href={`${allEmojiUrl}?category=${encodeURIComponent(category.slug)}`}>
-          <span>{category.name}</span>
-          <small>{category.count.toLocaleString('en-US')}</small>
+        <a class="category-chip" href={`${allEmojiUrl}?category=${encodeURIComponent(category.slug || category.name.toLowerCase())}`}>
+          <span>{category.name}</span><small>{category.count.toLocaleString('en-US')}</small>
         </a>
       ))}
     </div>
@@ -156,14 +156,9 @@ const sections = [
   {sections.map((section) => section.items.length > 0 && (
     <section class="shell emoji-section">
       <div class="section-heading-modern">
-        <div>
-          <p class="section-kicker">Library</p>
-          <h2>{section.title}</h2>
-          <p>{section.subtitle}</p>
-        </div>
+        <div><p class="section-kicker">Library</p><h2>{section.title}</h2><p>{section.subtitle}</p></div>
         <a href={section.href}>View all <span>→</span></a>
       </div>
-
       <div class="home-emoji-grid">
         {section.items.map((emoji) => {
           const detailUrl = withBase(`/emoji/${emoji.slug}`, base);
@@ -174,11 +169,7 @@ const sections = [
                 <img src={imageUrl} alt={emoji.name} loading="lazy" width="120" height="120" />
                 {emoji.animated && <span class="motion-badge">GIF</span>}
               </div>
-              <div class="home-emoji-info">
-                <strong>{emoji.name}</strong>
-                <span>:{emoji.shortcode}:</span>
-                <small>{emoji.category || emoji.sourceLabel}</small>
-              </div>
+              <div class="home-emoji-info"><strong>{emoji.name}</strong><span>:{emoji.shortcode}:</span><small>{emoji.category || emoji.sourceLabel}</small></div>
             </a>
           );
         })}
@@ -188,13 +179,11 @@ const sections = [
 
   <section class="shell developer-banner">
     <div>
-      <p class="section-kicker">Database-backed catalog</p>
-      <h2>No public catalog JSON required.</h2>
-      <p>Search, filters, detail pages and sitemap data are read from Turso on the server.</p>
+      <p class="section-kicker">Static search architecture</p>
+      <h2>No runtime API or Worker required.</h2>
+      <p>GitHub Actions generates a compact sharded search index, then deploys the static site to GitHub Pages.</p>
     </div>
-    <div class="developer-actions">
-      <a class="button-primary" href="https://github.com/vietnam-awesome/emoji" rel="noreferrer">GitHub</a>
-    </div>
+    <div class="developer-actions"><a class="button-primary" href="https://github.com/vietnam-awesome/emoji" rel="noreferrer">GitHub</a></div>
   </section>
 </Layout>
 
