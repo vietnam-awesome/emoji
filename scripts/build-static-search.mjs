@@ -3,6 +3,7 @@ import path from 'node:path';
 import { createClient } from '@libsql/client';
 
 const DATA_FILE = path.resolve('src/data/emojis.json');
+const CATEGORY_FILE = path.resolve('src/data/categories.json');
 const OUT_DIR = path.resolve('public/search');
 const CHUNK_SIZE = 1000;
 const DB_PAGE_SIZE = 5000;
@@ -70,9 +71,9 @@ function compactRecord(record) {
   };
 }
 
-async function writeJson(file, value) {
+async function writeJson(file, value, pretty = false) {
   await mkdir(path.dirname(file), { recursive: true });
-  await writeFile(file, JSON.stringify(value));
+  await writeFile(file, `${JSON.stringify(value, null, pretty ? 2 : 0)}${pretty ? '\n' : ''}`);
 }
 
 async function loadLocalCatalog() {
@@ -119,20 +120,27 @@ async function loadCatalog() {
   return loadLocalCatalog();
 }
 
-function addFacet(map, key, name, id) {
+function addFacet(map, key, name, id, animated) {
   const value = String(key || '').trim().toLowerCase();
   if (!value) return;
-  if (!map.has(value)) map.set(value, { name: String(name || key), ids: [] });
-  map.get(value).ids.push(id);
+  if (!map.has(value)) map.set(value, { name: String(name || key), ids: [], animated: 0, static: 0 });
+  const item = map.get(value);
+  item.ids.push(id);
+  if (animated) item.animated += 1;
+  else item.static += 1;
 }
 
-function addToken(index, token, id) {
-  const prefix = token.slice(0, Math.min(2, token.length));
+function addTokenToPrefix(index, prefix, token, id) {
   if (!prefix) return;
   if (!index.has(prefix)) index.set(prefix, new Map());
   const shard = index.get(prefix);
   if (!shard.has(token)) shard.set(token, []);
   shard.get(token).push(id);
+}
+
+function addToken(index, token, id) {
+  addTokenToPrefix(index, token.slice(0, 1), token, id);
+  if (token.length > 1) addTokenToPrefix(index, token.slice(0, 2), token, id);
 }
 
 const records = await loadCatalog();
@@ -148,8 +156,8 @@ const staticIds = [];
 
 for (let id = 0; id < records.length; id += 1) {
   const record = records[id];
-  addFacet(categories, record.categorySlug || safeSlug(record.category), record.category, id);
-  addFacet(sources, record.source, record.sourceLabel || record.source, id);
+  addFacet(categories, record.categorySlug || safeSlug(record.category), record.category, id, Boolean(record.animated));
+  addFacet(sources, record.source, record.sourceLabel || record.source, id, Boolean(record.animated));
   (record.animated ? animatedIds : staticIds).push(id);
   for (const token of recordTokens(record)) addToken(tokenIndex, token, id);
 }
@@ -167,7 +175,14 @@ const categoryManifest = [];
 for (const [value, item] of categories) {
   const file = `${safeSlug(value)}.json`;
   await writeJson(path.join(OUT_DIR, 'facets', 'category', file), item.ids);
-  categoryManifest.push({ value, name: item.name, count: item.ids.length, file });
+  categoryManifest.push({
+    value,
+    name: item.name,
+    count: item.ids.length,
+    animated: item.animated,
+    static: item.static,
+    file
+  });
 }
 categoryManifest.sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
 
@@ -192,13 +207,22 @@ await writeJson(path.join(OUT_DIR, 'manifest.json'), {
   total: records.length,
   chunkSize: CHUNK_SIZE,
   chunkCount,
-  categories: categoryManifest,
+  categories: categoryManifest.map(({ value, name, count, file }) => ({ value, name, count, file })),
   sources: sourceManifest,
-  motion: {
-    yes: animatedIds.length,
-    no: staticIds.length
-  }
+  motion: { yes: animatedIds.length, no: staticIds.length }
 });
+
+await writeJson(
+  CATEGORY_FILE,
+  categoryManifest.map(({ value, name, count, animated, static: staticCount }) => ({
+    slug: value,
+    name,
+    count,
+    animated,
+    static: staticCount
+  })),
+  true
+);
 
 console.log(
   `[static-data] generated ${records.length.toLocaleString('en-US')} records, ` +
