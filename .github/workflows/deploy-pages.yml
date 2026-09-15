@@ -12,7 +12,6 @@ on:
       - 'scripts/emoji-store.mjs'
       - 'astro.config.mjs'
       - 'package.json'
-      - 'package-lock.json'
       - '.github/workflows/deploy-pages.yml'
   workflow_dispatch:
   schedule:
@@ -47,16 +46,18 @@ jobs:
         uses: actions/setup-node@v7
         with:
           node-version: 22
-          cache: npm
 
       - name: Install dependencies
         run: npm install --no-audit --no-fund
 
-      - name: Verify repository catalog
+      - name: Export catalog and build static search shards
+        run: npm run build:static-data
+
+      - name: Verify static catalog snapshot
         run: npm run check:data
 
-      - name: Build static site and search index
-        run: npm run build
+      - name: Build static Astro site
+        run: npx astro build
 
       - name: Verify built links
         run: npm run check:build
