@@ -1,200 +1,107 @@
 [
   {
-    "id": "23",
-    "slug": "aesthetic",
-    "name": "Aesthetic",
-    "source": "emojigg",
-    "count": 1050,
-    "animated": 108,
-    "static": 942
-  },
-  {
-    "id": "17",
-    "slug": "animals",
-    "name": "Animals",
-    "source": "emojigg",
-    "count": 1050,
-    "animated": 105,
-    "static": 945
-  },
-  {
-    "id": "8",
-    "slug": "animated",
-    "name": "Animated",
-    "source": "emojigg",
-    "count": 1052,
-    "animated": 1045,
-    "static": 7
-  },
-  {
-    "id": "4",
-    "slug": "anime",
-    "name": "Anime",
-    "source": "emojigg",
-    "count": 1050,
-    "animated": 89,
-    "static": 961
-  },
-  {
-    "id": "6",
-    "slug": "blobs",
-    "name": "Blobs",
-    "source": "emojigg",
-    "count": 1049,
-    "animated": 36,
-    "static": 1013
-  },
-  {
-    "id": "5",
-    "slug": "celebrity",
-    "name": "Celebrity",
-    "source": "emojigg",
-    "count": 1050,
-    "animated": 65,
-    "static": 985
-  },
-  {
-    "id": "15",
-    "slug": "cute",
-    "name": "Cute",
-    "source": "emojigg",
-    "count": 1052,
-    "animated": 176,
-    "static": 876
-  },
-  {
-    "id": "19",
-    "slug": "flags",
-    "name": "Flags",
-    "source": "emojigg",
-    "count": 1043,
-    "animated": 28,
-    "static": 1015
-  },
-  {
-    "id": "10",
-    "slug": "gaming",
-    "name": "Gaming",
-    "source": "emojigg",
-    "count": 1050,
-    "animated": 50,
-    "static": 1000
-  },
-  {
-    "id": "20",
-    "slug": "hearts",
-    "name": "Hearts",
-    "source": "emojigg",
-    "count": 1049,
-    "animated": 237,
-    "static": 812
-  },
-  {
-    "id": "11",
-    "slug": "letters",
-    "name": "Letters",
-    "source": "emojigg",
-    "count": 1048,
-    "animated": 48,
-    "static": 1000
-  },
-  {
-    "id": "14",
-    "slug": "logos",
-    "name": "Logos",
-    "source": "emojigg",
-    "count": 1050,
-    "animated": 77,
-    "static": 973
-  },
-  {
-    "id": "3",
-    "slug": "meme",
-    "name": "Meme",
-    "source": "emojigg",
-    "count": 1051,
-    "animated": 64,
-    "static": 987
-  },
-  {
-    "id": "1",
-    "slug": "original-style",
-    "name": "Original Style",
-    "source": "emojigg",
-    "count": 1050,
-    "animated": 38,
-    "static": 1012
-  },
-  {
-    "id": "12",
     "slug": "other",
     "name": "Other",
-    "source": "emojigg",
-    "count": 1050,
-    "animated": 40,
-    "static": 1010
+    "count": 123007,
+    "animated": 37522,
+    "static": 85485
   },
   {
-    "id": "13",
-    "slug": "pepe",
-    "name": "Pepe",
-    "source": "emojigg",
-    "count": 3783,
-    "animated": 354,
-    "static": 3429
-  },
-  {
-    "id": "21",
-    "slug": "pixel-art",
-    "name": "Pixel Art",
-    "source": "emojigg",
-    "count": 1050,
-    "animated": 482,
-    "static": 568
-  },
-  {
-    "id": "22",
     "slug": "reactions",
     "name": "Reactions",
-    "source": "emojigg",
-    "count": 1050,
-    "animated": 47,
-    "static": 1003
+    "count": 21122,
+    "animated": 3592,
+    "static": 17530
   },
   {
-    "id": "18",
-    "slug": "recolors",
-    "name": "Recolors",
-    "source": "emojigg",
-    "count": 1050,
-    "animated": 57,
-    "static": 993
+    "slug": "animals",
+    "name": "Animals",
+    "count": 11331,
+    "animated": 2869,
+    "static": 8462
   },
   {
-    "id": "7",
-    "slug": "thinking",
-    "name": "Thinking",
-    "source": "emojigg",
-    "count": 712,
-    "animated": 15,
-    "static": 697
+    "slug": "gaming",
+    "name": "Gaming",
+    "count": 7712,
+    "animated": 546,
+    "static": 7166
   },
   {
-    "id": "2",
-    "slug": "tv-movie",
-    "name": "TV / Movie",
-    "source": "emojigg",
-    "count": 1048,
-    "animated": 72,
-    "static": 976
+    "slug": "meme",
+    "name": "Meme",
+    "count": 7159,
+    "animated": 545,
+    "static": 6614
   },
   {
-    "id": "16",
-    "slug": "utility",
-    "name": "Utility",
-    "source": "emojigg",
-    "count": 1050,
-    "animated": 30,
-    "static": 1020
+    "slug": "people",
+    "name": "People",
+    "count": 4311,
+    "animated": 1075,
+    "static": 3236
+  },
+  {
+    "slug": "entertainment",
+    "name": "Entertainment",
+    "count": 4200,
+    "animated": 388,
+    "static": 3812
+  },
+  {
+    "slug": "activities",
+    "name": "Activities",
+    "count": 3812,
+    "animated": 1674,
+    "static": 2138
+  },
+  {
+    "slug": "brands",
+    "name": "Brands",
+    "count": 3408,
+    "animated": 102,
+    "static": 3306
+  },
+  {
+    "slug": "nature",
+    "name": "Nature",
+    "count": 3403,
+    "animated": 973,
+    "static": 2430
+  },
+  {
+    "slug": "symbols",
+    "name": "Symbols",
+    "count": 2209,
+    "animated": 304,
+    "static": 1905
+  },
+  {
+    "slug": "objects",
+    "name": "Objects",
+    "count": 2029,
+    "animated": 468,
+    "static": 1561
+  },
+  {
+    "slug": "food-drink",
+    "name": "Food & Drink",
+    "count": 1886,
+    "animated": 964,
+    "static": 922
+  },
+  {
+    "slug": "flags",
+    "name": "Flags",
+    "count": 1271,
+    "animated": 142,
+    "static": 1129
+  },
+  {
+    "slug": "travel-places",
+    "name": "Travel & Places",
+    "count": 519,
+    "animated": 311,
+    "static": 208
   }
 ]
