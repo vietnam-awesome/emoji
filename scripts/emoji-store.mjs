@@ -1,5 +1,9 @@
 import { access, mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import {
+  filterSensitiveEmojiRecords,
+  removeSensitiveLocalAssets
+} from './lib/content-safety.mjs';
 
 const DATA_FILE = path.resolve('src/data/emojis.json');
 const API_FILE = path.resolve('public/api/emojis.json');
@@ -50,6 +54,29 @@ async function loadShards() {
   return all;
 }
 
+async function sanitizeCatalog(records, phase) {
+  const { allowed, blocked } = filterSensitiveEmojiRecords(records);
+  if (!blocked.length) return allowed;
+
+  const removedAssets = await removeSensitiveLocalAssets(blocked);
+  const bySource = new Map();
+  for (const record of blocked) {
+    const source = String(record?.source || 'unknown');
+    bySource.set(source, (bySource.get(source) || 0) + 1);
+  }
+  const summary = [...bySource.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .map(([source, count]) => `${source}:${count}`)
+    .join(', ');
+
+  console.warn(
+    `[content-safety] ${phase}: blocked ${blocked.length.toLocaleString('en-US')} sensitive record(s)` +
+    `; removed ${removedAssets.toLocaleString('en-US')} local asset(s)` +
+    (summary ? `; sources=${summary}` : '')
+  );
+  return allowed;
+}
+
 async function hydrate() {
   let emojis;
   if (await exists(DATA_FILE)) {
@@ -57,11 +84,12 @@ async function hydrate() {
     if (!Array.isArray(emojis)) throw new Error('src/data/emojis.json is not an array.');
   } else {
     emojis = await loadShards();
-    await writeJson(DATA_FILE, emojis);
   }
 
+  emojis = await sanitizeCatalog(emojis, 'hydrate');
+  await writeJson(DATA_FILE, emojis);
   await writeJson(API_FILE, emojis);
-  console.log(`[emoji-store] hydrated ${emojis.length.toLocaleString('en-US')} records into working JSON files`);
+  console.log(`[emoji-store] hydrated ${emojis.length.toLocaleString('en-US')} safe records into working JSON files`);
 }
 
 async function shard() {
@@ -72,6 +100,8 @@ async function shard() {
     emojis = await loadShards();
   }
   if (!Array.isArray(emojis)) throw new Error('Emoji data is not an array.');
+
+  emojis = await sanitizeCatalog(emojis, 'shard');
 
   const chunkSizeArg = Number.parseInt(process.env.EMOJI_SHARD_SIZE || '', 10);
   const chunkSize = Number.isFinite(chunkSizeArg) && chunkSizeArg > 0 ? chunkSizeArg : DEFAULT_CHUNK_SIZE;
@@ -98,7 +128,7 @@ async function shard() {
   await rm(API_FILE, { force: true });
 
   const files = await readdir(SHARD_DIR);
-  console.log(`[emoji-store] sharded ${emojis.length.toLocaleString('en-US')} records into ${chunks.length} chunks (${files.length} files including manifest)`);
+  console.log(`[emoji-store] sharded ${emojis.length.toLocaleString('en-US')} safe records into ${chunks.length} chunks (${files.length} files including manifest)`);
 }
 
 const command = String(process.argv[2] || '').toLowerCase();
