@@ -10,10 +10,9 @@
     "taxonomy:report": "node scripts/classify-emojis.mjs",
     "taxonomy:apply": "node scripts/classify-emojis.mjs --write",
     "dev": "astro dev",
-    "build": "astro build",
+    "build:static-data": "node scripts/build-static-search.mjs",
+    "build": "npm run build:static-data && astro build",
     "preview": "astro preview",
-    "cf:preview": "npm run build && wrangler dev",
-    "cf:deploy": "npm run build && wrangler deploy",
     "sync": "node scripts/sync.mjs",
     "import:community": "node scripts/import-community.mjs",
     "import:emojigg": "node scripts/import-emojigg.mjs",
@@ -27,13 +26,10 @@
     "check:build": "node scripts/verify-build.mjs"
   },
   "dependencies": {
-    "@astrojs/cloudflare": "14.1.7",
-    "@libsql/client": "0.18.0",
-    "@tursodatabase/serverless": "1.4.0"
+    "@libsql/client": "0.18.0"
   },
   "devDependencies": {
     "astro": "7.3.1",
-    "playwright": "1.55.0",
-    "wrangler": "^4.68.0"
+    "playwright": "1.55.0"
   }
 }

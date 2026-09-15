@@ -1,0 +1,108 @@
+name: Deploy GitHub Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'public/**'
+      - '!public/emojis/**'
+      - '!public/api/**'
+      - 'scripts/build-static-search.mjs'
+      - 'scripts/emoji-store.mjs'
+      - 'scripts/verify-build.mjs'
+      - 'astro.config.mjs'
+      - 'package.json'
+      - '.github/workflows/deploy-pages.yml'
+  workflow_dispatch:
+  schedule:
+    # 01:30 UTC = 08:30 Asia/Ho_Chi_Minh on the 1st and 15th,
+    # one hour after the scheduled Turso delta sync.
+    - cron: '30 1 1,15 * *'
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages-production
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+      TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+    steps:
+      - name: Checkout latest main
+        uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - name: Cache npm downloads
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: npm-${{ runner.os }}-${{ hashFiles('package.json') }}
+          restore-keys: |
+            npm-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Restore static search cache
+        id: search-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: public/search
+          key: static-search-v1-${{ hashFiles('src/data/emojis/*.json', 'scripts/build-static-search.mjs') }}
+
+      - name: Export catalog and build static search shards
+        if: steps.search-cache.outputs.cache-hit != 'true'
+        run: npm run build:static-data
+
+      - name: Save static search cache
+        if: steps.search-cache.outputs.cache-hit != 'true' && success()
+        uses: actions/cache/save@v4
+        with:
+          path: public/search
+          key: static-search-v1-${{ hashFiles('src/data/emojis/*.json', 'scripts/build-static-search.mjs') }}
+
+      - name: Verify static catalog snapshot
+        run: npm run check:data
+
+      - name: Build static Astro site
+        run: npx astro build
+
+      - name: Verify representative built links
+        env:
+          VERIFY_DETAIL_LIMIT: '500'
+        run: npm run check:build
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v6
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: dist
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5

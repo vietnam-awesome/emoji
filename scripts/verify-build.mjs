@@ -2,11 +2,40 @@ import { access, readFile, readdir } from 'node:fs/promises';
 import path from 'node:path';
 
 const dist = path.resolve('dist');
+const dataFile = path.resolve('src/data/emojis.json');
 // The site is deployed on the custom domain https://emoji.eplus.dev with Astro base '/'.
 // Do not infer '/emoji' merely because the build runs inside GitHub Actions.
 const base = (process.env.VERIFY_BASE ?? '').replace(/\/+$/g, '');
+const detailLimitEnv = Number.parseInt(process.env.VERIFY_DETAIL_LIMIT ?? '500', 10);
+const detailLimit = Number.isFinite(detailLimitEnv) ? detailLimitEnv : 500;
+const verifyAllDetails = detailLimit <= 0;
+const fastVerify = process.env.VERIFY_FAST === '1';
 let errors = 0;
 let checked = 0;
+
+async function exists(target) {
+  try {
+    await access(target);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function sampleRecords(records, limit) {
+  if (limit <= 0 || records.length <= limit) return records;
+  if (limit === 1) return [records[0]];
+
+  const sampled = [];
+  const seen = new Set();
+  for (let index = 0; index < limit; index += 1) {
+    const recordIndex = Math.round((index * (records.length - 1)) / (limit - 1));
+    if (seen.has(recordIndex)) continue;
+    seen.add(recordIndex);
+    sampled.push(records[recordIndex]);
+  }
+  return sampled;
+}
 
 async function findHtmlFiles(root) {
   const pending = [root];
@@ -20,27 +49,49 @@ async function findHtmlFiles(root) {
       const full = path.join(dir, entry.name);
 
       if (entry.isDirectory()) {
+        // Detail pages all use the same template. Avoid reading ~197k HTML files on
+        // every routine verification; representative detail files are added below.
+        if (!verifyAllDetails && dir === root && entry.name === 'emoji') continue;
         pending.push(full);
         continue;
       }
 
-      // Avoid following symlinks and only retain files this verifier actually reads.
-      if (entry.isFile() && entry.name.endsWith('.html')) {
-        htmlFiles.push(full);
-      }
+      if (entry.isFile() && entry.name.endsWith('.html')) htmlFiles.push(full);
     }
   }
 
-  return htmlFiles;
-}
+  if (!verifyAllDetails) {
+    try {
+      const records = JSON.parse(await readFile(dataFile, 'utf8'));
+      if (!Array.isArray(records)) throw new Error('catalog is not an array');
 
-async function exists(target) {
-  try {
-    await access(target);
-    return true;
-  } catch {
-    return false;
+      for (const record of sampleRecords(records, detailLimit)) {
+        const slug = String(record?.slug || '');
+        if (!slug) continue;
+        const candidates = [
+          path.join(root, 'emoji', slug, 'index.html'),
+          path.join(root, 'emoji', `${slug}.html`)
+        ];
+        let found = '';
+        for (const candidate of candidates) {
+          if (await exists(candidate)) {
+            found = candidate;
+            break;
+          }
+        }
+        if (found) htmlFiles.push(found);
+        else {
+          console.error(`[missing sampled detail] /emoji/${slug}`);
+          errors += 1;
+        }
+      }
+    } catch (error) {
+      console.error(`[verify] could not load detail sample: ${error instanceof Error ? error.message : error}`);
+      errors += 1;
+    }
   }
+
+  return [...new Set(htmlFiles)];
 }
 
 function cleanUrl(value) {
@@ -85,6 +136,9 @@ for (const file of htmlFiles) {
     const routeHtml = path.join(dist, `${relative}.html`);
 
     if (!await exists(direct) && !await exists(routeIndex) && !await exists(routeHtml)) {
+      // Fast CI intentionally builds only a representative detail sample and does
+      // not checkout the large public/emojis asset tree.
+      if (fastVerify && (url.startsWith('/emoji/') || url.startsWith('/emojis/'))) continue;
       console.error(`[missing target] ${path.relative(dist, file)} -> ${url}`);
       errors += 1;
     }
@@ -96,4 +150,5 @@ if (errors) {
   process.exit(1);
 }
 
-console.log(`Verified ${checked} internal URLs across ${htmlFiles.length} HTML pages.`);
+const detailMode = verifyAllDetails ? 'all detail pages' : `${detailLimit} sampled detail pages`;
+console.log(`Verified ${checked} internal URLs across ${htmlFiles.length} HTML pages (${detailMode}).`);

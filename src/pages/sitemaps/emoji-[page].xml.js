@@ -1,4 +1,6 @@
-import { getEmojiSitemapPage } from '../../lib/catalog-db.mjs';
+import emojis from '../../data/emojis.json';
+
+export const prerender = true;
 
 const SITE = 'https://emoji.eplus.dev';
 const PAGE_SIZE = 50000;
@@ -17,11 +19,11 @@ function dateOnly(value) {
   return match?.[0] || '';
 }
 
-function urlEntry(row) {
-  const lastmod = dateOnly(row.lastmod);
+function urlEntry(emoji) {
+  const lastmod = dateOnly(emoji.syncedAt || emoji.addedAt);
   return [
     '  <url>',
-    `    <loc>${escapeXml(`${SITE}/emoji/${encodeURIComponent(String(row.slug))}`)}</loc>`,
+    `    <loc>${escapeXml(`${SITE}/emoji/${encodeURIComponent(String(emoji.slug))}`)}</loc>`,
     lastmod ? `    <lastmod>${lastmod}</lastmod>` : '',
     '    <changefreq>monthly</changefreq>',
     '    <priority>0.7</priority>',
@@ -29,13 +31,15 @@ function urlEntry(row) {
   ].filter(Boolean).join('\n');
 }
 
-export async function GET({ params }) {
-  const page = Number.parseInt(String(params.page || ''), 10);
-  if (!Number.isFinite(page) || page < 1) {
-    return new Response('Not found', { status: 404 });
-  }
+export function getStaticPaths() {
+  const pages = Math.max(1, Math.ceil(emojis.length / PAGE_SIZE));
+  return Array.from({ length: pages }, (_, index) => ({ params: { page: String(index + 1) } }));
+}
 
-  const rows = await getEmojiSitemapPage(page, PAGE_SIZE);
+export function GET({ params }) {
+  const page = Number.parseInt(String(params.page || ''), 10);
+  const start = (page - 1) * PAGE_SIZE;
+  const rows = emojis.slice(start, start + PAGE_SIZE);
   if (!rows.length) return new Response('Not found', { status: 404 });
 
   const body = [
@@ -46,10 +50,5 @@ export async function GET({ params }) {
     ''
   ].join('\n');
 
-  return new Response(body, {
-    headers: {
-      'Content-Type': 'application/xml; charset=utf-8',
-      'Cache-Control': 'public, max-age=3600, s-maxage=3600'
-    }
-  });
+  return new Response(body, { headers: { 'Content-Type': 'application/xml; charset=utf-8' } });
 }
