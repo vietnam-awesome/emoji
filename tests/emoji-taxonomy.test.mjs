@@ -86,6 +86,20 @@ test('applyEmojiTaxonomy preserves upstream category while canonicalizing catego
   assert.equal(record.taxonomyVersion, 1);
 });
 
+test('preserves upstream category even when its slug matches canonical category', () => {
+  const once = applyEmojiTaxonomy({
+    id: 'emojigg-animal-1',
+    source: 'emojigg',
+    category: 'Animals',
+    categorySlug: 'animals',
+    name: 'Tiny Fox',
+    tags: ['fox']
+  });
+  assert.equal(once.categorySlug, 'animals');
+  assert.equal(once.sourceCategory, 'Animals');
+  assert.deepEqual(applyEmojiTaxonomy(once), once);
+});
+
 test('taxonomy application is idempotent', () => {
   const once = applyEmojiTaxonomy({
     id: 'emojigg-2',
