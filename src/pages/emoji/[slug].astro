@@ -81,7 +81,20 @@ const description = hasDistinctShortcode
     <a class="back-link" href={browseUrl}>← Back to emoji library</a>
     <div class="detail-grid">
       <div class="detail-preview">
-        <img src={imageUrl} alt={emoji.name} width="320" height="320" />
+        <button
+          class="detail-preview-image-button"
+          id="detail-preview-zoom"
+          type="button"
+          aria-controls="detail-lightbox"
+          aria-haspopup="dialog"
+          title={`Zoom ${emoji.name}`}
+        >
+          <img id="detail-preview-image" src={imageUrl} alt={emoji.name} />
+          <span class="detail-preview-zoom-hint" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="m21 21-4.3-4.3m2.3-5.7a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-11 0h6m-3-3v6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            Zoom
+          </span>
+        </button>
       </div>
       <div class="detail-content">
         <div class="detail-title-row">
@@ -125,6 +138,24 @@ const description = hasDistinctShortcode
     </div>
   </section>
 
+  <dialog class="detail-lightbox" id="detail-lightbox" aria-label={`Preview ${emoji.name}`}>
+    <div class="detail-lightbox-shell">
+      <div class="detail-lightbox-toolbar">
+        <span id="detail-lightbox-size">Original size</span>
+        <div class="detail-lightbox-zoom-levels" role="group" aria-label="Zoom level">
+          <button type="button" data-detail-zoom="fit">Fit</button>
+          <button type="button" data-detail-zoom="1" class="is-active">1×</button>
+          <button type="button" data-detail-zoom="2">2×</button>
+          <button type="button" data-detail-zoom="4">4×</button>
+        </div>
+        <button class="detail-lightbox-close" id="detail-lightbox-close" type="button" aria-label="Close preview">×</button>
+      </div>
+      <div class="detail-lightbox-stage">
+        <img id="detail-lightbox-image" src={imageUrl} alt={emoji.name} />
+      </div>
+    </div>
+  </dialog>
+
   <script>
     document.addEventListener('click', async (event) => {
       const button = event.target.closest('[data-copy]');
@@ -135,6 +166,68 @@ const description = hasDistinctShortcode
       const previous = label.textContent;
       label.textContent = 'Copied!';
       setTimeout(() => { label.textContent = previous; }, 900);
+    });
+
+    const previewZoomButton = document.querySelector('#detail-preview-zoom');
+    const previewImage = document.querySelector('#detail-preview-image');
+    const lightbox = document.querySelector('#detail-lightbox');
+    const lightboxImage = document.querySelector('#detail-lightbox-image');
+    const lightboxSize = document.querySelector('#detail-lightbox-size');
+    const lightboxClose = document.querySelector('#detail-lightbox-close');
+    const zoomButtons = [...document.querySelectorAll('[data-detail-zoom]')];
+
+    const syncOriginalSize = () => {
+      if (!(lightboxImage instanceof HTMLImageElement)) return;
+      const width = lightboxImage.naturalWidth || (previewImage instanceof HTMLImageElement ? previewImage.naturalWidth : 0);
+      const height = lightboxImage.naturalHeight || (previewImage instanceof HTMLImageElement ? previewImage.naturalHeight : 0);
+      if (lightboxSize && width && height) lightboxSize.textContent = `Original ${width}×${height}px`;
+    };
+
+    const setZoom = (value) => {
+      if (!(lightboxImage instanceof HTMLImageElement)) return;
+      const naturalWidth = lightboxImage.naturalWidth || 1;
+      const naturalHeight = lightboxImage.naturalHeight || 1;
+
+      if (value === 'fit') {
+        lightboxImage.style.width = 'auto';
+        lightboxImage.style.height = 'auto';
+        lightboxImage.style.maxWidth = '100%';
+        lightboxImage.style.maxHeight = '100%';
+      } else {
+        const level = Math.max(1, Number(value) || 1);
+        lightboxImage.style.width = `${naturalWidth * level}px`;
+        lightboxImage.style.height = `${naturalHeight * level}px`;
+        lightboxImage.style.maxWidth = 'none';
+        lightboxImage.style.maxHeight = 'none';
+      }
+
+      for (const button of zoomButtons) {
+        button.classList.toggle('is-active', button.dataset.detailZoom === String(value));
+      }
+    };
+
+    if (lightboxImage instanceof HTMLImageElement) {
+      if (lightboxImage.complete) syncOriginalSize();
+      else lightboxImage.addEventListener('load', syncOriginalSize, { once: true });
+    }
+
+    previewZoomButton?.addEventListener('click', () => {
+      if (!(lightbox instanceof HTMLDialogElement)) return;
+      syncOriginalSize();
+      setZoom('1');
+      lightbox.showModal();
+    });
+
+    for (const button of zoomButtons) {
+      button.addEventListener('click', () => setZoom(button.dataset.detailZoom || '1'));
+    }
+
+    lightboxClose?.addEventListener('click', () => {
+      if (lightbox instanceof HTMLDialogElement) lightbox.close();
+    });
+
+    lightbox?.addEventListener('click', (event) => {
+      if (event.target === lightbox && lightbox instanceof HTMLDialogElement) lightbox.close();
     });
   </script>
 </Layout>
@@ -159,31 +252,123 @@ const description = hasDistinctShortcode
     color: var(--ink);
   }
 
-  /* Preserve the source asset's natural size on detail pages instead of upscaling small emoji. */
+  /* Detail preview: render at the asset's natural size and only shrink when the container requires it. */
   .detail-preview {
-    min-height: 360px;
-    padding: 36px;
+    min-height: 320px;
+    padding: 32px;
   }
-  .detail-preview img {
+  .detail-preview-image-button {
+    position: relative;
+    display: grid;
+    max-width: 100%;
+    max-height: 100%;
+    place-items: center;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: zoom-in;
+  }
+  .detail-preview-image-button img {
     width: auto;
     height: auto;
-    max-width: min(240px, 70%);
-    max-height: 240px;
+    max-width: 100%;
+    max-height: min(68vh, 620px);
     object-fit: contain;
   }
+  .detail-preview-zoom-hint {
+    position: absolute;
+    right: 8px;
+    bottom: 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 7px;
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    background: rgba(255,255,255,.92);
+    color: var(--muted);
+    box-shadow: var(--shadow-sm);
+    font-size: .62rem;
+    font-weight: 700;
+    opacity: .72;
+    pointer-events: none;
+    transition: opacity .14s ease, transform .14s ease;
+  }
+  .detail-preview-zoom-hint svg { width: 13px; height: 13px; }
+  .detail-preview-image-button:hover .detail-preview-zoom-hint,
+  .detail-preview-image-button:focus-visible .detail-preview-zoom-hint {
+    opacity: 1;
+    transform: translateY(-1px);
+  }
 
-  @media (max-width: 960px) {
-    .detail-preview { min-height: 320px; }
+  .detail-lightbox {
+    width: min(94vw, 1100px);
+    height: min(92vh, 900px);
+    max-width: none;
+    max-height: none;
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid var(--line-strong);
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 30px 90px rgba(16,24,40,.28);
+  }
+  .detail-lightbox::backdrop { background: rgba(16,24,40,.62); backdrop-filter: blur(3px); }
+  .detail-lightbox-shell { display: grid; grid-template-rows: auto minmax(0, 1fr); height: 100%; }
+  .detail-lightbox-toolbar {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    align-items: center;
+    gap: 12px;
+    min-height: 54px;
+    padding: 8px 10px 8px 14px;
+    border-bottom: 1px solid var(--line);
+    background: #fff;
+  }
+  .detail-lightbox-toolbar > span { color: var(--muted); font-size: .7rem; font-weight: 650; }
+  .detail-lightbox-zoom-levels { display: inline-flex; gap: 3px; padding: 3px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-subtle); }
+  .detail-lightbox-zoom-levels button,
+  .detail-lightbox-close {
+    min-width: 34px;
+    height: 32px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--muted);
+    font-size: .7rem;
+    font-weight: 720;
+    cursor: pointer;
+  }
+  .detail-lightbox-zoom-levels button:hover,
+  .detail-lightbox-close:hover { background: #fff; color: var(--ink); }
+  .detail-lightbox-zoom-levels button.is-active { background: #fff; color: var(--ink); box-shadow: var(--shadow-sm); }
+  .detail-lightbox-close { font-size: 1.2rem; }
+  .detail-lightbox-stage {
+    display: grid;
+    min-width: 0;
+    min-height: 0;
+    place-items: center;
+    overflow: auto;
+    padding: 32px;
+    background: var(--surface-subtle);
+  }
+  .detail-lightbox-stage img {
+    width: auto;
+    height: auto;
+    max-width: none;
+    max-height: none;
+    object-fit: contain;
   }
 
   @media (max-width: 680px) {
     .detail-preview {
-      min-height: 240px;
+      min-height: 220px;
       padding: 24px;
     }
-    .detail-preview img {
-      max-width: min(200px, 72%);
-      max-height: 200px;
-    }
+    .detail-preview-image-button img { max-height: 52vh; }
+    .detail-lightbox { width: 96vw; height: 88vh; }
+    .detail-lightbox-toolbar { grid-template-columns: 1fr auto; gap: 8px; }
+    .detail-lightbox-toolbar > span { grid-column: 1 / -1; order: 2; padding: 0 4px 4px; }
+    .detail-lightbox-stage { padding: 20px; }
   }
 </style>
