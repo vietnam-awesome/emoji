@@ -56,7 +56,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: public/search
-          key: static-search-v2-${{ hashFiles('src/data/emojis/*.json', 'scripts/build-static-search.mjs') }}
+          key: static-search-v3-${{ hashFiles('src/data/emojis/*.json', 'scripts/build-static-search.mjs') }}
 
       - name: Build static search shards from repository data
         if: steps.search-cache.outputs.cache-hit != 'true'
@@ -69,7 +69,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: public/search
-          key: static-search-v2-${{ hashFiles('src/data/emojis/*.json', 'scripts/build-static-search.mjs') }}
+          key: static-search-v3-${{ hashFiles('src/data/emojis/*.json', 'scripts/build-static-search.mjs') }}
 
       - name: Build static Astro site
         run: npx astro build
