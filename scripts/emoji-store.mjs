@@ -6,7 +6,6 @@ import {
 } from './lib/content-safety.mjs';
 
 const DATA_FILE = path.resolve('src/data/emojis.json');
-const API_FILE = path.resolve('public/api/emojis.json');
 const SHARD_DIR = path.resolve('src/data/emojis');
 const MANIFEST_FILE = path.join(SHARD_DIR, 'index.json');
 const DEFAULT_CHUNK_SIZE = 2500;
@@ -88,8 +87,7 @@ async function hydrate() {
 
   emojis = await sanitizeCatalog(emojis, 'hydrate');
   await writeJson(DATA_FILE, emojis);
-  await writeJson(API_FILE, emojis);
-  console.log(`[emoji-store] hydrated ${emojis.length.toLocaleString('en-US')} safe records into working JSON files`);
+  console.log(`[emoji-store] hydrated ${emojis.length.toLocaleString('en-US')} safe records into the working JSON file`);
 }
 
 async function shard() {
@@ -125,7 +123,6 @@ async function shard() {
   });
 
   await rm(DATA_FILE, { force: true });
-  await rm(API_FILE, { force: true });
 
   const files = await readdir(SHARD_DIR);
   console.log(`[emoji-store] sharded ${emojis.length.toLocaleString('en-US')} safe records into ${chunks.length} chunks (${files.length} files including manifest)`);

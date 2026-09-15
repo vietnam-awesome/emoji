@@ -1,8 +1,7 @@
-import emojis from '../data/emojis.json';
-
-export const prerender = true;
+import { getEmojiCount } from '../lib/catalog-db.mjs';
 
 const SITE = 'https://emoji.eplus.dev';
+const SITEMAP_PAGE_SIZE = 50000;
 
 function escapeXml(value) {
   return String(value)
@@ -13,50 +12,34 @@ function escapeXml(value) {
     .replaceAll("'", '&apos;');
 }
 
-function dateOnly(value) {
-  const match = String(value || '').match(/^\d{4}-\d{2}-\d{2}/);
-  return match?.[0] || '';
-}
-
-function urlEntry({ loc, lastmod = '', changefreq = '', priority = '' }) {
+function sitemapEntry(loc) {
   return [
-    '  <url>',
+    '  <sitemap>',
     `    <loc>${escapeXml(loc)}</loc>`,
-    lastmod ? `    <lastmod>${escapeXml(lastmod)}</lastmod>` : '',
-    changefreq ? `    <changefreq>${changefreq}</changefreq>` : '',
-    priority ? `    <priority>${priority}</priority>` : '',
-    '  </url>'
-  ].filter(Boolean).join('\n');
+    '  </sitemap>'
+  ].join('\n');
 }
 
-export function GET() {
+export async function GET() {
+  const total = await getEmojiCount();
+  const emojiSitemaps = Math.max(1, Math.ceil(total / SITEMAP_PAGE_SIZE));
   const entries = [
-    { loc: `${SITE}/`, changefreq: 'daily', priority: '1.0' },
-    { loc: `${SITE}/emojis`, changefreq: 'daily', priority: '0.9' },
-    { loc: `${SITE}/api/emojis.json`, changefreq: 'daily', priority: '0.6' },
-    { loc: `${SITE}/api/categories.json`, changefreq: 'daily', priority: '0.5' },
-    { loc: `${SITE}/llms.txt`, changefreq: 'weekly', priority: '0.4' },
-    { loc: `${SITE}/agents.md`, changefreq: 'weekly', priority: '0.4' },
-    ...emojis.map((emoji) => ({
-      loc: `${SITE}/emoji/${encodeURIComponent(emoji.slug)}`,
-      lastmod: dateOnly(emoji.syncedAt || emoji.addedAt),
-      changefreq: 'monthly',
-      priority: '0.7'
-    }))
+    `${SITE}/sitemap-static.xml`,
+    ...Array.from({ length: emojiSitemaps }, (_, index) => `${SITE}/sitemaps/emoji-${index + 1}.xml`)
   ];
 
   const body = [
     '<?xml version="1.0" encoding="UTF-8"?>',
-    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
-    ...entries.map(urlEntry),
-    '</urlset>',
+    '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+    ...entries.map(sitemapEntry),
+    '</sitemapindex>',
     ''
   ].join('\n');
 
   return new Response(body, {
     headers: {
       'Content-Type': 'application/xml; charset=utf-8',
-      'Cache-Control': 'public, max-age=3600'
+      'Cache-Control': 'public, max-age=3600, s-maxage=3600'
     }
   });
 }
