@@ -29,5 +29,11 @@ export function localEmojiAssetPath(emoji: EmojiAssetRef) {
 }
 
 export function emojiAssetUrl(emoji: EmojiAssetRef, base: string) {
-  return withBase(localEmojiAssetPath(emoji), base);
+  const assetPath = localEmojiAssetPath(emoji);
+  const previewAssetOrigin = String(process.env.PR_PREVIEW_ASSET_ORIGIN || '')
+    .trim()
+    .replace(/\/+$/, '');
+
+  if (previewAssetOrigin) return `${previewAssetOrigin}${assetPath}`;
+  return withBase(assetPath, base);
 }
