@@ -140,6 +140,31 @@ function addFacet(map, key, name, id, animated) {
   else item.static += 1;
 }
 
+function countBucket() {
+  return { total: 0, animated: 0, static: 0 };
+}
+
+function incrementBucket(bucket, animated) {
+  bucket.total += 1;
+  if (animated) bucket.animated += 1;
+  else bucket.static += 1;
+}
+
+function addCompatibility(compatibility, category, source, animated) {
+  incrementBucket(compatibility.totals, animated);
+
+  if (!compatibility.categories[category]) compatibility.categories[category] = countBucket();
+  incrementBucket(compatibility.categories[category], animated);
+
+  if (!source) return;
+  if (!compatibility.sources[source]) compatibility.sources[source] = countBucket();
+  incrementBucket(compatibility.sources[source], animated);
+
+  if (!compatibility.categorySource[category]) compatibility.categorySource[category] = {};
+  if (!compatibility.categorySource[category][source]) compatibility.categorySource[category][source] = countBucket();
+  incrementBucket(compatibility.categorySource[category][source], animated);
+}
+
 function addTokenToPrefix(index, prefix, token, id) {
   if (!prefix) return;
   if (!index.has(prefix)) index.set(prefix, new Map());
@@ -163,12 +188,23 @@ const sources = new Map();
 const tokenIndex = new Map();
 const animatedIds = [];
 const staticIds = [];
+const compatibility = {
+  totals: countBucket(),
+  categories: {},
+  sources: {},
+  categorySource: {}
+};
 
 for (let id = 0; id < records.length; id += 1) {
   const record = records[id];
-  addFacet(categories, record.categorySlug || safeSlug(record.category), record.category, id, Boolean(record.animated));
-  addFacet(sources, record.source, record.sourceLabel || record.source, id, Boolean(record.animated));
-  (record.animated ? animatedIds : staticIds).push(id);
+  const category = String(record.categorySlug || safeSlug(record.category)).trim().toLowerCase();
+  const source = String(record.source || '').trim().toLowerCase();
+  const animated = Boolean(record.animated);
+
+  addFacet(categories, category, record.category, id, animated);
+  addFacet(sources, source, record.sourceLabel || record.source, id, animated);
+  addCompatibility(compatibility, category, source, animated);
+  (animated ? animatedIds : staticIds).push(id);
   for (const token of recordTokens(record)) addToken(tokenIndex, token, id);
 }
 
@@ -213,13 +249,14 @@ for (const [prefix, tokens] of tokenIndex) {
 }
 
 await writeJson(path.join(OUT_DIR, 'manifest.json'), {
-  version: 1,
+  version: 2,
   total: records.length,
   chunkSize: CHUNK_SIZE,
   chunkCount,
   categories: categoryManifest.map(({ value, name, count, file }) => ({ value, name, count, file })),
   sources: sourceManifest,
-  motion: { yes: animatedIds.length, no: staticIds.length }
+  motion: { yes: animatedIds.length, no: staticIds.length },
+  compatibility
 });
 
 await writeJson(
