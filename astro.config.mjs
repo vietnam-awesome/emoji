@@ -1,8 +1,8 @@
 import { defineConfig } from 'astro/config';
+import cloudflare from '@astrojs/cloudflare';
 
 const previewBase = process.env.PR_PREVIEW_BASE;
 const previewSite = process.env.PR_PREVIEW_SITE;
-const isGitHubPages = process.env.GITHUB_ACTIONS === 'true' && !previewBase;
 
 function normalizeBase(value) {
   if (!value) return '/';
@@ -11,7 +11,11 @@ function normalizeBase(value) {
 }
 
 export default defineConfig({
-  site: previewSite || (isGitHubPages ? 'https://emoji.eplus.dev' : 'http://localhost:4321'),
+  site: previewSite || 'https://emoji.eplus.dev',
   base: normalizeBase(previewBase),
-  trailingSlash: previewBase ? 'always' : 'never'
+  trailingSlash: previewBase ? 'always' : 'never',
+  output: 'server',
+  adapter: cloudflare({
+    prerenderEnvironment: 'node'
+  })
 });
