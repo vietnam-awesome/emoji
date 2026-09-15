@@ -7,6 +7,7 @@ import {
   isCandidateAssetUrl,
   validateImageAsset
 } from './lib/emojigg-asset.mjs';
+import { isSensitiveImportCandidate } from './lib/import-content-safety.mjs';
 
 const args = process.argv.slice(2);
 const valueFor = (name, fallback) => {
@@ -103,17 +104,22 @@ async function discoverCategories(page) {
   );
 
   const categories = new Map();
+  let sensitiveCategoriesSkipped = 0;
   for (const link of links) {
     const category = categoryFromHref(link.href, link.text);
     if (!category) continue;
+    if (isSensitiveImportCandidate(category)) {
+      sensitiveCategoriesSkipped += 1;
+      continue;
+    }
     if (!categories.has(category.id) || categories.get(category.id).name.startsWith('Category ')) {
       categories.set(category.id, category);
     }
   }
 
   const result = [...categories.values()].sort((a, b) => Number(a.id) - Number(b.id));
-  if (!result.length) throw new Error('Emoji.gg returned no category links');
-  console.log(`[${SOURCE.label}] discovered ${result.length} categories: ${result.map((item) => `${item.id}:${item.slug}`).join(', ')}`);
+  if (!result.length) throw new Error('Emoji.gg returned no safe category links');
+  console.log(`[${SOURCE.label}] discovered ${result.length} safe categories${sensitiveCategoriesSkipped ? `; skipped ${sensitiveCategoriesSkipped} sensitive categories` : ''}: ${result.map((item) => `${item.id}:${item.slug}`).join(', ')}`);
   return result;
 }
 
@@ -124,7 +130,7 @@ function selectCategories(categories) {
     value === category.id || value === category.slug.toLowerCase() || value === category.name.toLowerCase()
   ));
   if (!selected.length) {
-    throw new Error(`No Emoji.gg category matched "${categoryFilter}". Available: ${categories.map((item) => `${item.id}:${item.slug}`).join(', ')}`);
+    throw new Error(`No safe Emoji.gg category matched "${categoryFilter}". Available: ${categories.map((item) => `${item.id}:${item.slug}`).join(', ')}`);
   }
   return selected;
 }
@@ -136,6 +142,7 @@ async function discoverCategoryUrls(page, category) {
   let pageNumber = 0;
   let consecutiveEmpty = 0;
   let canonicalName = category.name;
+  let sensitiveUrlsSkipped = 0;
 
   while (nextUrl && pageNumber < maxPagesPerCategory && !visitedPages.has(nextUrl)) {
     visitedPages.add(nextUrl);
@@ -158,12 +165,25 @@ async function discoverCategoryUrls(page, category) {
     for (const href of hrefs) {
       const url = absoluteUrl(href, page.url());
       if (!url) continue;
+      let pathname;
       try {
-        if (!SOURCE.detailPattern.test(new URL(url).pathname)) continue;
+        pathname = new URL(url).pathname;
+        if (!SOURCE.detailPattern.test(pathname)) continue;
       } catch {
         continue;
       }
       const normalized = normalizeUrl(url);
+      const urlName = path.basename(pathname).replace(/^\d+-/, '');
+      if (isSensitiveImportCandidate({
+        name: urlName,
+        slug: slugify(urlName),
+        categoryName: category.name,
+        categorySlug: category.slug,
+        detailUrl: normalized
+      })) {
+        sensitiveUrlsSkipped += 1;
+        continue;
+      }
       if (!urls.has(normalized)) {
         urls.add(normalized);
         added += 1;
@@ -171,10 +191,10 @@ async function discoverCategoryUrls(page, category) {
     }
 
     consecutiveEmpty = added === 0 ? consecutiveEmpty + 1 : 0;
-    console.log(`[${SOURCE.label}/${category.slug}] page ${pageNumber}: +${added}, total ${urls.size}${added === 0 ? ` (empty ${consecutiveEmpty}/${emptyPageStop})` : ''}`);
+    console.log(`[${SOURCE.label}/${category.slug}] page ${pageNumber}: +${added}, total ${urls.size}, sensitiveSkipped ${sensitiveUrlsSkipped}${added === 0 ? ` (empty ${consecutiveEmpty}/${emptyPageStop})` : ''}`);
 
     if (consecutiveEmpty >= emptyPageStop) {
-      console.log(`[${SOURCE.label}/${category.slug}] stopping after ${emptyPageStop} consecutive pages with no new emoji.`);
+      console.log(`[${SOURCE.label}/${category.slug}] stopping after ${emptyPageStop} consecutive pages with no new safe emoji.`);
       break;
     }
 
@@ -192,7 +212,8 @@ async function discoverCategoryUrls(page, category) {
   return {
     category: { ...category, name: canonicalName, slug: slugify(canonicalName) || category.slug },
     urls: [...urls].sort(),
-    pages: visitedPages.size
+    pages: visitedPages.size,
+    sensitiveUrlsSkipped
   };
 }
 
@@ -364,24 +385,37 @@ try {
     const resolvedCategory = discovery.category;
     const missing = discovery.urls.filter((url) => !bySourceUrl.has(normalizeUrl(url)));
     const chosen = limitPerCategory === 0 ? missing : missing.slice(0, limitPerCategory);
+    let sensitiveDetailsSkipped = 0;
 
     state[SOURCE.id].categories[resolvedCategory.slug] = {
       id: resolvedCategory.id,
       name: resolvedCategory.name,
       url: resolvedCategory.url,
       discovered: discovery.urls.length,
+      sensitiveUrlsSkipped: discovery.sensitiveUrlsSkipped,
       missingBeforeRun: missing.length,
       attemptedThisRun: chosen.length,
       pagesDiscovered: discovery.pages,
       lastRunAt: new Date().toISOString()
     };
 
-    console.log(`[${SOURCE.label}/${resolvedCategory.slug}] discovered=${discovery.urls.length}, alreadyIndexed=${discovery.urls.length - missing.length}, missing=${missing.length}, importing=${chosen.length}`);
+    console.log(`[${SOURCE.label}/${resolvedCategory.slug}] discovered=${discovery.urls.length}, urlFiltered=${discovery.sensitiveUrlsSkipped}, alreadyIndexed=${discovery.urls.length - missing.length}, missing=${missing.length}, importing=${chosen.length}`);
 
     await runPool(chosen, async (detailUrl) => {
       const detailPage = await browser.newPage();
       try {
         const detail = await extractDetail(detailPage, detailUrl, resolvedCategory);
+        if (isSensitiveImportCandidate({
+          name: detail.name,
+          categoryName: detail.category.name,
+          categorySlug: detail.category.slug,
+          detailUrl
+        })) {
+          sensitiveDetailsSkipped += 1;
+          console.warn(`[${SOURCE.label}/${resolvedCategory.slug}] blocked sensitive candidate before asset download: ${detail.name}`);
+          return;
+        }
+
         const remoteKey = path.basename(new URL(detailUrl).pathname).replace(/[^a-zA-Z0-9_-]+/g, '-');
         const stableId = `emojigg-${slugify(remoteKey || detail.name)}`;
         const asset = await downloadAsset(detailPage.context(), detailUrl, detail.assetUrls, stableId);
@@ -433,9 +467,10 @@ try {
     }, concurrency);
 
     const remaining = discovery.urls.filter((url) => !bySourceUrl.has(normalizeUrl(url))).length;
+    state[SOURCE.id].categories[resolvedCategory.slug].sensitiveDetailsSkipped = sensitiveDetailsSkipped;
     state[SOURCE.id].categories[resolvedCategory.slug].remainingAfterRun = remaining;
     state[SOURCE.id].categories[resolvedCategory.slug].complete = remaining === 0;
-    console.log(`[${SOURCE.label}/${resolvedCategory.slug}] remaining=${remaining}, complete=${remaining === 0}`);
+    console.log(`[${SOURCE.label}/${resolvedCategory.slug}] sensitiveDetailsSkipped=${sensitiveDetailsSkipped}, remaining=${remaining}, complete=${remaining === 0}`);
   }
 
   state[SOURCE.id].lastRunAt = new Date().toISOString();
