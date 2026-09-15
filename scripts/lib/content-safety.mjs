@@ -12,8 +12,9 @@ const SENSITIVE_TOKENS = new Set([
 
 // These are safe to match inside concatenated names such as HentaiFuckUwU.
 const STRONG_COMPACT_MARKERS = [
-  '18plus', 'blowjob', 'hentai', 'nsfw', 'onlyfans', 'porn', 'porno',
-  'pornographic', 'rule34', 'sexual', 'xxx'
+  '18plus', 'blowjob', 'boob', 'boobs', 'fuck', 'hentai', 'naked', 'nsfw',
+  'nude', 'nudity', 'onlyfans', 'porn', 'porno', 'pornographic', 'rule34',
+  'sexual', 'tits', 'xxx'
 ];
 
 function textParts(value) {
