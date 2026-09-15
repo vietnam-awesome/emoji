@@ -8,6 +8,7 @@ import '../styles/home.css';
 
 const base = import.meta.env.BASE_URL;
 const allEmojiUrl = withBase('/emojis', base);
+const categoriesUrl = withBase('/categories', base);
 const animatedCount = emojis.filter((emoji) => emoji.animated).length;
 const sourceCount = new Set(emojis.map((emoji) => emoji.source)).size;
 
@@ -39,7 +40,10 @@ const recent = [...emojis]
   })
   .slice(0, 12);
 const animated = emojis.filter((emoji) => emoji.animated && !heroPoolIds.has(emoji.id)).slice(0, 12);
-const topCategories = [...categories].sort((a, b) => b.count - a.count).slice(0, 10);
+const topCategories = [...categories]
+  .filter((category) => category.slug !== 'other')
+  .sort((a, b) => b.count - a.count)
+  .slice(0, 10);
 
 const sections = [
   { title: 'Recently added', subtitle: 'The newest emoji from recent catalog syncs.', items: recent, href: allEmojiUrl },
@@ -143,11 +147,11 @@ const sections = [
   <section class="shell category-section" aria-labelledby="category-title">
     <div class="section-heading-modern category-heading">
       <div><p class="section-kicker">Categories</p><h2 id="category-title">Browse popular collections</h2></div>
-      <a href={allEmojiUrl}>View all <span>→</span></a>
+      <a href={categoriesUrl}>View all categories <span>→</span></a>
     </div>
     <div class="category-list">
       {topCategories.map((category) => (
-        <a class="category-chip" href={`${allEmojiUrl}?category=${encodeURIComponent(category.slug || category.name.toLowerCase())}`}>
+        <a class="category-chip" href={withBase(`/categories/${category.slug}`, base)}>
           <span>{category.name}</span><small>{category.count.toLocaleString('en-US')}</small>
         </a>
       ))}

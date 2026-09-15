@@ -18,6 +18,7 @@ const base = import.meta.env.BASE_URL;
 const origin = Astro.site ?? Astro.url.origin;
 const homeUrl = withBase('/', base);
 const emojisUrl = withBase('/emojis', base);
+const categoriesUrl = withBase('/categories', base);
 const faviconUrl = withBase('/favicon.svg', base);
 const canonical = new URL(Astro.url.pathname, origin);
 const pathname = Astro.url.pathname;
@@ -30,9 +31,14 @@ const isHome = routePath === '/';
 const isEmojiDetail = routePath.startsWith('/emoji/');
 const isBrowseIndex = routePath === '/emojis';
 const isBrowse = isBrowseIndex || isEmojiDetail;
+const isCategoriesIndex = routePath === '/categories';
+const isCategoryDetail = routePath.startsWith('/categories/');
+const isCategories = isCategoriesIndex || isCategoryDetail;
+const isCollectionPage = isBrowseIndex || isCategoriesIndex || isCategoryDetail;
 
 const absoluteHomeUrl = new URL(homeUrl, origin).toString();
 const absoluteBrowseUrl = new URL(emojisUrl, origin).toString();
+const absoluteCategoriesUrl = new URL(categoriesUrl, origin).toString();
 const websiteId = `${absoluteHomeUrl}#website`;
 const webpageId = `${canonical.toString()}#webpage`;
 
@@ -53,7 +59,7 @@ const schemaGraph = [
     }
   },
   {
-    '@type': isBrowseIndex ? 'CollectionPage' : 'WebPage',
+    '@type': isCollectionPage ? 'CollectionPage' : 'WebPage',
     '@id': webpageId,
     url: canonical.toString(),
     name: title,
@@ -70,19 +76,33 @@ const schemaGraph = [
   }
 ];
 
-if (isBrowse) {
+if (isBrowse || isCategories) {
   const itemListElement = [
-    { '@type': 'ListItem', position: 1, name: 'Home', item: absoluteHomeUrl },
-    { '@type': 'ListItem', position: 2, name: 'Browse', item: absoluteBrowseUrl }
+    { '@type': 'ListItem', position: 1, name: 'Home', item: absoluteHomeUrl }
   ];
 
-  if (isEmojiDetail) {
-    itemListElement.push({
-      '@type': 'ListItem',
-      position: 3,
-      name: title.split('—')[0].trim(),
-      item: canonical.toString()
-    });
+  if (isBrowse) {
+    itemListElement.push({ '@type': 'ListItem', position: 2, name: 'Browse', item: absoluteBrowseUrl });
+    if (isEmojiDetail) {
+      itemListElement.push({
+        '@type': 'ListItem',
+        position: 3,
+        name: title.split('—')[0].trim(),
+        item: canonical.toString()
+      });
+    }
+  }
+
+  if (isCategories) {
+    itemListElement.push({ '@type': 'ListItem', position: 2, name: 'Categories', item: absoluteCategoriesUrl });
+    if (isCategoryDetail) {
+      itemListElement.push({
+        '@type': 'ListItem',
+        position: 3,
+        name: title.split('—')[0].trim(),
+        item: canonical.toString()
+      });
+    }
   }
 
   schemaGraph.push({
@@ -134,6 +154,7 @@ const schemaJson = JSON.stringify({
         <nav class="nav-links" aria-label="Primary navigation">
           <a class:list={[{ active: isHome }]} href={homeUrl} aria-current={isHome ? 'page' : undefined}>Home</a>
           <a class:list={[{ active: isBrowse }]} href={emojisUrl} aria-current={isBrowse ? 'page' : undefined}>Browse</a>
+          <a class:list={[{ active: isCategories }]} href={categoriesUrl} aria-current={isCategories ? 'page' : undefined}>Categories</a>
         </nav>
 
         <a class="header-github" href="https://github.com/vietnam-awesome/emoji" rel="noreferrer">
@@ -155,6 +176,7 @@ const schemaJson = JSON.stringify({
         </div>
         <div class="footer-links">
           <a href={emojisUrl}>Browse all</a>
+          <a href={categoriesUrl}>Categories</a>
           <a href="https://github.com/vietnam-awesome/emoji/blob/main/NOTICE.md" rel="noreferrer">Licenses</a>
           <a href="https://github.com/vietnam-awesome/emoji" rel="noreferrer">Source</a>
         </div>

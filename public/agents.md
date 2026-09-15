@@ -13,13 +13,21 @@ ePlus Emoji is a searchable directory of static and animated emoji assets with s
 - Sitemap: https://emoji.eplus.dev/sitemap.xml
 - LLM discovery summary: https://emoji.eplus.dev/llms.txt
 
+## Human-readable discovery routes
+
+- Browse all emoji: https://emoji.eplus.dev/emojis
+- Browse category index: https://emoji.eplus.dev/categories
+- Category landing page: https://emoji.eplus.dev/categories/{category-slug}
+- Emoji detail page: https://emoji.eplus.dev/emoji/{slug}
+
 ## Recommended agent workflow
 
 1. Read `/api/categories.json` when category-level discovery is needed.
-2. Read `/api/emojis.json` and filter by fields such as `name`, `shortcode`, `tags`, `category`, `source`, `format`, or `animated`.
-3. Open `/emoji/{slug}` when a human-readable detail page is useful.
-4. Use the `image` value from the selected record to retrieve the hosted asset.
-5. Preserve and surface `license`, `attribution`, and `sourceUrl` when presenting or redistributing an asset.
+2. Use `/categories/{category-slug}` when a human-readable category overview or category navigation is useful.
+3. Read `/api/emojis.json` and filter by fields such as `name`, `shortcode`, `tags`, `category`, `source`, `format`, or `animated`.
+4. Open `/emoji/{slug}` when a human-readable detail page is useful.
+5. Use the `image` value from the selected record to retrieve the hosted asset.
+6. Preserve and surface `license`, `attribution`, and `sourceUrl` when presenting or redistributing an asset.
 
 ## Data notes
 
@@ -31,7 +39,7 @@ ePlus Emoji is a searchable directory of static and animated emoji assets with s
 
 ## Crawling and freshness
 
-The catalog is updated by automated source import workflows. Prefer the JSON endpoints for current structured data; the sitemap is regenerated from the same emoji index whenever the site is built.
+The catalog is updated by automated source import workflows. Prefer the JSON endpoints for current structured data; the sitemap is regenerated from the same emoji index whenever the site is built. Category landing pages are included in the static sitemap.
 
 ## Rights and attribution
 

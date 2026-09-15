@@ -1,0 +1,98 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import EmojiCard from '../../components/EmojiCard.astro';
+import categories from '../../data/categories.json';
+import emojis from '../../data/emojis.json';
+import { categoryIcon, emojiCategorySlug } from '../../lib/category';
+import { withBase } from '../../lib/url';
+import '../../styles/categories.css';
+
+export function getStaticPaths() {
+  return categories.map((category) => ({
+    params: { slug: category.slug },
+    props: { category }
+  }));
+}
+
+const { category } = Astro.props;
+const base = import.meta.env.BASE_URL;
+const categoryItems = emojis.filter((emoji) => emojiCategorySlug(emoji) === category.slug);
+const previewItems = categoryItems.slice(0, 48);
+const browseUrl = withBase('/emojis', base);
+const categoriesUrl = withBase('/categories', base);
+const browseCategoryUrl = `${browseUrl}?category=${encodeURIComponent(category.slug)}`;
+const animatedCategoryUrl = `${browseCategoryUrl}&motion=yes`;
+const relatedCategories = [...categories]
+  .filter((item) => item.slug !== category.slug && item.slug !== 'other')
+  .sort((a, b) => b.count - a.count)
+  .slice(0, 5);
+const description = `Browse ${category.count.toLocaleString('en-US')} ${category.name} emoji, including ${category.animated.toLocaleString('en-US')} animated and ${category.static.toLocaleString('en-US')} static assets.`;
+---
+<Layout title={`${category.name} emoji — ePlus Emoji`} description={description}>
+  <section class="shell category-detail-page" aria-labelledby="category-title">
+    <header class="category-detail-header">
+      <a class="category-breadcrumb" href={categoriesUrl}>← All categories</a>
+      <div class="category-detail-topline">
+        <span class="category-icon" aria-hidden="true">{categoryIcon(category.slug)}</span>
+        <div>
+          <p class="eyebrow">Emoji category</p>
+          <h1 id="category-title">{category.name}</h1>
+        </div>
+      </div>
+      <p>{description}</p>
+    </header>
+
+    <div class="category-stats" aria-label={`${category.name} statistics`}>
+      <article><strong>{category.count.toLocaleString('en-US')}</strong><span>emoji in category</span></article>
+      <article><strong>{category.animated.toLocaleString('en-US')}</strong><span>animated</span></article>
+      <article><strong>{category.static.toLocaleString('en-US')}</strong><span>static</span></article>
+    </div>
+
+    <div class="category-actions">
+      <a class="primary-action" href={browseCategoryUrl}>Browse all {category.name}</a>
+      {category.animated > 0 && <a class="secondary-action" href={animatedCategoryUrl}>Animated only</a>}
+      <a class="secondary-action" href={browseUrl}>Search entire library</a>
+    </div>
+
+    <section class="category-preview-section" aria-labelledby="preview-title">
+      <div class="category-preview-heading">
+        <div>
+          <p class="section-kicker">Preview</p>
+          <h2 id="preview-title">Explore {category.name}</h2>
+          <p>Showing a lightweight preview; use Browse all for the complete filtered catalog.</p>
+        </div>
+        <a class="secondary-action" href={browseCategoryUrl}>View all →</a>
+      </div>
+
+      {previewItems.length > 0 ? (
+        <div class="emoji-grid">
+          {previewItems.map((emoji) => <EmojiCard emoji={emoji} />)}
+        </div>
+      ) : (
+        <div class="category-empty">No preview items are available in this build. Open the filtered catalog to browse the category.</div>
+      )}
+    </section>
+
+    <section class="related-categories" aria-labelledby="related-title">
+      <p class="section-kicker">Keep exploring</p>
+      <h2 id="related-title">Related categories</h2>
+      <div class="related-category-list">
+        {relatedCategories.map((item) => (
+          <a href={withBase(`/categories/${item.slug}`, base)}>{categoryIcon(item.slug)} {item.name} · {item.count.toLocaleString('en-US')}</a>
+        ))}
+      </div>
+    </section>
+  </section>
+
+  <script>
+    document.addEventListener('click', async (event) => {
+      const button = event.target.closest('[data-copy]');
+      if (!button) return;
+      const value = button.dataset.copy || '';
+      await navigator.clipboard.writeText(value);
+      const previous = button.textContent;
+      button.textContent = 'Copied!';
+      setTimeout(() => { button.textContent = previous; }, 850);
+    });
+  </script>
+</Layout>

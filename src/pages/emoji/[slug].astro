@@ -2,6 +2,7 @@
 import Layout from '../../layouts/Layout.astro';
 import emojis from '../../data/emojis.json';
 import { emojiAssetUrl } from '../../lib/emojiAsset';
+import { emojiCategorySlug } from '../../lib/category';
 import { withBase } from '../../lib/url';
 
 export function getStaticPaths() {
@@ -44,6 +45,8 @@ const imageUrl = emojiAssetUrl(emoji, base);
 const browseUrl = withBase('/emojis', base);
 const title = `${emoji.name} — ${emoji.sourceLabel} | ePlus Emoji`;
 const category = emoji.category || String(emoji.group || '').replaceAll('-', ' ');
+const categorySlug = emojiCategorySlug(emoji);
+const categoryUrl = withBase(`/categories/${categorySlug}`, base);
 const description = `Download ${emoji.name} from ${emoji.sourceLabel}, copy :${emoji.shortcode}: and view source, format and license metadata.`;
 ---
 <Layout title={title} description={description}>
@@ -72,7 +75,7 @@ const description = `Download ${emoji.name} from ${emoji.sourceLabel}, copy :${e
         </div>
 
         <dl class="metadata-list">
-          <div><dt>Category</dt><dd>{category}</dd></div>
+          <div><dt>Category</dt><dd><a href={categoryUrl}>{category}</a></dd></div>
           {emoji.collection && <div><dt>Collection</dt><dd>{emoji.collection}</dd></div>}
           {emoji.style && <div><dt>Style</dt><dd>{emoji.style}</dd></div>}
           <div><dt>Source</dt><dd>{emoji.sourceLabel}</dd></div>
