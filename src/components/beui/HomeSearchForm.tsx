@@ -21,11 +21,17 @@ export default function HomeSearchForm({ action }: HomeSearchFormProps) {
         leftIcon={<Search aria-hidden="true" />}
         className="min-w-0 flex-1"
         classNames={{
-          field: 'h-11 border-border bg-background',
+          field: 'h-11 border-border bg-background shadow-sm',
           input: 'text-sm'
         }}
       />
-      <Button type="submit" size="md" ripple className="beui-search-button shrink-0">
+      <Button
+        type="submit"
+        size="md"
+        variant="secondary"
+        ripple
+        className="beui-search-button shrink-0 bg-background shadow-sm hover:bg-card"
+      >
         Search
       </Button>
     </form>
