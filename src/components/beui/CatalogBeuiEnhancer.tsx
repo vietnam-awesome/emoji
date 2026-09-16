@@ -189,10 +189,10 @@ function SearchControl({ config }: { config: SearchConfig }) {
       {config.showSubmit ? (
         <Button
           type="submit"
-          variant="secondary"
+          variant="primary"
           ripple
           disabled={busy}
-          className="h-11 shrink-0 !border !border-border !bg-background !px-5 !text-foreground !shadow-sm hover:!bg-card dark:!border-foreground dark:!bg-foreground dark:!text-background dark:hover:!bg-foreground/90"
+          className="h-11 shrink-0 !border !border-primary !bg-primary !px-5 !text-primary-foreground !shadow-sm hover:!bg-primary/90"
         >
           <Search className="size-4" aria-hidden="true" />
           <span>{busy ? 'Searching…' : 'Search'}</span>
