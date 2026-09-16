@@ -5,7 +5,6 @@ on:
     branches: [main]
     paths:
       - 'public/emojis/**'
-      - '.github/workflows/deploy-emoji-assets.yml'
   workflow_dispatch:
 
 permissions:
@@ -41,19 +40,30 @@ jobs:
           test ! -e public/emojis
           echo "Emoji source tree: $emoji_tree"
 
+      - name: Fetch current gh-pages metadata only
+        id: pages-branch
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if git ls-remote --exit-code --heads origin refs/heads/gh-pages >/dev/null 2>&1; then
+            git fetch --no-tags --filter=blob:none origin \
+              '+refs/heads/gh-pages:refs/remotes/origin/gh-pages'
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "Existing gh-pages branch found."
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "::notice title=Asset deploy deferred::gh-pages does not exist yet. The first UI deploy will create it, including the current emoji tree. Future emoji changes will use this asset-only workflow."
+          fi
+
       - name: Setup Node.js
+        if: steps.pages-branch.outputs.exists == 'true'
         uses: actions/setup-node@v7
         with:
           node-version: 22
 
-      - name: Fetch current gh-pages metadata only
-        shell: bash
-        run: |
-          set -euo pipefail
-          git fetch --no-tags --filter=blob:none origin \
-            '+refs/heads/gh-pages:refs/remotes/origin/gh-pages'
-
       - name: Prepare asset-only gh-pages commit
+        if: steps.pages-branch.outputs.exists == 'true'
         id: publish
         env:
           DEPLOY_MODE: assets
@@ -62,13 +72,14 @@ jobs:
         run: node scripts/publish-gh-pages.mjs
 
       - name: Push gh-pages commit
-        if: steps.publish.outputs.changed == 'true'
+        if: steps.pages-branch.outputs.exists == 'true' && steps.publish.outputs.changed == 'true'
         shell: bash
         run: |
           set -euo pipefail
           git push origin "${{ steps.publish.outputs.commit }}:refs/heads/gh-pages"
 
       - name: Check whether branch-based Pages publishing is active
+        if: steps.pages-branch.outputs.exists == 'true'
         id: pages
         env:
           GH_TOKEN: ${{ github.token }}
@@ -87,7 +98,7 @@ jobs:
           echo "active=$active" >> "$GITHUB_OUTPUT"
 
       - name: Request Pages build explicitly
-        if: steps.publish.outputs.changed == 'true' && steps.pages.outputs.active == 'true'
+        if: steps.pages-branch.outputs.exists == 'true' && steps.publish.outputs.changed == 'true' && steps.pages.outputs.active == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
@@ -121,9 +132,15 @@ jobs:
             echo '## Emoji asset-only deploy'
             echo
             echo "- Source: \`${GITHUB_SHA}\`"
-            echo "- gh-pages commit: \`${{ steps.publish.outputs.commit }}\`"
-            echo "- Emoji tree: \`${{ steps.publish.outputs.emoji_tree }}\`"
-            echo "- Changed: \`${{ steps.publish.outputs.changed }}\`"
-            echo
-            echo 'This workflow updates only `/emojis` on `gh-pages`; it does not rebuild Astro/UI.'
+            if [ "${{ steps.pages-branch.outputs.exists }}" = "true" ]; then
+              echo "- gh-pages commit: \`${{ steps.publish.outputs.commit }}\`"
+              echo "- Emoji tree: \`${{ steps.publish.outputs.emoji_tree }}\`"
+              echo "- Changed: \`${{ steps.publish.outputs.changed }}\`"
+              echo
+              echo 'This workflow updates only `/emojis` on `gh-pages`; it does not rebuild Astro/UI.'
+            else
+              echo '- Result: deferred because `gh-pages` has not been bootstrapped yet.'
+              echo
+              echo 'The first UI deploy creates `gh-pages` with the current emoji tree, so no asset data is lost.'
+            fi
           } >> "$GITHUB_STEP_SUMMARY"
