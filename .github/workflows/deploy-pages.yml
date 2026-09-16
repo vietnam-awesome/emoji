@@ -1,4 +1,4 @@
-name: Publish GitHub Pages (gh-pages)
+name: Deploy UI to GitHub Pages
 
 on:
   push:
@@ -7,6 +7,7 @@ on:
       - 'src/**'
       - 'public/**'
       - '!public/api/**'
+      - '!public/emojis/**'
       - 'scripts/build-static-search.mjs'
       - 'scripts/emoji-store.mjs'
       - 'scripts/publish-gh-pages.mjs'
@@ -15,12 +16,6 @@ on:
       - 'package-lock.json'
       - '.github/workflows/deploy-pages.yml'
   workflow_dispatch:
-    inputs:
-      force_full_build:
-        description: Rebuild HTML/CSS/JS even when only emoji assets changed
-        required: false
-        default: true
-        type: boolean
 
 permissions:
   contents: write
@@ -31,11 +26,11 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  publish:
+  publish-ui:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 30
     steps:
-      - name: Checkout source without materializing production emoji assets
+      - name: Checkout UI source without emoji binaries
         uses: actions/checkout@v7
         with:
           ref: main
@@ -46,70 +41,19 @@ jobs:
             !/public/emojis/
           sparse-checkout-cone-mode: false
 
-      - name: Detect deployment scope
-        id: scope
+      - name: Verify emoji binaries are not materialized
         shell: bash
         run: |
           set -euo pipefail
-
-          mode="site"
-          changed_file="$RUNNER_TEMP/pages-changed-files.txt"
-          : > "$changed_file"
-
-          if [ "$GITHUB_EVENT_NAME" = "push" ]; then
-            before="${{ github.event.before }}"
-            after="$GITHUB_SHA"
-
-            if [[ ! "$before" =~ ^0+$ ]]; then
-              if ! git cat-file -e "${before}^{commit}" 2>/dev/null; then
-                git fetch --no-tags --filter=blob:none origin "$before"
-              fi
-              git diff --name-only "$before" "$after" > "$changed_file"
-            else
-              echo "First push on ref; using full site mode."
-            fi
-
-            if [ -s "$changed_file" ]; then
-              mode="assets"
-              while IFS= read -r path; do
-                [ -z "$path" ] && continue
-                case "$path" in
-                  public/emojis/*) ;;
-                  *) mode="site"; break ;;
-                esac
-              done < "$changed_file"
-            fi
-          fi
-
-          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ] && [ "${{ inputs.force_full_build }}" = "true" ]; then
-            mode="site"
-          fi
-
-          echo "Deployment mode: $mode"
-          echo "mode=$mode" >> "$GITHUB_OUTPUT"
-
-          if [ -s "$changed_file" ]; then
-            echo "Changed files:"
-            sed 's/^/ - /' "$changed_file"
-          fi
-
-      - name: Verify source emoji tree is available without blob checkout
-        shell: bash
-        run: |
-          set -euo pipefail
-          emoji_tree="$(git rev-parse HEAD:public/emojis)"
-          echo "Emoji source tree: $emoji_tree"
-          test -n "$emoji_tree"
           test ! -e public/emojis
+          echo "UI deploy is isolated from production emoji binaries."
 
       - name: Setup Node.js
-        if: steps.scope.outputs.mode == 'site'
         uses: actions/setup-node@v7
         with:
           node-version: 22
 
       - name: Cache npm downloads
-        if: steps.scope.outputs.mode == 'site'
         uses: actions/cache@v4
         with:
           path: ~/.npm
@@ -118,11 +62,9 @@ jobs:
             npm-${{ runner.os }}-
 
       - name: Install dependencies and hydrate metadata
-        if: steps.scope.outputs.mode == 'site'
         run: npm install --no-audit --no-fund
 
       - name: Restore static search cache
-        if: steps.scope.outputs.mode == 'site'
         id: search-cache
         uses: actions/cache/restore@v4
         with:
@@ -130,46 +72,42 @@ jobs:
           key: static-search-v3-${{ hashFiles('src/data/emojis/*.json', 'scripts/build-static-search.mjs') }}
 
       - name: Build static search shards from repository data
-        if: steps.scope.outputs.mode == 'site' && steps.search-cache.outputs.cache-hit != 'true'
+        if: steps.search-cache.outputs.cache-hit != 'true'
         env:
           STATIC_DATA_SOURCE: local
         run: npm run build:static-data
 
       - name: Save static search cache
-        if: steps.scope.outputs.mode == 'site' && steps.search-cache.outputs.cache-hit != 'true' && success()
+        if: steps.search-cache.outputs.cache-hit != 'true' && success()
         uses: actions/cache/save@v4
         with:
           path: public/search
           key: static-search-v3-${{ hashFiles('src/data/emojis/*.json', 'scripts/build-static-search.mjs') }}
 
-      - name: Build Astro without emoji binaries
-        if: steps.scope.outputs.mode == 'site'
+      - name: Build Astro UI without emoji binaries
         run: npx astro build
 
       - name: Validate lightweight production output
-        if: steps.scope.outputs.mode == 'site'
         shell: bash
         run: |
           set -euo pipefail
           test -s dist/index.html
           test ! -e dist/emojis
           touch dist/.nojekyll
-          echo "Production build size without /emojis:"
+          echo "Production UI build size without /emojis:"
           du -sh dist
-          echo "Largest generated directories:"
-          du -sh dist/* 2>/dev/null | sort -h | tail -20 || true
 
-      - name: Fetch current gh-pages branch metadata only
+      - name: Fetch current gh-pages metadata only
         shell: bash
         run: |
           set -euo pipefail
           git fetch --no-tags --filter=blob:none origin \
             '+refs/heads/gh-pages:refs/remotes/origin/gh-pages' || true
 
-      - name: Prepare incremental gh-pages commit
+      - name: Prepare UI-only gh-pages commit
         id: publish
         env:
-          DEPLOY_MODE: ${{ steps.scope.outputs.mode }}
+          DEPLOY_MODE: site
           DIST_DIR: dist
           PUBLISH_BRANCH: gh-pages
           SOURCE_REF: HEAD
@@ -189,7 +127,6 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-
           current="$(gh api "repos/${GITHUB_REPOSITORY}/pages")"
           build_type="$(jq -r '.build_type // ""' <<<"$current")"
           source_branch="$(jq -r '.source.branch // ""' <<<"$current")"
@@ -200,13 +137,9 @@ jobs:
             active=true
           fi
 
-          echo "build_type=$build_type"
-          echo "source_branch=$source_branch"
-          echo "source_path=$source_path"
           echo "active=$active" >> "$GITHUB_OUTPUT"
-
           if [ "$active" != "true" ]; then
-            echo "::notice title=One-time GitHub Pages setting required::Open Settings → Pages, choose Deploy from a branch, then select gh-pages and /(root). The gh-pages branch has already been prepared."
+            echo "::notice title=One-time GitHub Pages setting required::Open Settings → Pages, choose Deploy from a branch, then select gh-pages and /(root)."
           fi
 
       - name: Request Pages build explicitly
@@ -216,7 +149,6 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-
           for attempt in 1 2 3 4; do
             set +e
             output="$(gh api --method POST "repos/${GITHUB_REPOSITORY}/pages/builds" 2>&1)"
@@ -225,39 +157,29 @@ jobs:
 
             if [ "$status" -eq 0 ]; then
               echo "$output"
-              echo "Pages build requested successfully."
               exit 0
             fi
-
             if grep -q 'HTTP 409' <<<"$output"; then
-              echo "A Pages build is already running; waiting before retry $attempt/4..."
               sleep $((attempt * 8))
               continue
             fi
-
             echo "$output" >&2
             exit "$status"
           done
 
-          echo "A Pages build is already queued/running; no second build request is necessary."
+          echo "A Pages build is already queued/running."
 
       - name: Deployment summary
         if: always()
         shell: bash
         run: |
           {
-            echo '## Incremental gh-pages publish'
+            echo '## UI-only GitHub Pages deploy'
             echo
-            echo "- Mode: \`${{ steps.scope.outputs.mode }}\`"
             echo "- Source: \`${GITHUB_SHA}\`"
             echo "- gh-pages commit: \`${{ steps.publish.outputs.commit }}\`"
-            echo "- Emoji tree: \`${{ steps.publish.outputs.emoji_tree }}\`"
+            echo "- Preserved emoji tree: \`${{ steps.publish.outputs.emoji_tree }}\`"
             echo "- Changed: \`${{ steps.publish.outputs.changed }}\`"
-            echo "- Branch Pages active: \`${{ steps.pages.outputs.active }}\`"
             echo
-            echo 'Emoji binaries are referenced from the existing Git object tree and are not packed into a Pages artifact.'
-            if [ "${{ steps.pages.outputs.active }}" != "true" ]; then
-              echo
-              echo '> One-time activation required: Settings → Pages → Deploy from a branch → gh-pages → /(root).'
-            fi
+            echo 'UI deploys preserve the existing `/emojis` tree on `gh-pages`. Emoji binaries are published only by the dedicated asset workflow.'
           } >> "$GITHUB_STEP_SUMMARY"
