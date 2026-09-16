@@ -4,14 +4,12 @@ import EmojiCard from '../components/EmojiCard.astro';
 import CategoryPills from '../components/beui/CategoryPills';
 import DeveloperGithubButton from '../components/beui/DeveloperGithubButton';
 import HeroShuffleButton from '../components/beui/HeroShuffleButton';
-import HomeSearchButton from '../components/beui/HomeSearchButton';
+import HomeSearchForm from '../components/beui/HomeSearchForm';
 import { emojiAssetUrl } from '../lib/emojiAsset';
 import { withBase } from '../lib/url';
 import emojis from '../data/emojis.json';
 import categories from '../data/categories.json';
-import '../styles/beui.css';
 import '../styles/home.css';
-import '../styles/beui-home.css';
 
 const base = import.meta.env.BASE_URL;
 const allEmojiUrl = withBase('/emojis', base);
@@ -75,20 +73,7 @@ const sections = [
         <p class="hero-lead">Search a growing library of custom emoji, reactions and GIFs. Every asset keeps its source, format and attribution metadata.</p>
 
         <div class="hero-search-shell" id="home-search-shell" data-asset-base={previewAssetBase}>
-          <form class="hero-search" action={allEmojiUrl} method="get">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m21 21-4.35-4.35m2.35-5.65a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-            <input
-              id="home-emoji-search"
-              type="search"
-              name="q"
-              placeholder="Search name, :shortcode:, tag or category"
-              aria-label="Search emoji"
-              aria-controls="home-search-results"
-              aria-expanded="false"
-              autocomplete="off"
-            />
-            <HomeSearchButton client:load />
-          </form>
+          <HomeSearchForm action={allEmojiUrl} client:load />
 
           <div class="home-search-results" id="home-search-results" aria-live="polite" hidden>
             <div class="home-search-results-head">
@@ -169,22 +154,20 @@ const sections = [
 
 <style>
   .hero-library-actions { display:flex; align-items:center; gap:10px; }
-  .hero-shuffle { display:inline-flex; min-height:30px; align-items:center; gap:6px; padding:0 9px; border:1px solid var(--line); border-radius:7px; background:#fff; color:var(--ink-soft); font:inherit; font-size:.68rem; font-weight:720; cursor:pointer; }
   .hero-shuffle svg { width:14px; height:14px; }
 
   .hero-search-shell { position:relative; z-index:20; max-width:680px; margin-top:30px; }
-  .hero-search-shell .hero-search { max-width:none; margin-top:0; }
-  .home-search-results { position:absolute; top:calc(100% + 8px); left:0; right:0; overflow:hidden; max-height:min(520px, 58vh); border:1px solid var(--line-strong); border-radius:12px; background:#fff; box-shadow:0 20px 50px rgba(16,24,40,.14); }
+  .home-search-results { position:absolute; top:calc(100% + 8px); left:0; right:0; overflow:hidden; max-height:min(520px, 58vh); border:1px solid var(--line-strong); border-radius:16px; background:var(--surface); box-shadow:0 20px 50px rgba(16,24,40,.14); }
   .home-search-results[hidden] { display:none; }
-  .home-search-results-head { display:flex; align-items:center; justify-content:space-between; gap:16px; min-height:38px; padding:0 12px; border-bottom:1px solid var(--line); background:#fcfcfd; color:var(--muted-light); font-size:.64rem; }
+  .home-search-results-head { display:flex; align-items:center; justify-content:space-between; gap:16px; min-height:38px; padding:0 12px; border-bottom:1px solid var(--line); background:var(--surface-subtle); color:var(--muted-light); font-size:.64rem; }
   .home-search-results-head strong { color:var(--ink-soft); font-size:.7rem; }
   .home-search-list { overflow:auto; max-height:390px; }
-  .home-search-all { display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:42px; padding:0 12px; border-top:1px solid var(--line); background:#fcfcfd; color:var(--ink-soft); font-size:.7rem; font-weight:720; text-decoration:none; }
-  .home-search-all:hover { color:var(--ink); background:#f9fafb; }
+  .home-search-all { display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:42px; padding:0 12px; border-top:1px solid var(--line); background:var(--surface-subtle); color:var(--ink-soft); font-size:.7rem; font-weight:720; text-decoration:none; }
+  .home-search-all:hover { color:var(--ink); background:var(--surface-subtle); }
 
   @media (max-width:520px) {
     .hero-library-actions > span,
     .hero-shuffle span { display:none; }
-    .hero-shuffle { width:30px; justify-content:center; padding:0; }
+    .hero-shuffle { width:32px; justify-content:center; padding:0; }
   }
 </style>
