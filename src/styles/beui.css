@@ -11,7 +11,6 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  /* beUI palette */
   --background: oklch(99% 0 0);
   --foreground: oklch(15% 0 0);
   --card: oklch(97% 0 0);
@@ -30,7 +29,6 @@
   --glass-strong-bg: rgb(255 255 255 / 0.7);
   --glass-thin-bg: rgb(255 255 255 / 0.45);
 
-  /* shadcn/beUI semantic tokens */
   --card-foreground: var(--foreground);
   --popover: var(--card);
   --popover-foreground: var(--foreground);
@@ -141,89 +139,43 @@
 }
 
 /*
- * The site deliberately skips Tailwind preflight. Keep the beUI controls fully
- * self-contained and stop legacy catalog grid rules / browser button defaults
- * from leaking into the Motion components.
+ * Catalog controls are server-rendered as beUI components. Native controls stay
+ * hidden only as state/logic proxies, so there is no legacy UI -> placeholder ->
+ * React UI hand-off during first paint.
  */
 body[data-ui="beui"][data-page="browse"] .catalog-controls {
   grid-template-columns: minmax(0, 1fr) !important;
+  gap: 0;
+}
+
+body[data-ui="beui"] .beui-catalog-control-stack {
+  display: grid;
+  width: 100%;
+  min-width: 0;
   gap: 10px;
 }
 
-/*
- * Native controls are retained only as hidden state/logic proxies. Hide them
- * from the very first CSS paint instead of waiting for React useEffect(), which
- * previously caused the legacy toolbar to flash before the beUI toolbar mounted.
- */
-body[data-ui="beui"][data-page="browse"] .catalog-search,
-body[data-ui="beui"][data-page="browse"] #category-filter,
-body[data-ui="beui"][data-page="browse"] #source-filter,
-body[data-ui="beui"][data-page="browse"] #motion-filter,
-body[data-ui="beui"][data-page="browse"] .browse-mode-switcher,
-body[data-ui="beui"][data-page="category-detail"] .browse-mode-switcher {
-  position: absolute !important;
-  width: 1px !important;
-  height: 1px !important;
-  margin: -1px !important;
-  padding: 0 !important;
-  overflow: hidden !important;
-  clip: rect(0 0 0 0) !important;
-  clip-path: inset(50%) !important;
-  white-space: nowrap !important;
-  border: 0 !important;
-  opacity: 0 !important;
-  pointer-events: none !important;
-}
-
-/* Preserve the final toolbar geometry while the small React island hydrates. */
-body[data-ui="beui"][data-page="browse"] .catalog-controls:not(:has(.beui-catalog-search-host))::before {
-  content: "";
-  display: block;
-  grid-column: 1 / -1;
-  min-height: 44px;
-}
-
-body[data-ui="beui"][data-page="browse"] .filter-row:not(:has(.beui-control-host))::before {
-  content: "";
-  display: block;
-  grid-column: 1 / -1;
-  min-height: 40px;
-}
-
-body[data-ui="beui"] :where(.results-toolbar, .category-results-toolbar):not(:has(.beui-mode-host))::after {
-  content: "";
-  display: block;
-  flex: 0 0 148px;
-  min-height: 36px;
-}
-
-body[data-ui="beui"][data-page="browse"] .beui-catalog-search-host {
-  width: 100%;
-  min-width: 0;
-  grid-column: 1 / -1;
-}
-
-body[data-ui="beui"][data-page="browse"] .filter-row {
+body[data-ui="beui"] .beui-filter-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr)) auto !important;
-  align-items: center !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+  align-items: center;
   gap: 8px;
   min-width: 0;
 }
 
-body[data-ui="beui"][data-page="browse"] .filter-row > *,
-body[data-ui="beui"] .beui-control-host,
-body[data-ui="beui"] .beui-control-host > * {
+body[data-ui="beui"] .beui-filter-grid > *,
+body[data-ui="beui"] [data-beui-catalog-controls],
+body[data-ui="beui"] [data-beui-catalog-controls] > * {
   min-width: 0;
 }
 
-body[data-ui="beui"] .beui-control-host button[aria-haspopup="listbox"] {
+body[data-ui="beui"] [data-beui-catalog-controls] button[aria-haspopup="listbox"] {
   width: 100%;
   min-width: 0;
   overflow: hidden;
 }
 
-body[data-ui="beui"] .beui-control-host button[aria-haspopup="listbox"] > span:first-child {
+body[data-ui="beui"] [data-beui-catalog-controls] button[aria-haspopup="listbox"] > span:first-child {
   min-width: 0;
   flex: 1 1 auto;
   overflow: hidden;
@@ -232,7 +184,12 @@ body[data-ui="beui"] .beui-control-host button[aria-haspopup="listbox"] > span:f
   white-space: nowrap;
 }
 
-body[data-ui="beui"] .beui-mode-host [role="tab"] {
+body[data-ui="beui"] .beui-mode-control {
+  display: inline-flex;
+  flex: 0 0 auto;
+}
+
+body[data-ui="beui"] .beui-mode-control [role="tab"] {
   appearance: none;
   margin: 0;
   border: 0;
@@ -249,23 +206,23 @@ body[data-ui="beui"] [role="listbox"] [role="option"] {
   font: inherit;
 }
 
-body[data-ui="beui"] .beui-mode-host [role="tab"]:focus-visible,
+body[data-ui="beui"] .beui-mode-control [role="tab"]:focus-visible,
 body[data-ui="beui"] [role="listbox"] [role="option"]:focus-visible {
   outline: 0;
 }
 
 @media (max-width: 900px) {
-  body[data-ui="beui"][data-page="browse"] .filter-row {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  body[data-ui="beui"] .beui-filter-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 @media (max-width: 560px) {
-  body[data-ui="beui"][data-page="browse"] .filter-row {
-    grid-template-columns: minmax(0, 1fr) !important;
+  body[data-ui="beui"] .beui-filter-grid {
+    grid-template-columns: minmax(0, 1fr);
   }
 
-  body[data-ui="beui"] .beui-mode-host [role="tab"] {
+  body[data-ui="beui"] .beui-mode-control [role="tab"] {
     padding-inline: 10px;
   }
 }
