@@ -1,6 +1,7 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import EmojiCard from '../../components/EmojiCard.astro';
+import CatalogBeuiEnhancer from '../../components/beui/CatalogBeuiEnhancer';
 import { catalogConfig } from '../../config/catalog';
 import categories from '../../data/categories.json';
 import emojis from '../../data/emojis.json';
@@ -83,10 +84,17 @@ const description = `Browse ${category.count.toLocaleString('en-US')} ${category
             : 'No emoji found'}
         </p>
         {hasMoreItems && (
-          <div class="browse-mode-switcher" role="group" aria-label="Choose how category emoji are loaded">
-            <button class="browse-mode-button is-active" type="button" data-browse-mode="scroll" aria-pressed="true"><span aria-hidden="true">↕</span> Scroll</button>
-            <button class="browse-mode-button" type="button" data-browse-mode="pagination" aria-pressed="false"><span aria-hidden="true">☷</span> Pages</button>
-          </div>
+          <>
+            <div class="browse-mode-switcher beui-native-proxy" role="group" aria-label="Choose how category emoji are loaded" aria-hidden="true">
+              <button class="browse-mode-button is-active" type="button" data-browse-mode="scroll" aria-pressed="true" tabindex="-1"><span aria-hidden="true">↕</span> Scroll</button>
+              <button class="browse-mode-button" type="button" data-browse-mode="pagination" aria-pressed="false" tabindex="-1"><span aria-hidden="true">☷</span> Pages</button>
+            </div>
+            <CatalogBeuiEnhancer
+              mode={{ proxySelector: '#category-explorer .browse-mode-switcher', label: 'Choose how category emoji are loaded' }}
+              className="beui-mode-control"
+              client:load
+            />
+          </>
         )}
       </div>
 
