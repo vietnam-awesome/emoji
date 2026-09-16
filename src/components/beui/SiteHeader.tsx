@@ -62,6 +62,15 @@ export default function SiteHeader({ homeUrl, emojisUrl, categoriesUrl, routePat
     };
   }, [searchOpen, menuOpen]);
 
+  useEffect(() => {
+    if (!menuOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [menuOpen]);
+
   const panelTransition = reduceMotion ? { duration: 0.12 } : SPRING_PANEL;
 
   return (
@@ -216,26 +225,40 @@ export default function SiteHeader({ homeUrl, emojisUrl, categoriesUrl, routePat
 
         <AnimatePresence>
           {menuOpen ? (
-            <motion.nav
-              aria-label="Mobile navigation"
-              className="glass absolute left-0 right-0 top-[calc(100%+10px)] z-40 mx-auto grid w-[min(420px,calc(100vw-24px))] gap-1 rounded-2xl p-2 md:hidden"
-              initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -8, scale: 0.985 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -6, scale: 0.99 }}
-              transition={panelTransition}
+            <motion.div
+              className="fixed inset-x-0 bottom-0 top-16 z-40 md:hidden"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={reduceMotion ? { duration: 0 } : { duration: 0.16 }}
             >
-              {nav.map((item) => (
-                <a
-                  key={item.href}
-                  href={item.href}
-                  aria-current={item.active ? 'page' : undefined}
-                  className={`flex min-h-11 items-center justify-between rounded-xl px-3 text-sm font-medium no-underline transition-colors ${item.active ? 'bg-primary text-primary-foreground' : 'text-foreground hover:bg-muted'}`}
-                >
-                  <span>{item.label}</span>
-                  <ArrowRight className="size-4" aria-hidden="true" />
-                </a>
-              ))}
-            </motion.nav>
+              <button
+                type="button"
+                aria-label="Close navigation"
+                className="absolute inset-0 appearance-none border-0 bg-background/72 p-0 backdrop-blur-[2px]"
+                onClick={() => setMenuOpen(false)}
+              />
+              <motion.nav
+                aria-label="Mobile navigation"
+                className="absolute left-3 right-3 top-2 z-10 grid gap-1.5 rounded-2xl border border-border bg-background p-2.5 shadow-2xl"
+                initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -8, scale: 0.985 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -6, scale: 0.99 }}
+                transition={panelTransition}
+              >
+                {nav.map((item) => (
+                  <a
+                    key={item.href}
+                    href={item.href}
+                    aria-current={item.active ? 'page' : undefined}
+                    className={`flex min-h-12 items-center justify-between rounded-xl px-3.5 text-sm font-medium no-underline outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring ${item.active ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-transparent text-foreground hover:bg-muted'}`}
+                  >
+                    <span>{item.label}</span>
+                    <ArrowRight className="size-4 shrink-0" aria-hidden="true" />
+                  </a>
+                ))}
+              </motion.nav>
+            </motion.div>
           ) : null}
         </AnimatePresence>
       </div>
