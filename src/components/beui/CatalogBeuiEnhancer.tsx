@@ -1,6 +1,6 @@
 "use client";
 
-import { Database, Folder, LayoutGrid, List, Search, Sparkles } from 'lucide-react';
+import { Database, Folder, LayoutGrid, List, Search, Sparkles, X } from 'lucide-react';
 import { useEffect, useMemo, useState, type ComponentType } from 'react';
 import { Button } from '../motion/button';
 import { Input } from '../motion/input';
@@ -46,6 +46,7 @@ interface CatalogBeuiEnhancerProps {
   search?: SearchConfig;
   selects?: SelectConfig[];
   mode?: ModeConfig;
+  clearProxyId?: string;
   className?: string;
 }
 
@@ -201,6 +202,35 @@ function SearchControl({ config }: { config: SearchConfig }) {
   );
 }
 
+function ClearControl({ proxyId }: { proxyId: string }) {
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const proxy = document.getElementById(proxyId);
+    if (!(proxy instanceof HTMLButtonElement)) return;
+    const sync = () => setVisible(!proxy.hidden);
+    const observer = new MutationObserver(sync);
+    observer.observe(proxy, { attributes: true, attributeFilter: ['hidden'] });
+    sync();
+    return () => observer.disconnect();
+  }, [proxyId]);
+
+  if (!visible) return null;
+  return (
+    <Button
+      type="button"
+      variant="secondary"
+      size="sm"
+      ripple
+      className="h-10 shrink-0 !border !border-border !bg-background !text-foreground !shadow-sm hover:!bg-card"
+      onClick={() => document.getElementById(proxyId)?.click()}
+    >
+      <X className="size-3.5" aria-hidden="true" />
+      <span>Clear</span>
+    </Button>
+  );
+}
+
 function readMode(proxy: HTMLElement) {
   const buttons = Array.from(proxy.querySelectorAll<HTMLButtonElement>('[data-browse-mode]'));
   return buttons.find((button) => button.getAttribute('aria-pressed') === 'true')?.dataset.browseMode
@@ -249,7 +279,7 @@ function ModeControl({ config }: { config: ModeConfig }) {
   );
 }
 
-export default function CatalogBeuiEnhancer({ search, selects = [], mode, className }: CatalogBeuiEnhancerProps) {
+export default function CatalogBeuiEnhancer({ search, selects = [], mode, clearProxyId, className }: CatalogBeuiEnhancerProps) {
   const stableSelects = useMemo(() => selects, [selects]);
 
   return (
@@ -258,6 +288,7 @@ export default function CatalogBeuiEnhancer({ search, selects = [], mode, classN
       {stableSelects.length ? (
         <div className="beui-filter-grid">
           {stableSelects.map((config) => <SelectControl key={config.proxyId} config={config} />)}
+          {clearProxyId ? <ClearControl proxyId={clearProxyId} /> : null}
         </div>
       ) : null}
       {mode ? <ModeControl config={mode} /> : null}
