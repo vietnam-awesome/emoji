@@ -1,5 +1,6 @@
 ---
 import Layout from '../../layouts/Layout.astro';
+import CatalogBeuiEnhancer from '../../components/beui/CatalogBeuiEnhancer';
 import categories from '../../data/categories.json';
 import { categoryIcon } from '../../lib/category';
 import { withBase } from '../../lib/url';
@@ -31,11 +32,16 @@ const totalStatic = categories.reduce((sum, category) => sum + category.static, 
       <article><strong>{totalStatic.toLocaleString('en-US')}</strong><span>static emoji</span></article>
     </div>
 
-    <label class="search-box category-search">
+    <label class="search-box category-search beui-native-proxy-block" aria-hidden="true">
       <span class="search-icon" aria-hidden="true">⌕</span>
       <span class="sr-only">Filter categories</span>
-      <input id="category-search" type="search" placeholder="Find a category" autocomplete="off" />
+      <input id="category-search" type="search" placeholder="Find a category" autocomplete="off" tabindex="-1" />
     </label>
+    <CatalogBeuiEnhancer
+      search={{ proxyId: 'category-search', placeholder: 'Find a category', label: 'Filter categories' }}
+      className="beui-category-search-control"
+      client:load
+    />
 
     <div class="category-grid" id="category-grid">
       {sortedCategories.map((category) => {
