@@ -121,9 +121,13 @@ const buildZip = (files: Array<{ name: string; data: Uint8Array }>) => {
   return new Blob([concatBytes([...localParts, centralBytes, end])], { type: "application/zip" });
 };
 
+const isSelectableCard = (node: Element): node is HTMLElement =>
+  node instanceof HTMLElement &&
+  node.matches(".emoji-card[data-emoji-card]") &&
+  node.dataset.cardVariant !== "compact";
+
 export default function CatalogDownloadClient() {
   const selectedRef = useRef(new Map<string, SelectedItem>());
-  const gridRef = useRef<HTMLElement | null>(null);
   const [count, setCount] = useState(0);
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState("");
@@ -150,6 +154,7 @@ export default function CatalogDownloadClient() {
   }, [cardItem]);
 
   const ensureControls = useCallback((card: HTMLElement) => {
+    if (!isSelectableCard(card)) return;
     const item = cardItem(card);
     if (!item) return;
 
@@ -190,50 +195,51 @@ export default function CatalogDownloadClient() {
   }, [cardItem, syncCard]);
 
   useEffect(() => {
-    const grid = document.querySelector("#emoji-grid");
-    if (!(grid instanceof HTMLElement)) return;
-    gridRef.current = grid;
+    const root = document.body;
 
-    const enhance = (root: ParentNode | HTMLElement) => {
-      if (root instanceof HTMLElement && root.matches(".emoji-card")) ensureControls(root);
-      root.querySelectorAll?.(".emoji-card").forEach((node) => {
-        if (node instanceof HTMLElement) ensureControls(node);
+    const enhance = (target: ParentNode | HTMLElement) => {
+      if (target instanceof HTMLElement && isSelectableCard(target)) ensureControls(target);
+      target.querySelectorAll?.(".emoji-card[data-emoji-card]").forEach((node) => {
+        if (isSelectableCard(node)) ensureControls(node);
       });
     };
 
-    enhance(grid);
+    enhance(root);
+
     const observer = new MutationObserver((mutations) => {
       for (const mutation of mutations) {
-        for (const node of mutation.addedNodes) if (node instanceof HTMLElement) enhance(node);
+        for (const node of mutation.addedNodes) {
+          if (node instanceof HTMLElement) enhance(node);
+        }
       }
     });
-    observer.observe(grid, { childList: true, subtree: true });
+    observer.observe(root, { childList: true, subtree: true });
 
     const onChange = (event: Event) => {
       const target = event.target;
       if (!(target instanceof HTMLInputElement) || !target.matches("[data-emoji-select]")) return;
-      const card = target.closest(".emoji-card");
-      if (!(card instanceof HTMLElement)) return;
+      const card = target.closest(".emoji-card[data-emoji-card]");
+      if (!(card instanceof HTMLElement) || !isSelectableCard(card)) return;
       const item = cardItem(card);
       if (!item) return;
+
       if (target.checked) selectedRef.current.set(item.key, item);
       else selectedRef.current.delete(item.key);
       syncCard(card);
       setCount(selectedRef.current.size);
     };
 
-    grid.addEventListener("change", onChange);
+    document.addEventListener("change", onChange);
     return () => {
       observer.disconnect();
-      grid.removeEventListener("change", onChange);
-      gridRef.current = null;
+      document.removeEventListener("change", onChange);
     };
   }, [cardItem, ensureControls, syncCard]);
 
   const clearSelection = () => {
     selectedRef.current.clear();
-    gridRef.current?.querySelectorAll(".emoji-card").forEach((node) => {
-      if (node instanceof HTMLElement) syncCard(node);
+    document.querySelectorAll(".emoji-card[data-emoji-card]").forEach((node) => {
+      if (isSelectableCard(node)) syncCard(node);
     });
     setCount(0);
   };
@@ -314,7 +320,7 @@ export default function CatalogDownloadClient() {
             <Button
               variant="ghost"
               size="sm"
-              className="text-background/75 hover:bg-background/10 hover:text-background"
+              className="!border-0 !bg-transparent !text-background/80 !shadow-none hover:!bg-background/10 hover:!text-background disabled:!opacity-40"
               onClick={clearSelection}
               disabled={busy}
             >
@@ -324,7 +330,7 @@ export default function CatalogDownloadClient() {
             <Button
               variant="secondary"
               size="sm"
-              className="border-background bg-background text-foreground hover:bg-card"
+              className="!border-background !bg-background !text-foreground !shadow-none hover:!bg-card disabled:!opacity-60"
               onClick={downloadSelected}
               disabled={busy}
             >
