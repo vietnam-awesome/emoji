@@ -76,7 +76,10 @@ function writeTreeEntries(entries) {
   }
 
   const input = Buffer.from(`${sorted.join('\0')}\0`, 'utf8');
-  return runGit(['mktree', '-z'], { input, encoding: 'buffer' }).toString('utf8').trim();
+  // gh-pages is intentionally fetched as a partial clone. Preserved tree entries may
+  // therefore reference blobs that exist on GitHub but are not materialized locally.
+  // --missing lets mktree keep those references without downloading the whole asset set.
+  return runGit(['mktree', '--missing', '-z'], { input, encoding: 'buffer' }).toString('utf8').trim();
 }
 
 function replaceTreeEntry(treeSha, name, replacementEntry) {
