@@ -81,6 +81,10 @@ const description = hasDistinctShortcode
     <a class="back-link" href={browseUrl}>← Back to emoji library</a>
     <div class="detail-grid">
       <div class="detail-preview">
+        <div class="detail-preview-head" aria-hidden="true">
+          <span>Preview</span>
+          <span id="detail-preview-size">Original size</span>
+        </div>
         <button
           class="detail-preview-image-button"
           id="detail-preview-zoom"
@@ -89,13 +93,16 @@ const description = hasDistinctShortcode
           aria-haspopup="dialog"
           title={`Zoom ${emoji.name}`}
         >
-          <img id="detail-preview-image" src={imageUrl} alt={emoji.name} />
+          <span class="detail-preview-canvas">
+            <img id="detail-preview-image" src={imageUrl} alt={emoji.name} />
+          </span>
           <span class="detail-preview-zoom-hint" aria-hidden="true">
             <svg viewBox="0 0 24 24"><path d="m21 21-4.3-4.3m2.3-5.7a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-11 0h6m-3-3v6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-            Zoom
+            Open zoom preview
           </span>
         </button>
       </div>
+
       <div class="detail-content">
         <div class="detail-title-row">
           <div>
@@ -118,7 +125,12 @@ const description = hasDistinctShortcode
           ))}
         </div>
 
-        <dl class="metadata-list">
+        <div class="detail-actions">
+          <a class="primary-action" href={imageUrl} download>Download {String(emoji.format || '').toUpperCase()}</a>
+          {emoji.sourceUrl && <a class="secondary-action" href={emoji.sourceUrl} rel="noreferrer">View original source</a>}
+        </div>
+
+        <dl class="metadata-list" aria-label="Emoji details">
           <div><dt>Category</dt><dd><a href={categoryUrl}>{category}</a></dd></div>
           {hasDistinctShortcode && <div><dt>Shortcode</dt><dd>:{emoji.shortcode}:</dd></div>}
           {emoji.collection && <div><dt>Collection</dt><dd>{emoji.collection}</dd></div>}
@@ -129,11 +141,6 @@ const description = hasDistinctShortcode
           <div><dt>License</dt><dd>{emoji.license}</dd></div>
           <div><dt>Attribution</dt><dd>{emoji.attribution}</dd></div>
         </dl>
-
-        <div class="detail-actions">
-          <a class="primary-action" href={imageUrl} download>Download {String(emoji.format || '').toUpperCase()}</a>
-          {emoji.sourceUrl && <a class="secondary-action" href={emoji.sourceUrl} rel="noreferrer">View original source</a>}
-        </div>
       </div>
     </div>
   </section>
@@ -170,6 +177,7 @@ const description = hasDistinctShortcode
 
     const previewZoomButton = document.querySelector('#detail-preview-zoom');
     const previewImage = document.querySelector('#detail-preview-image');
+    const previewSize = document.querySelector('#detail-preview-size');
     const lightbox = document.querySelector('#detail-lightbox');
     const lightboxImage = document.querySelector('#detail-lightbox-image');
     const lightboxSize = document.querySelector('#detail-lightbox-size');
@@ -177,10 +185,14 @@ const description = hasDistinctShortcode
     const zoomButtons = [...document.querySelectorAll('[data-detail-zoom]')];
 
     const syncOriginalSize = () => {
-      if (!(lightboxImage instanceof HTMLImageElement)) return;
-      const width = lightboxImage.naturalWidth || (previewImage instanceof HTMLImageElement ? previewImage.naturalWidth : 0);
-      const height = lightboxImage.naturalHeight || (previewImage instanceof HTMLImageElement ? previewImage.naturalHeight : 0);
-      if (lightboxSize && width && height) lightboxSize.textContent = `Original ${width}×${height}px`;
+      const sourceImage = lightboxImage instanceof HTMLImageElement ? lightboxImage : previewImage;
+      if (!(sourceImage instanceof HTMLImageElement)) return;
+      const width = sourceImage.naturalWidth || (previewImage instanceof HTMLImageElement ? previewImage.naturalWidth : 0);
+      const height = sourceImage.naturalHeight || (previewImage instanceof HTMLImageElement ? previewImage.naturalHeight : 0);
+      if (!width || !height) return;
+      const label = `Original ${width}×${height}px`;
+      if (previewSize) previewSize.textContent = label;
+      if (lightboxSize) lightboxSize.textContent = label;
     };
 
     const setZoom = (value) => {
@@ -206,6 +218,10 @@ const description = hasDistinctShortcode
       }
     };
 
+    if (previewImage instanceof HTMLImageElement) {
+      if (previewImage.complete) syncOriginalSize();
+      else previewImage.addEventListener('load', syncOriginalSize, { once: true });
+    }
     if (lightboxImage instanceof HTMLImageElement) {
       if (lightboxImage.complete) syncOriginalSize();
       else lightboxImage.addEventListener('load', syncOriginalSize, { once: true });
@@ -233,11 +249,161 @@ const description = hasDistinctShortcode
 </Layout>
 
 <style>
-  .tag-list.without-shortcode { margin-top: 24px; }
-  .tag-list a {
-    padding: 5px 8px;
+  .detail-page {
+    padding-top: 28px;
+    padding-bottom: 58px;
+  }
+
+  .back-link {
+    margin-bottom: 18px;
+  }
+
+  .detail-grid {
+    width: min(100%, 1080px);
+    margin-inline: auto;
+    grid-template-columns: minmax(300px, 410px) minmax(0, 1fr);
+    gap: clamp(34px, 5vw, 68px);
+    align-items: start;
+  }
+
+  .detail-preview {
+    position: sticky;
+    top: 86px;
+    min-height: 0;
+    padding: 12px;
+  }
+
+  .detail-preview-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 3px 5px 11px;
+    color: var(--muted);
+    font-size: .66rem;
+    font-weight: 650;
+  }
+
+  .detail-preview-head > span:first-child {
+    color: var(--ink);
+    font-weight: 720;
+  }
+
+  .detail-preview-image-button {
+    display: block;
+    width: 100%;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: zoom-in;
+  }
+
+  .detail-preview-canvas {
+    display: grid;
+    width: 100%;
+    min-height: 286px;
+    place-items: center;
+    padding: 30px;
+    overflow: hidden;
     border: 1px solid var(--line);
-    border-radius: 6px;
+    border-radius: 14px;
+    background-color: var(--surface-subtle);
+    background-image:
+      linear-gradient(45deg, color-mix(in srgb, var(--line) 42%, transparent) 25%, transparent 25%),
+      linear-gradient(-45deg, color-mix(in srgb, var(--line) 42%, transparent) 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, color-mix(in srgb, var(--line) 42%, transparent) 75%),
+      linear-gradient(-45deg, transparent 75%, color-mix(in srgb, var(--line) 42%, transparent) 75%);
+    background-size: 20px 20px;
+    background-position: 0 0, 0 10px, 10px -10px, -10px 0;
+  }
+
+  .detail-preview-image-button img {
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: 230px;
+    object-fit: contain;
+    filter: drop-shadow(0 10px 16px rgb(0 0 0 / .08));
+  }
+
+  .detail-preview-zoom-hint {
+    display: flex;
+    width: 100%;
+    min-height: 40px;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    margin-top: 9px;
+    padding: 8px 12px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: #fff;
+    color: var(--muted);
+    font-size: .69rem;
+    font-weight: 680;
+    pointer-events: none;
+    transition: border-color .14s ease, color .14s ease, background .14s ease, transform .14s ease;
+  }
+
+  .detail-preview-zoom-hint svg {
+    width: 15px;
+    height: 15px;
+  }
+
+  .detail-preview-image-button:hover .detail-preview-zoom-hint,
+  .detail-preview-image-button:focus-visible .detail-preview-zoom-hint {
+    border-color: var(--line-strong);
+    background: var(--surface-subtle);
+    color: var(--ink);
+    transform: translateY(-1px);
+  }
+
+  .detail-content {
+    min-width: 0;
+    padding-top: 5px;
+  }
+
+  .detail-title-row {
+    align-items: flex-start;
+    gap: 14px;
+  }
+
+  .detail-title-row > div {
+    min-width: 0;
+  }
+
+  .detail-title-row h1 {
+    max-width: 650px;
+    font-size: clamp(2.2rem, 4vw, 3.15rem);
+    line-height: .97;
+    letter-spacing: -.05em;
+    overflow-wrap: anywhere;
+    text-wrap: balance;
+  }
+
+  .detail-native {
+    flex: 0 0 auto;
+    font-size: 1.9rem;
+  }
+
+  .copy-large {
+    margin: 20px 0 14px;
+    padding: 11px 14px;
+  }
+
+  .tag-list {
+    gap: 6px;
+    margin-bottom: 18px;
+  }
+
+  .tag-list.without-shortcode {
+    margin-top: 20px;
+  }
+
+  .tag-list a {
+    padding: 5px 9px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
     background: #fff;
     color: var(--muted);
     font-size: .64rem;
@@ -245,6 +411,7 @@ const description = hasDistinctShortcode
     text-decoration: none;
     transition: transform .14s ease, border-color .14s ease, background .14s ease, color .14s ease;
   }
+
   .tag-list a:hover {
     transform: translateY(-1px);
     border-color: var(--line-strong);
@@ -252,55 +419,26 @@ const description = hasDistinctShortcode
     color: var(--ink);
   }
 
-  /* Detail preview: render at the asset's natural size and keep the zoom control clear of the image. */
-  .detail-preview {
-    min-height: 320px;
-    padding: 32px;
+  .detail-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0 0 20px;
   }
-  .detail-preview-image-button {
-    display: grid;
-    max-width: 100%;
-    max-height: 100%;
-    grid-template-rows: minmax(0, 1fr) auto;
-    justify-items: center;
-    gap: 14px;
-    padding: 0;
-    border: 0;
-    background: transparent;
-    cursor: zoom-in;
+
+  .metadata-list {
+    margin: 0;
   }
-  .detail-preview-image-button img {
-    width: auto;
-    height: auto;
-    max-width: 100%;
-    max-height: min(68vh, 620px);
-    object-fit: contain;
+
+  .metadata-list div {
+    grid-template-columns: 112px minmax(0, 1fr);
+    gap: 16px;
+    padding: 11px 14px;
   }
-  .detail-preview-zoom-hint {
-    position: static;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    min-height: 32px;
-    padding: 6px 10px;
-    border: 1px solid var(--line);
-    border-radius: 8px;
-    background: #fff;
-    color: var(--muted);
-    box-shadow: var(--shadow-sm);
-    font-size: .64rem;
-    font-weight: 700;
-    opacity: 1;
-    pointer-events: none;
-    transition: border-color .14s ease, color .14s ease, transform .14s ease;
-  }
-  .detail-preview-zoom-hint svg { width: 14px; height: 14px; }
-  .detail-preview-image-button:hover .detail-preview-zoom-hint,
-  .detail-preview-image-button:focus-visible .detail-preview-zoom-hint {
-    border-color: var(--line-strong);
-    color: var(--ink);
-    transform: translateY(-1px);
+
+  .metadata-list dd {
+    min-width: 0;
+    overflow-wrap: anywhere;
   }
 
   .detail-lightbox {
@@ -315,8 +453,18 @@ const description = hasDistinctShortcode
     background: #fff;
     box-shadow: 0 30px 90px rgba(16,24,40,.28);
   }
-  .detail-lightbox::backdrop { background: rgba(16,24,40,.62); backdrop-filter: blur(3px); }
-  .detail-lightbox-shell { display: grid; grid-template-rows: auto minmax(0, 1fr); height: 100%; }
+
+  .detail-lightbox::backdrop {
+    background: rgba(16,24,40,.62);
+    backdrop-filter: blur(3px);
+  }
+
+  .detail-lightbox-shell {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    height: 100%;
+  }
+
   .detail-lightbox-toolbar {
     display: grid;
     grid-template-columns: 1fr auto auto;
@@ -327,8 +475,22 @@ const description = hasDistinctShortcode
     border-bottom: 1px solid var(--line);
     background: #fff;
   }
-  .detail-lightbox-toolbar > span { color: var(--muted); font-size: .7rem; font-weight: 650; }
-  .detail-lightbox-zoom-levels { display: inline-flex; gap: 3px; padding: 3px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-subtle); }
+
+  .detail-lightbox-toolbar > span {
+    color: var(--muted);
+    font-size: .7rem;
+    font-weight: 650;
+  }
+
+  .detail-lightbox-zoom-levels {
+    display: inline-flex;
+    gap: 3px;
+    padding: 3px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface-subtle);
+  }
+
   .detail-lightbox-zoom-levels button,
   .detail-lightbox-close {
     min-width: 34px;
@@ -341,10 +503,23 @@ const description = hasDistinctShortcode
     font-weight: 720;
     cursor: pointer;
   }
+
   .detail-lightbox-zoom-levels button:hover,
-  .detail-lightbox-close:hover { background: #fff; color: var(--ink); }
-  .detail-lightbox-zoom-levels button.is-active { background: #fff; color: var(--ink); box-shadow: var(--shadow-sm); }
-  .detail-lightbox-close { font-size: 1.2rem; }
+  .detail-lightbox-close:hover {
+    background: #fff;
+    color: var(--ink);
+  }
+
+  .detail-lightbox-zoom-levels button.is-active {
+    background: #fff;
+    color: var(--ink);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .detail-lightbox-close {
+    font-size: 1.2rem;
+  }
+
   .detail-lightbox-stage {
     display: grid;
     min-width: 0;
@@ -354,6 +529,7 @@ const description = hasDistinctShortcode
     padding: 32px;
     background: var(--surface-subtle);
   }
+
   .detail-lightbox-stage img {
     width: auto;
     height: auto;
@@ -362,16 +538,84 @@ const description = hasDistinctShortcode
     object-fit: contain;
   }
 
-  @media (max-width: 680px) {
+  @media (max-width: 860px) {
+    .detail-grid {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 28px;
+    }
+
     .detail-preview {
-      min-height: 220px;
+      position: static;
+      width: min(100%, 520px);
+      margin-inline: auto;
+    }
+
+    .detail-content {
+      width: min(100%, 640px);
+      margin-inline: auto;
+      padding-top: 0;
+    }
+  }
+
+  @media (max-width: 680px) {
+    .detail-page {
+      padding-top: 22px;
+      padding-bottom: 42px;
+    }
+
+    .back-link {
+      margin-bottom: 14px;
+    }
+
+    .detail-preview {
+      padding: 10px;
+    }
+
+    .detail-preview-head {
+      padding-bottom: 9px;
+    }
+
+    .detail-preview-canvas {
+      min-height: 230px;
       padding: 24px;
     }
-    .detail-preview-image-button { gap: 12px; }
-    .detail-preview-image-button img { max-height: 52vh; }
-    .detail-lightbox { width: 96vw; height: 88vh; }
-    .detail-lightbox-toolbar { grid-template-columns: 1fr auto; gap: 8px; }
-    .detail-lightbox-toolbar > span { grid-column: 1 / -1; order: 2; padding: 0 4px 4px; }
-    .detail-lightbox-stage { padding: 20px; }
+
+    .detail-preview-image-button img {
+      max-height: 190px;
+    }
+
+    .detail-title-row h1 {
+      font-size: clamp(2rem, 11vw, 2.7rem);
+    }
+
+    .detail-actions > a {
+      flex: 1 1 180px;
+    }
+
+    .metadata-list div {
+      grid-template-columns: 92px minmax(0, 1fr);
+      gap: 12px;
+      padding: 10px 12px;
+    }
+
+    .detail-lightbox {
+      width: 96vw;
+      height: 88vh;
+    }
+
+    .detail-lightbox-toolbar {
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+    }
+
+    .detail-lightbox-toolbar > span {
+      grid-column: 1 / -1;
+      order: 2;
+      padding: 0 4px 4px;
+    }
+
+    .detail-lightbox-stage {
+      padding: 20px;
+    }
   }
 </style>
