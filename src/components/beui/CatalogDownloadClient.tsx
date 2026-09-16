@@ -165,7 +165,7 @@ export default function CatalogDownloadClient() {
 
     if (!card.querySelector("[data-emoji-select]")) {
       const selectLabel = document.createElement("label");
-      selectLabel.className = "emoji-select-control";
+      selectLabel.className = "emoji-select-control !grid";
       selectLabel.title = `Select ${item.name}`;
 
       const checkbox = document.createElement("input");
