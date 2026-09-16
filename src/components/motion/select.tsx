@@ -206,7 +206,7 @@ export function SelectTrigger({ className, children }: SelectTriggerProps) {
         borderBottomRightRadius: isTop ? INSTANT_TRANSITION : keyframeTransition,
       }}
       className={cn(
-        "relative z-10 flex w-full items-center justify-between gap-2 rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground outline-none transition-colors",
+        "relative z-10 flex w-full appearance-none items-center justify-between gap-2 rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground outline-none transition-colors",
         "hover:border-(--color-border-strong) focus-visible:ring-2 focus-visible:ring-foreground/20",
         "disabled:pointer-events-none disabled:opacity-50",
         className,
@@ -366,7 +366,7 @@ export function SelectItem({ value, disabled = false, className, children }: Sel
   }, [context.register, context.unregister, value, label]);
 
   return (
-    <motion.li variants={context.reduce ? undefined : ITEM_VARIANTS}>
+    <motion.li variants={context.reduce ? undefined : ITEM_VARIANTS} className="m-0 list-none p-0">
       <button
         type="button"
         role="option"
@@ -374,11 +374,11 @@ export function SelectItem({ value, disabled = false, className, children }: Sel
         disabled={disabled}
         onClick={() => context.select(value)}
         className={cn(
-          "flex w-full items-center justify-between gap-2 rounded-lg px-2.5 py-1.5 text-left text-sm outline-none transition-colors",
+          "flex w-full appearance-none items-center justify-between gap-2 rounded-lg border-0 bg-transparent px-2.5 py-1.5 text-left text-sm font-inherit outline-none transition-colors",
           selected
             ? "bg-muted text-foreground"
-            : "text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:bg-muted",
-          "disabled:pointer-events-none disabled:opacity-50",
+            : "text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:bg-muted focus-visible:text-foreground",
+          "disabled:pointer-events-none disabled:bg-transparent disabled:text-muted-foreground/45 disabled:opacity-100",
           className,
         )}
       >
