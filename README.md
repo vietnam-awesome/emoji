@@ -11,7 +11,7 @@ An open, searchable emoji directory for developers and communities, inspired by 
 - Public JSON index at `/api/emojis.json`.
 - Automated importers for upstream Unicode sources and selected custom-emoji directories.
 - SHA-256 metadata for exact duplicate detection.
-- GitHub Pages deployment workflow.
+- Incremental GitHub Pages publishing through the `gh-pages` branch.
 - Scheduled source sync workflows with configurable import limits.
 
 ## Current sources
@@ -130,11 +130,22 @@ Each record contains fields such as:
 
 ## GitHub Pages
 
-The website is configured to use the custom domain:
+The website uses the custom domain:
 
 `https://emoji.eplus.dev`
 
-After merging to `main`, enable **Settings → Pages → Source: GitHub Actions** if it is not already enabled. The `Deploy Pages` workflow will build and deploy the site.
+Production publishing is incremental. The workflow builds Astro without checking out `public/emojis`, creates the generated HTML/CSS/JS tree, then reuses the existing Git tree at `main:public/emojis` as `gh-pages:emojis`. This avoids packaging and uploading the multi-gigabyte emoji catalog every time a UI file changes.
+
+The publisher has two modes:
+
+- `site`: used for source/UI/data changes. Astro and the static search index are rebuilt, but emoji binaries are not materialized into `dist`.
+- `assets`: used when a push changes only `public/emojis/**`. The workflow updates only the `emojis` subtree on `gh-pages` and skips Node installation and the Astro build entirely.
+
+After the migration is merged and the first `gh-pages` commit has been prepared, perform the one-time repository setting change **Settings → Pages → Source: Deploy from a branch → `gh-pages` → `/(root)`**. GitHub does not allow the normal workflow `GITHUB_TOKEN` to change this repository administration setting.
+
+The workflow writes `.nojekyll`, preserves `CNAME`, checks whether branch-based Pages is active, and explicitly requests a Pages build on later pushes because pushes made with `GITHUB_TOKEN` do not trigger a branch-based Pages build by themselves.
+
+PR previews remain separate and intentionally use a representative catalog sample plus production-hosted emoji assets.
 
 ## Adding another source
 
