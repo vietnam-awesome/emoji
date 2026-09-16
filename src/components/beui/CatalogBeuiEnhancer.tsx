@@ -27,6 +27,7 @@ type SelectMount = {
 type ModeMount = {
   proxy: HTMLElement;
   host: HTMLDivElement;
+  proxyButtons: HTMLButtonElement[];
 };
 
 type SearchMount = {
@@ -133,6 +134,7 @@ function SearchAdapter({ proxy, submitProxy }: Pick<SearchMount, 'proxy' | 'subm
         onChange={syncProxy}
         placeholder={proxy.placeholder || 'Search'}
         aria-label={proxy.getAttribute('aria-label') || 'Search emoji'}
+        data-beui-visible-search={proxy.id}
         leftIcon={<Search aria-hidden="true" />}
         className="min-w-0 flex-1"
         classNames={{
@@ -213,15 +215,17 @@ export default function CatalogBeuiEnhancer() {
 
     const modeSwitchers = Array.from(document.querySelectorAll<HTMLElement>('.browse-mode-switcher'));
     const nextModeMounts = modeSwitchers.map((proxy, index) => {
+      const proxyButtons = Array.from(proxy.querySelectorAll<HTMLButtonElement>('[data-browse-mode]'));
       proxy.classList.add('beui-native-proxy');
       proxy.setAttribute('aria-hidden', 'true');
+      proxyButtons.forEach((button) => { button.tabIndex = -1; });
 
       const host = document.createElement('div');
       host.className = 'beui-control-host beui-mode-host';
       host.dataset.modeHost = String(index);
       proxy.insertAdjacentElement('afterend', host);
       createdHosts.push(host);
-      return { proxy, host };
+      return { proxy, host, proxyButtons };
     });
 
     const searchInputs = Array.from(document.querySelectorAll<HTMLInputElement>('#emoji-search, #category-search'));
@@ -232,6 +236,8 @@ export default function CatalogBeuiEnhancer() {
       const submitProxy = shell.querySelector<HTMLButtonElement>('.catalog-search-submit');
       shell.classList.add('beui-native-proxy-block');
       shell.setAttribute('aria-hidden', 'true');
+      proxy.tabIndex = -1;
+      if (submitProxy) submitProxy.tabIndex = -1;
 
       const host = document.createElement('div');
       host.className = `beui-search-host ${proxy.id === 'emoji-search' ? 'beui-catalog-search-host' : 'beui-category-search-host'}`;
@@ -249,15 +255,18 @@ export default function CatalogBeuiEnhancer() {
       for (const { proxy } of nextSelectMounts) {
         proxy.classList.remove('beui-native-proxy');
         proxy.removeAttribute('aria-hidden');
-        proxy.removeAttribute('tabindex');
+        proxy.tabIndex = 0;
       }
-      for (const { proxy } of nextModeMounts) {
+      for (const { proxy, proxyButtons } of nextModeMounts) {
         proxy.classList.remove('beui-native-proxy');
         proxy.removeAttribute('aria-hidden');
+        proxyButtons.forEach((button) => { button.tabIndex = 0; });
       }
-      for (const { shell } of nextSearchMounts) {
+      for (const { proxy, shell, submitProxy } of nextSearchMounts) {
         shell.classList.remove('beui-native-proxy-block');
         shell.removeAttribute('aria-hidden');
+        proxy.tabIndex = 0;
+        if (submitProxy) submitProxy.tabIndex = 0;
       }
       createdHosts.forEach((host) => host.remove());
     };
