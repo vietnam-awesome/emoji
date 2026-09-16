@@ -54,17 +54,17 @@ const TYPE_SELECTOR = [
 function readCursorState(target: Element | null): { state: CursorState; label?: string } {
   if (!target) return { state: 'default' };
 
+  const disabled = target.closest<HTMLElement>(
+    ':disabled, [aria-disabled="true"], [data-disabled="true"], [inert], [data-cursor="disabled"]',
+  );
+  if (disabled) return { state: 'disabled', label: disabled.dataset.cursorLabel };
+
   const override = target.closest<HTMLElement>('[data-cursor]');
   const overrideState = override?.dataset.cursor as CursorState | undefined;
   const overrideLabel = override?.dataset.cursorLabel;
-  if (overrideState && ['default', 'click', 'type', 'drag', 'disabled'].includes(overrideState)) {
+  if (overrideState && ['default', 'click', 'type', 'drag'].includes(overrideState)) {
     return { state: overrideState, label: overrideLabel };
   }
-
-  const disabled = target.closest<HTMLElement>(
-    ':disabled, [aria-disabled="true"], [data-disabled="true"], [inert]',
-  );
-  if (disabled) return { state: 'disabled', label: disabled.dataset.cursorLabel };
 
   const typeTarget = target.closest<HTMLElement>(TYPE_SELECTOR);
   if (typeTarget) return { state: 'type', label: typeTarget.dataset.cursorLabel };
