@@ -51,6 +51,11 @@ const TYPE_SELECTOR = [
   'input[type="number"]',
 ].join(',');
 
+/**
+ * Optional per-element overrides:
+ * data-cursor="click|type|drag|selected|disabled|default"
+ * data-cursor-label="custom label"
+ */
 function readCursorState(target: Element | null): { state: CursorState; label?: string } {
   if (!target) return { state: 'default' };
 
