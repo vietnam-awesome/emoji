@@ -1,7 +1,6 @@
 ---
 import { emojiAssetUrl } from '../lib/emojiAsset';
 import { withBase } from '../lib/url';
-import '../styles/emoji-card.css';
 
 interface Emoji {
   slug: string;
@@ -73,7 +72,7 @@ const compact = variant === 'compact';
 >
   {!compact && (
     <>
-      <label class="emoji-select-control" title={`Select ${emoji.name}`}>
+      <label class="emoji-select-control !grid" title={`Select ${emoji.name}`}>
         <input type="checkbox" data-emoji-select aria-label={`Select ${emoji.name}`} />
         <span aria-hidden="true">✓</span>
       </label>

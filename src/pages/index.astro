@@ -1,11 +1,14 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import EmojiCard from '../components/EmojiCard.astro';
+import CategoryPills from '../components/beui/CategoryPills';
+import DeveloperGithubButton from '../components/beui/DeveloperGithubButton';
+import HeroShuffleButton from '../components/beui/HeroShuffleButton';
+import HomeSearchForm from '../components/beui/HomeSearchForm';
 import { emojiAssetUrl } from '../lib/emojiAsset';
 import { withBase } from '../lib/url';
 import emojis from '../data/emojis.json';
 import categories from '../data/categories.json';
-import '../styles/home.css';
 
 const base = import.meta.env.BASE_URL;
 const allEmojiUrl = withBase('/emojis', base);
@@ -46,6 +49,11 @@ const topCategories = [...categories]
   .filter((category) => category.slug !== 'other')
   .sort((a, b) => b.count - a.count)
   .slice(0, 10);
+const topCategoryItems = topCategories.map((category) => ({
+  name: category.name,
+  count: category.count,
+  href: withBase(`/categories/${category.slug}`, base)
+}));
 
 const sections = [
   { title: 'Recently added', subtitle: 'The newest emoji from recent catalog syncs.', items: recent, href: allEmojiUrl },
@@ -64,21 +72,7 @@ const sections = [
         <p class="hero-lead">Search a growing library of custom emoji, reactions and GIFs. Every asset keeps its source, format and attribution metadata.</p>
 
         <div class="hero-search-shell" id="home-search-shell" data-asset-base={previewAssetBase}>
-          <form class="hero-search" action={allEmojiUrl} method="get">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m21 21-4.35-4.35m2.35-5.65a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-            <input
-              id="home-emoji-search"
-              type="search"
-              name="q"
-              placeholder="Search name, :shortcode:, tag or category"
-              aria-label="Search emoji"
-              aria-controls="home-search-results"
-              aria-expanded="false"
-              autocomplete="off"
-            />
-            <button type="submit">Search</button>
-          </form>
-
+          <HomeSearchForm action={allEmojiUrl} client:load />
           <div class="home-search-results" id="home-search-results" aria-live="polite" hidden>
             <div class="home-search-results-head">
               <strong id="home-search-summary">Searching…</strong>
@@ -102,16 +96,13 @@ const sections = [
           <div><span class="status-dot" aria-hidden="true"></span><strong>Emoji picks</strong></div>
           <div class="hero-library-actions">
             <span>{emojis.length.toLocaleString('en-US')} assets</span>
-            <button class="hero-shuffle" id="hero-shuffle" type="button" aria-controls="hero-random-grid" aria-label="Show another set of emoji" title="Shuffle emoji">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              <span>Shuffle</span>
-            </button>
+            <HeroShuffleButton client:load />
           </div>
         </div>
         <div class="hero-library-grid" id="hero-random-grid">
           {showcase.map((emoji) => (
             <a href={withBase(`/emoji/${emoji.slug}`, base)} title={emoji.name}>
-              <img src={emoji.image} alt={emoji.name} loading="eager" width="80" height="80" />
+              <img class="!size-16 !max-h-16 !max-w-16 object-contain" src={emoji.image} alt={emoji.name} loading="eager" width="64" height="64" />
               {emoji.animated && <span>GIF</span>}
             </a>
           ))}
@@ -134,13 +125,7 @@ const sections = [
       <div><p class="section-kicker">Categories</p><h2 id="category-title">Browse popular collections</h2></div>
       <a href={categoriesUrl}>View all categories <span>→</span></a>
     </div>
-    <div class="category-list">
-      {topCategories.map((category) => (
-        <a class="category-chip" href={withBase(`/categories/${category.slug}`, base)}>
-          <span>{category.name}</span><small>{category.count.toLocaleString('en-US')}</small>
-        </a>
-      ))}
-    </div>
+    <CategoryPills client:visible items={topCategoryItems} />
   </section>
 
   {sections.map((section) => section.items.length > 0 && (
@@ -161,28 +146,6 @@ const sections = [
       <h2>No runtime API or Worker required.</h2>
       <p>GitHub Actions generates a compact sharded search index, then deploys the static site to GitHub Pages.</p>
     </div>
-    <div class="developer-actions"><a class="button-primary" href="https://github.com/vietnam-awesome/emoji" rel="noreferrer">GitHub</a></div>
+    <div class="developer-actions"><DeveloperGithubButton client:visible /></div>
   </section>
 </Layout>
-
-<style>
-  .hero-library-actions { display:flex; align-items:center; gap:10px; }
-  .hero-shuffle { display:inline-flex; min-height:30px; align-items:center; gap:6px; padding:0 9px; border:1px solid var(--line); border-radius:7px; background:#fff; color:var(--ink-soft); font:inherit; font-size:.68rem; font-weight:720; cursor:pointer; }
-  .hero-shuffle svg { width:14px; height:14px; }
-
-  .hero-search-shell { position:relative; z-index:20; max-width:680px; margin-top:30px; }
-  .hero-search-shell .hero-search { max-width:none; margin-top:0; }
-  .home-search-results { position:absolute; top:calc(100% + 8px); left:0; right:0; overflow:hidden; max-height:min(520px, 58vh); border:1px solid var(--line-strong); border-radius:12px; background:#fff; box-shadow:0 20px 50px rgba(16,24,40,.14); }
-  .home-search-results[hidden] { display:none; }
-  .home-search-results-head { display:flex; align-items:center; justify-content:space-between; gap:16px; min-height:38px; padding:0 12px; border-bottom:1px solid var(--line); background:#fcfcfd; color:var(--muted-light); font-size:.64rem; }
-  .home-search-results-head strong { color:var(--ink-soft); font-size:.7rem; }
-  .home-search-list { overflow:auto; max-height:390px; }
-  .home-search-all { display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:42px; padding:0 12px; border-top:1px solid var(--line); background:#fcfcfd; color:var(--ink-soft); font-size:.7rem; font-weight:720; text-decoration:none; }
-  .home-search-all:hover { color:var(--ink); background:#f9fafb; }
-
-  @media (max-width:520px) {
-    .hero-library-actions > span,
-    .hero-shuffle span { display:none; }
-    .hero-shuffle { width:30px; justify-content:center; padding:0; }
-  }
-</style>

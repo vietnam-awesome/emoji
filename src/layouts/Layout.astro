@@ -1,9 +1,10 @@
 ---
-import '../styles/global.css';
-import '../styles/header-search.css';
+import '../styles/beui.css';
 import { withBase } from '../lib/url';
 import CatalogDownload from '../components/CatalogDownload.astro';
 import FilterCompatibility from '../components/FilterCompatibility.astro';
+import SiteHeader from '../components/beui/SiteHeader';
+import BackToTop from '../components/beui/BackToTop';
 
 interface Props {
   title?: string;
@@ -36,6 +37,17 @@ const isCategoriesIndex = routePath === '/categories';
 const isCategoryDetail = routePath.startsWith('/categories/');
 const isCategories = isCategoriesIndex || isCategoryDetail;
 const isCollectionPage = isBrowseIndex || isCategoriesIndex || isCategoryDetail;
+const pageKind = isHome
+  ? 'home'
+  : isBrowseIndex
+    ? 'browse'
+    : isEmojiDetail
+      ? 'emoji-detail'
+      : isCategoriesIndex
+        ? 'categories'
+        : isCategoryDetail
+          ? 'category-detail'
+          : 'page';
 
 const absoluteHomeUrl = new URL(homeUrl, origin).toString();
 const absoluteBrowseUrl = new URL(emojisUrl, origin).toString();
@@ -122,8 +134,25 @@ const schemaJson = JSON.stringify({
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script is:inline>
+      (() => {
+        try {
+          const key = 'eplus-emoji-theme';
+          const saved = localStorage.getItem(key);
+          const theme = saved === 'dark' || saved === 'light'
+            ? saved
+            : (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+          const dark = theme === 'dark';
+          document.documentElement.classList.toggle('dark', dark);
+          document.documentElement.style.colorScheme = theme;
+          document.documentElement.dataset.theme = theme;
+        } catch {
+          // localStorage can be unavailable in privacy-restricted contexts.
+        }
+      })();
+    </script>
     <meta name="description" content={description} />
-    <meta name="theme-color" content="#0b1020" />
+    <meta name="theme-color" content="#ffffff" />
     <meta property="og:type" content="website" />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
@@ -131,7 +160,6 @@ const schemaJson = JSON.stringify({
     <link rel="icon" type="image/svg+xml" href={faviconUrl} />
     <link rel="canonical" href={canonical} />
     <script type="application/ld+json" set:html={schemaJson}></script>
-    <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-Z8VQQ5NSBH"></script>
     <script is:inline>
       window.dataLayer = window.dataLayer || [];
@@ -141,47 +169,18 @@ const schemaJson = JSON.stringify({
     </script>
     <title>{title}</title>
   </head>
-  <body>
-    <header class="site-header">
-      <div class="shell header-inner">
-        <a class="brand" href={homeUrl} aria-label="ePlus Emoji home">
-          <span class="brand-mark" aria-hidden="true">😀</span>
-          <span class="brand-copy">
-            <strong>ePlus Emoji</strong>
-            <small>Open emoji directory</small>
-          </span>
-        </a>
-
-        <nav class="nav-links" aria-label="Primary navigation">
-          <a class:list={[{ active: isHome }]} href={homeUrl} aria-current={isHome ? 'page' : undefined}>Home</a>
-          <a class:list={[{ active: isBrowse }]} href={emojisUrl} aria-current={isBrowse ? 'page' : undefined}>Browse</a>
-          <a class:list={[{ active: isCategories }]} href={categoriesUrl} aria-current={isCategories ? 'page' : undefined}>Categories</a>
-        </nav>
-
-        <div class="header-search" id="header-search">
-          <button
-            class="header-search-toggle"
-            id="header-search-toggle"
-            type="button"
-            aria-label="Search emoji"
-            aria-controls="header-search-panel"
-            aria-expanded="false"
-            title="Search emoji"
-          >
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m21 21-4.35-4.35m2.35-5.65a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-          </button>
-          <form class="header-search-panel" id="header-search-panel" action={emojisUrl} method="get" role="search" hidden>
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m21 21-4.35-4.35m2.35-5.65a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-            <input id="header-search-input" type="search" name="q" placeholder="Search emoji, tag or category" autocomplete="off" aria-label="Search emoji" />
-            <button class="header-search-submit" type="submit">Search</button>
-          </form>
-        </div>
-      </div>
-    </header>
+  <body data-ui="beui" data-page={pageKind}>
+    <SiteHeader
+      homeUrl={homeUrl}
+      emojisUrl={emojisUrl}
+      categoriesUrl={categoriesUrl}
+      routePath={routePath}
+      client:load
+    />
 
     <main><slot /></main>
     {isBrowseIndex && <FilterCompatibility />}
-    {isBrowseIndex && <CatalogDownload />}
+    <CatalogDownload />
 
     <footer class="site-footer">
       <div class="shell footer-grid">
@@ -202,49 +201,10 @@ const schemaJson = JSON.stringify({
       </div>
     </footer>
 
-    <button class="back-to-top" id="back-to-top" type="button" aria-label="Back to top" title="Back to top" hidden>
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6.5 14.5 5.5-5.5 5.5 5.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      <span>Top</span>
-    </button>
+    <BackToTop client:load />
 
     <script is:inline>
       (() => {
-        const backToTop = document.querySelector('#back-to-top');
-        const browseSearchInput = document.querySelector('#emoji-search');
-        const homeSearchInput = document.querySelector('#home-emoji-search');
-        const headerSearch = document.querySelector('#header-search');
-        const headerSearchToggle = document.querySelector('#header-search-toggle');
-        const headerSearchPanel = document.querySelector('#header-search-panel');
-        const headerSearchInput = document.querySelector('#header-search-input');
-        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-        let ticking = false;
-
-        const openHeaderSearch = () => {
-          if (!headerSearchPanel || !headerSearchToggle || !headerSearchInput) return;
-          headerSearchPanel.hidden = false;
-          headerSearchToggle.setAttribute('aria-expanded', 'true');
-          window.requestAnimationFrame(() => {
-            headerSearchInput.focus();
-            headerSearchInput.select();
-          });
-        };
-
-        const closeHeaderSearch = () => {
-          if (!headerSearchPanel || !headerSearchToggle) return;
-          headerSearchPanel.hidden = true;
-          headerSearchToggle.setAttribute('aria-expanded', 'false');
-        };
-
-        headerSearchToggle?.addEventListener('click', () => {
-          if (headerSearchPanel?.hidden) openHeaderSearch();
-          else closeHeaderSearch();
-        });
-
-        document.addEventListener('pointerdown', (event) => {
-          if (!headerSearchPanel || headerSearchPanel.hidden || headerSearch?.contains(event.target)) return;
-          closeHeaderSearch();
-        });
-
         const normalizeEmojiLabel = (value) => String(value || '')
           .toLowerCase()
           .normalize('NFKD')
@@ -291,43 +251,25 @@ const schemaJson = JSON.stringify({
         });
         metadataObserver.observe(document.body, { childList: true, subtree: true });
 
-        const syncBackToTop = () => {
-          backToTop.hidden = window.scrollY < Math.max(560, window.innerHeight * 0.72);
-          ticking = false;
-        };
-
-        window.addEventListener('scroll', () => {
-          if (ticking) return;
-          ticking = true;
-          window.requestAnimationFrame(syncBackToTop);
-        }, { passive: true });
-
-        backToTop.addEventListener('click', () => {
-          window.scrollTo({ top: 0, behavior: reduceMotion.matches ? 'auto' : 'smooth' });
-        });
-
         document.addEventListener('keydown', (event) => {
-          if (event.key === 'Escape' && headerSearchPanel && !headerSearchPanel.hidden) {
-            closeHeaderSearch();
-            headerSearchToggle?.focus();
-            return;
-          }
-
           if (event.key !== '/' || event.metaKey || event.ctrlKey || event.altKey) return;
           const tag = document.activeElement?.tagName;
           if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
-          event.preventDefault();
 
-          const pageSearch = browseSearchInput || homeSearchInput;
-          if (pageSearch) {
-            pageSearch.focus();
-            pageSearch.select();
+          const visibleSearch = document.querySelector('[data-beui-visible-search], #home-emoji-search, #emoji-search:not(.beui-native-proxy), #category-search:not(.beui-native-proxy)');
+          if (visibleSearch instanceof HTMLInputElement) {
+            event.preventDefault();
+            visibleSearch.focus();
+            visibleSearch.select();
             return;
           }
-          openHeaderSearch();
-        });
 
-        syncBackToTop();
+          const headerSearch = document.querySelector('[data-header-search-toggle]');
+          if (headerSearch instanceof HTMLButtonElement) {
+            event.preventDefault();
+            headerSearch.click();
+          }
+        });
       })();
     </script>
   </body>
