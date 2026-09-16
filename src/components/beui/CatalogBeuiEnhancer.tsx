@@ -138,12 +138,18 @@ function SearchAdapter({ proxy, submitProxy }: Pick<SearchMount, 'proxy' | 'subm
         leftIcon={<Search aria-hidden="true" />}
         className="min-w-0 flex-1"
         classNames={{
-          field: 'h-11 border-border bg-background',
+          field: 'h-11 border-border bg-background shadow-sm',
           input: 'text-sm'
         }}
       />
       {submitProxy ? (
-        <Button type="submit" ripple disabled={busy} className="h-11 shrink-0 px-5">
+        <Button
+          type="submit"
+          variant="secondary"
+          ripple
+          disabled={busy}
+          className="h-11 shrink-0 bg-background px-5 shadow-sm hover:bg-card"
+        >
           {busy ? 'Searching…' : 'Search'}
         </Button>
       ) : null}
