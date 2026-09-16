@@ -192,7 +192,7 @@ function SearchControl({ config }: { config: SearchConfig }) {
           variant="secondary"
           ripple
           disabled={busy}
-          className="h-11 shrink-0 !border !border-border !bg-background !px-5 !text-foreground !shadow-sm hover:!bg-card"
+          className="h-11 shrink-0 !border !border-border !bg-background !px-5 !text-foreground !shadow-sm hover:!bg-card dark:!border-foreground dark:!bg-foreground dark:!text-background dark:hover:!bg-foreground/90"
         >
           <Search className="size-4" aria-hidden="true" />
           <span>{busy ? 'Searching…' : 'Search'}</span>
