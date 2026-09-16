@@ -1,5 +1,8 @@
+import { Search } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import { useEffect, useState } from 'react';
+import { Button } from '../motion/button';
+import { Input } from '../motion/input';
 import {
   Select,
   SelectContent,
@@ -26,8 +29,14 @@ type ModeMount = {
   host: HTMLDivElement;
 };
 
+type SearchMount = {
+  proxy: HTMLInputElement;
+  shell: HTMLElement;
+  host: HTMLDivElement;
+  submitProxy: HTMLButtonElement | null;
+};
+
 function readSelect(proxy: HTMLSelectElement): SelectSnapshot {
-  const selected = proxy.options[proxy.selectedIndex];
   return {
     value: proxy.value,
     disabled: proxy.disabled,
@@ -84,6 +93,62 @@ function SelectAdapter({ proxy }: { proxy: HTMLSelectElement }) {
   );
 }
 
+function SearchAdapter({ proxy, submitProxy }: Pick<SearchMount, 'proxy' | 'submitProxy'>) {
+  const [value, setValue] = useState(proxy.value);
+  const [busy, setBusy] = useState(Boolean(submitProxy?.classList.contains('is-loading')));
+
+  useEffect(() => {
+    const syncValue = () => setValue(proxy.value);
+    proxy.addEventListener('input', syncValue);
+    proxy.addEventListener('change', syncValue);
+    const timer = window.setInterval(syncValue, 250);
+
+    let observer: MutationObserver | undefined;
+    if (submitProxy) {
+      const syncBusy = () => setBusy(submitProxy.classList.contains('is-loading') || submitProxy.disabled);
+      observer = new MutationObserver(syncBusy);
+      observer.observe(submitProxy, { attributes: true, attributeFilter: ['class', 'disabled'] });
+      syncBusy();
+    }
+
+    return () => {
+      proxy.removeEventListener('input', syncValue);
+      proxy.removeEventListener('change', syncValue);
+      window.clearInterval(timer);
+      observer?.disconnect();
+    };
+  }, [proxy, submitProxy]);
+
+  const syncProxy = (next: string) => {
+    setValue(next);
+    proxy.value = next;
+    proxy.dispatchEvent(new Event('input', { bubbles: true }));
+  };
+
+  return (
+    <div className="flex w-full min-w-0 items-center gap-2">
+      <Input
+        type="search"
+        value={value}
+        onChange={syncProxy}
+        placeholder={proxy.placeholder || 'Search'}
+        aria-label={proxy.getAttribute('aria-label') || 'Search emoji'}
+        leftIcon={<Search aria-hidden="true" />}
+        className="min-w-0 flex-1"
+        classNames={{
+          field: 'h-11 border-border bg-background',
+          input: 'text-sm'
+        }}
+      />
+      {submitProxy ? (
+        <Button type="submit" ripple disabled={busy} className="h-11 shrink-0 px-5">
+          {busy ? 'Searching…' : 'Search'}
+        </Button>
+      ) : null}
+    </div>
+  );
+}
+
 function readMode(proxy: HTMLElement) {
   const buttons = Array.from(proxy.querySelectorAll<HTMLButtonElement>('[data-browse-mode]'));
   return buttons.find((button) => button.getAttribute('aria-pressed') === 'true')?.dataset.browseMode
@@ -125,13 +190,14 @@ function BrowseModeAdapter({ proxy }: { proxy: HTMLElement }) {
 export default function CatalogBeuiEnhancer() {
   const [selectMounts, setSelectMounts] = useState<SelectMount[]>([]);
   const [modeMounts, setModeMounts] = useState<ModeMount[]>([]);
+  const [searchMounts, setSearchMounts] = useState<SearchMount[]>([]);
 
   useEffect(() => {
     const createdHosts: HTMLElement[] = [];
+
     const selects = Array.from(document.querySelectorAll<HTMLSelectElement>(
       '#category-filter, #source-filter, #motion-filter',
     ));
-
     const nextSelectMounts = selects.map((proxy) => {
       proxy.classList.add('beui-native-proxy');
       proxy.setAttribute('aria-hidden', 'true');
@@ -158,8 +224,26 @@ export default function CatalogBeuiEnhancer() {
       return { proxy, host };
     });
 
+    const searchInputs = Array.from(document.querySelectorAll<HTMLInputElement>('#emoji-search, #category-search'));
+    const nextSearchMounts = searchInputs.flatMap((proxy) => {
+      const shell = proxy.closest<HTMLElement>('.catalog-search, .category-search');
+      if (!shell) return [];
+
+      const submitProxy = shell.querySelector<HTMLButtonElement>('.catalog-search-submit');
+      shell.classList.add('beui-native-proxy-block');
+      shell.setAttribute('aria-hidden', 'true');
+
+      const host = document.createElement('div');
+      host.className = `beui-search-host ${proxy.id === 'emoji-search' ? 'beui-catalog-search-host' : 'beui-category-search-host'}`;
+      host.dataset.forControl = proxy.id;
+      shell.insertAdjacentElement('afterend', host);
+      createdHosts.push(host);
+      return [{ proxy, shell, host, submitProxy }];
+    });
+
     setSelectMounts(nextSelectMounts);
     setModeMounts(nextModeMounts);
+    setSearchMounts(nextSearchMounts);
 
     return () => {
       for (const { proxy } of nextSelectMounts) {
@@ -170,6 +254,10 @@ export default function CatalogBeuiEnhancer() {
       for (const { proxy } of nextModeMounts) {
         proxy.classList.remove('beui-native-proxy');
         proxy.removeAttribute('aria-hidden');
+      }
+      for (const { shell } of nextSearchMounts) {
+        shell.classList.remove('beui-native-proxy-block');
+        shell.removeAttribute('aria-hidden');
       }
       createdHosts.forEach((host) => host.remove());
     };
@@ -182,6 +270,9 @@ export default function CatalogBeuiEnhancer() {
       )}
       {modeMounts.map(({ proxy, host }, index) =>
         createPortal(<BrowseModeAdapter proxy={proxy} />, host, `mode-${index}`),
+      )}
+      {searchMounts.map(({ proxy, host, submitProxy }) =>
+        createPortal(<SearchAdapter proxy={proxy} submitProxy={submitProxy} />, host, `search-${proxy.id}`),
       )}
     </>
   );
