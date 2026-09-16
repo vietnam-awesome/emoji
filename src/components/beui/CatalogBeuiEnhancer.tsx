@@ -9,7 +9,6 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from '../motion/select';
 import { Tabs, TabsList, TabsTrigger } from '../motion/tabs';
 
@@ -81,6 +80,7 @@ function SelectControl({ config }: { config: SelectConfig }) {
     options: config.options,
   });
   const Icon = config.icon ? selectIcons[config.icon] : null;
+  const selectedLabel = snapshot.options.find((option) => option.value === snapshot.value)?.label ?? config.label;
 
   useEffect(() => {
     const proxy = document.getElementById(config.proxyId);
@@ -117,7 +117,7 @@ function SelectControl({ config }: { config: SelectConfig }) {
       <SelectTrigger className="h-10 w-full bg-background shadow-sm" aria-label={config.label}>
         <span className="flex min-w-0 items-center gap-2">
           {Icon ? <Icon className="size-4 shrink-0 text-muted-foreground" aria-hidden={true} /> : null}
-          <SelectValue placeholder={config.label} className="truncate" />
+          <span className="min-w-0 flex-1 truncate text-left">{selectedLabel}</span>
         </span>
       </SelectTrigger>
       <SelectContent className="[&>div]:max-h-72 [&>div]:overflow-y-auto [&>div]:scrollbar-hide">
