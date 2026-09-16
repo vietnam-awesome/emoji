@@ -205,7 +205,7 @@ export default function SiteHeader({ homeUrl, emojisUrl, categoriesUrl, routePat
                   size="sm"
                   variant="secondary"
                   ripple
-                  className="shrink-0 !border !border-border !bg-background !text-foreground !shadow-sm hover:!bg-card"
+                  className="shrink-0 !border !border-border !bg-background !text-foreground !shadow-sm hover:!bg-card dark:!border-foreground dark:!bg-foreground dark:!text-background dark:hover:!bg-foreground/90"
                 >
                   Search
                 </Button>
