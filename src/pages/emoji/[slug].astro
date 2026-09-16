@@ -4,15 +4,6 @@ import EmojiDetail from '../../components/beui/EmojiDetail.astro';
 import emojis from '../../data/emojis.json';
 
 export function getStaticPaths() {
-  const skipDetailPages = process.env.SKIP_EMOJI_DETAIL_PAGES === '1';
-  if (skipDetailPages) {
-    console.log(
-      `[ui-build] skipping ${emojis.length.toLocaleString('en-US')} emoji detail pages; ` +
-      'the previously published /emoji tree will be preserved'
-    );
-    return [];
-  }
-
   const fastBuild = process.env.FAST_BUILD === '1';
   const requestedLimit = Number.parseInt(process.env.FAST_BUILD_DETAIL_LIMIT || '300', 10);
   let detailRecords = emojis;
