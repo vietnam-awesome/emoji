@@ -1,4 +1,5 @@
 ---
+import EmojiShareDialog from './EmojiShareDialog.astro';
 import { emojiAssetUrl } from '../../lib/emojiAsset';
 import { emojiCategorySlug } from '../../lib/category';
 import { withBase } from '../../lib/url';
@@ -84,12 +85,7 @@ const tagTargetUrl = (tag) => {
           <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M12 4v10m0 0 4-4m-4 4-4-4M5 19h14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
           Download {String(emoji.format || '').toUpperCase()}
         </a>
-        {emoji.sourceUrl && (
-          <a class="secondary-action" href={emoji.sourceUrl} rel="noreferrer">
-            <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M14 5h5v5m0-5-8 8M19 13v5a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            View original source
-          </a>
-        )}
+        <EmojiShareDialog emoji={emoji} imageUrl={imageUrl} />
       </div>
 
       <dl class="metadata-list">
