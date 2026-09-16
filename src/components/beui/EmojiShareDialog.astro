@@ -1,0 +1,241 @@
+---
+const { emoji, imageUrl } = Astro.props;
+const dialogId = `emoji-share-${emoji.slug}`;
+---
+
+<div class="emoji-share-control">
+  <button
+    class="secondary-action emoji-share-trigger"
+    type="button"
+    data-share-open={dialogId}
+    aria-haspopup="dialog"
+    aria-controls={dialogId}
+  >
+    <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
+      <circle cx="18" cy="5" r="2.5" fill="none" stroke="currentColor" stroke-width="1.8" />
+      <circle cx="6" cy="12" r="2.5" fill="none" stroke="currentColor" stroke-width="1.8" />
+      <circle cx="18" cy="19" r="2.5" fill="none" stroke="currentColor" stroke-width="1.8" />
+      <path d="m8.3 10.8 7.4-4.5M8.3 13.2l7.4 4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+    </svg>
+    Share
+  </button>
+
+  <dialog
+    class="emoji-share-dialog"
+    id={dialogId}
+    data-share-dialog
+    data-image-url={imageUrl}
+    data-emoji-name={emoji.name}
+  >
+    <div class="emoji-share-panel">
+      <div class="emoji-share-header">
+        <div>
+          <p class="emoji-share-kicker">Share emoji</p>
+          <h2>{emoji.name}</h2>
+        </div>
+        <button class="emoji-share-close" type="button" data-share-close aria-label="Close share dialog">×</button>
+      </div>
+
+      <div class="emoji-share-preview">
+        <span class="emoji-share-image"><img src={imageUrl} alt="" /></span>
+        <div>
+          <strong>{emoji.name}</strong>
+          <span>{emoji.sourceLabel}</span>
+        </div>
+      </div>
+
+      <div class="emoji-share-actions">
+        <button class="emoji-share-action emoji-share-action-primary" type="button" data-share-native>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0L8 8m4-4 4 4M5 13v6h14v-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span><strong>Share emoji</strong><small>Use your device share menu</small></span>
+        </button>
+
+        <button class="emoji-share-action" type="button" data-share-copy="page">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.1.1l2-2a5 5 0 0 0-7.1-7.1l-1.1 1.1m3.1 5.8a5 5 0 0 0-7.1-.1l-2 2A5 5 0 0 0 12 20l1.1-1.1" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          <span><strong>Copy page link</strong><small data-share-copy-label="page">Link to this emoji page</small></span>
+        </button>
+
+        <button class="emoji-share-action" type="button" data-share-copy="image">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="9" cy="9" r="1.5" fill="currentColor"/><path d="m6.5 17 4.2-4.2 2.7 2.7 1.7-1.7 2.4 3.2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span><strong>Copy image link</strong><small data-share-copy-label="image">Direct image URL</small></span>
+        </button>
+
+        <a class="emoji-share-action" href={imageUrl} target="_blank" rel="noreferrer">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 5h5v5m0-5-8 8M19 13v5a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span><strong>Open image</strong><small>View the asset directly</small></span>
+        </a>
+      </div>
+    </div>
+  </dialog>
+</div>
+
+<script>
+  const copyText = async (value) => {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(value);
+      return;
+    }
+    const textarea = document.createElement('textarea');
+    textarea.value = value;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.append(textarea);
+    textarea.select();
+    document.execCommand('copy');
+    textarea.remove();
+  };
+
+  document.addEventListener('click', async (event) => {
+    const target = event.target instanceof Element ? event.target : null;
+    if (!target) return;
+
+    const opener = target.closest('[data-share-open]');
+    if (opener instanceof HTMLButtonElement) {
+      const dialog = document.getElementById(opener.dataset.shareOpen || '');
+      if (dialog instanceof HTMLDialogElement) dialog.showModal();
+      return;
+    }
+
+    const close = target.closest('[data-share-close]');
+    if (close) {
+      const dialog = close.closest('dialog');
+      if (dialog instanceof HTMLDialogElement) dialog.close();
+      return;
+    }
+
+    const nativeShare = target.closest('[data-share-native]');
+    if (nativeShare instanceof HTMLButtonElement) {
+      const dialog = nativeShare.closest('[data-share-dialog]');
+      if (!(dialog instanceof HTMLDialogElement)) return;
+      const pageUrl = `${window.location.origin}${window.location.pathname}`;
+      const name = dialog.dataset.emojiName || document.title;
+      if (navigator.share) {
+        try {
+          await navigator.share({ title: name, text: `Check out ${name} on ePlus Emoji`, url: pageUrl });
+          return;
+        } catch (error) {
+          if (error instanceof DOMException && error.name === 'AbortError') return;
+        }
+      }
+      await copyText(pageUrl);
+      const small = nativeShare.querySelector('small');
+      if (small) {
+        const previous = small.textContent;
+        small.textContent = 'Link copied';
+        window.setTimeout(() => { small.textContent = previous; }, 1200);
+      }
+      return;
+    }
+
+    const copyButton = target.closest('[data-share-copy]');
+    if (copyButton instanceof HTMLButtonElement) {
+      const dialog = copyButton.closest('[data-share-dialog]');
+      if (!(dialog instanceof HTMLDialogElement)) return;
+      const kind = copyButton.dataset.shareCopy;
+      const pageUrl = `${window.location.origin}${window.location.pathname}`;
+      const imageUrl = new URL(dialog.dataset.imageUrl || '', window.location.href).href;
+      await copyText(kind === 'image' ? imageUrl : pageUrl);
+      const label = copyButton.querySelector(`[data-share-copy-label="${kind}"]`);
+      if (label) {
+        const previous = label.textContent;
+        label.textContent = 'Copied';
+        window.setTimeout(() => { label.textContent = previous; }, 1200);
+      }
+    }
+  });
+
+  document.addEventListener('click', (event) => {
+    if (!(event.target instanceof HTMLDialogElement)) return;
+    if (event.target.matches('[data-share-dialog]')) event.target.close();
+  });
+</script>
+
+<style>
+  .emoji-share-control { display: inline-flex; }
+  .emoji-share-trigger { gap: .45rem; cursor: pointer; }
+
+  .emoji-share-dialog {
+    width: min(440px, calc(100vw - 28px));
+    max-width: none;
+    margin: auto;
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: 22px;
+    background: var(--background);
+    color: var(--foreground);
+    box-shadow: 0 24px 80px rgb(0 0 0 / .22);
+  }
+
+  .emoji-share-dialog::backdrop {
+    background: rgb(0 0 0 / .44);
+    backdrop-filter: blur(5px);
+  }
+
+  .emoji-share-panel { padding: 20px; }
+  .emoji-share-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+  .emoji-share-kicker { margin: 0 0 4px; color: var(--muted-foreground); font-size: .68rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+  .emoji-share-header h2 { margin: 0; font-size: 1.2rem; letter-spacing: -.025em; }
+  .emoji-share-close {
+    display: grid;
+    width: 34px;
+    height: 34px;
+    flex: 0 0 auto;
+    place-items: center;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--card);
+    color: var(--foreground);
+    font-size: 1.25rem;
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  .emoji-share-preview {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 18px 0;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: var(--card);
+  }
+  .emoji-share-image { display: grid; width: 54px; height: 54px; flex: 0 0 auto; place-items: center; overflow: hidden; border-radius: 12px; background: var(--background); }
+  .emoji-share-image img { max-width: 42px; max-height: 42px; object-fit: contain; }
+  .emoji-share-preview div { min-width: 0; }
+  .emoji-share-preview strong, .emoji-share-preview span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .emoji-share-preview strong { font-size: .88rem; }
+  .emoji-share-preview span { margin-top: 3px; color: var(--muted-foreground); font-size: .72rem; }
+
+  .emoji-share-actions { display: grid; gap: 8px; }
+  .emoji-share-action {
+    display: flex;
+    width: 100%;
+    min-width: 0;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 12px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--background);
+    color: var(--foreground);
+    text-align: left;
+    text-decoration: none;
+    cursor: pointer;
+    transition: border-color .15s ease, background .15s ease, transform .15s ease;
+  }
+  .emoji-share-action:hover { border-color: var(--border-strong); background: var(--card); transform: translateY(-1px); }
+  .emoji-share-action-primary { background: var(--primary); color: var(--primary-foreground); border-color: var(--primary); }
+  .emoji-share-action-primary:hover { background: var(--primary); color: var(--primary-foreground); opacity: .94; }
+  .emoji-share-action > svg { width: 19px; height: 19px; flex: 0 0 auto; }
+  .emoji-share-action > span { min-width: 0; }
+  .emoji-share-action strong, .emoji-share-action small { display: block; }
+  .emoji-share-action strong { font-size: .8rem; font-weight: 650; }
+  .emoji-share-action small { margin-top: 2px; color: var(--muted-foreground); font-size: .68rem; }
+  .emoji-share-action-primary small { color: color-mix(in oklab, var(--primary-foreground) 70%, transparent); }
+
+  @media (max-width: 520px) {
+    .emoji-share-dialog { width: calc(100vw - 20px); border-radius: 18px; }
+    .emoji-share-panel { padding: 16px; }
+  }
+</style>
