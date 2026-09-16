@@ -150,6 +150,53 @@ body[data-ui="beui"][data-page="browse"] .catalog-controls {
   gap: 10px;
 }
 
+/*
+ * Native controls are retained only as hidden state/logic proxies. Hide them
+ * from the very first CSS paint instead of waiting for React useEffect(), which
+ * previously caused the legacy toolbar to flash before the beUI toolbar mounted.
+ */
+body[data-ui="beui"][data-page="browse"] .catalog-search,
+body[data-ui="beui"][data-page="browse"] #category-filter,
+body[data-ui="beui"][data-page="browse"] #source-filter,
+body[data-ui="beui"][data-page="browse"] #motion-filter,
+body[data-ui="beui"][data-page="browse"] .browse-mode-switcher,
+body[data-ui="beui"][data-page="category-detail"] .browse-mode-switcher {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  margin: -1px !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  clip: rect(0 0 0 0) !important;
+  clip-path: inset(50%) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* Preserve the final toolbar geometry while the small React island hydrates. */
+body[data-ui="beui"][data-page="browse"] .catalog-controls:not(:has(.beui-catalog-search-host))::before {
+  content: "";
+  display: block;
+  grid-column: 1 / -1;
+  min-height: 44px;
+}
+
+body[data-ui="beui"][data-page="browse"] .filter-row:not(:has(.beui-control-host))::before {
+  content: "";
+  display: block;
+  grid-column: 1 / -1;
+  min-height: 40px;
+}
+
+body[data-ui="beui"] :where(.results-toolbar, .category-results-toolbar):not(:has(.beui-mode-host))::after {
+  content: "";
+  display: block;
+  flex: 0 0 148px;
+  min-height: 36px;
+}
+
 body[data-ui="beui"][data-page="browse"] .beui-catalog-search-host {
   width: 100%;
   min-width: 0;
