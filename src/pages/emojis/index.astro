@@ -1,6 +1,7 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import EmojiCard from '../../components/EmojiCard.astro';
+import CatalogBeuiEnhancer from '../../components/beui/CatalogBeuiEnhancer';
 import { catalogConfig } from '../../config/catalog';
 import emojis from '../../data/emojis.json';
 import '../../styles/pagination.css';
@@ -28,6 +29,38 @@ for (const emoji of emojis) {
 
 const categories = [...categoryCounts.values()].sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
 const sources = [...sourceCounts.values()].sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+const animatedCount = emojis.filter((emoji) => emoji.animated).length;
+const staticCount = emojis.length - animatedCount;
+const browseSelects = [
+  {
+    proxyId: 'category-filter',
+    label: 'Filter by category',
+    icon: 'category',
+    options: [
+      { value: '', label: `All categories · ${emojis.length.toLocaleString('en-US')}` },
+      ...categories.map((item) => ({ value: item.slug, label: `${item.name} · ${item.count.toLocaleString('en-US')}` }))
+    ]
+  },
+  {
+    proxyId: 'source-filter',
+    label: 'Filter by source',
+    icon: 'source',
+    options: [
+      { value: '', label: `All sources · ${emojis.length.toLocaleString('en-US')}` },
+      ...sources.map((item) => ({ value: item.slug, label: `${item.name} · ${item.count.toLocaleString('en-US')}` }))
+    ]
+  },
+  {
+    proxyId: 'motion-filter',
+    label: 'Filter by animation',
+    icon: 'motion',
+    options: [
+      { value: '', label: `Static + animated · ${emojis.length.toLocaleString('en-US')}` },
+      { value: 'yes', label: `Animated only · ${animatedCount.toLocaleString('en-US')}` },
+      { value: 'no', label: `Static only · ${staticCount.toLocaleString('en-US')}` }
+    ]
+  }
+];
 ---
 <Layout
   title="Browse all emoji — ePlus Emoji"
@@ -49,42 +82,61 @@ const sources = [...sourceCounts.values()].sort((a, b) => b.count - a.count || a
     </header>
 
     <form class="catalog-controls" id="catalog-filter-form" role="search" aria-label="Emoji search and filters">
-      <label class="search-box catalog-search">
+      <label class="search-box catalog-search beui-native-proxy-block" aria-hidden="true">
         <span class="search-icon" aria-hidden="true">⌕</span>
         <span class="sr-only">Search emoji</span>
-        <input id="emoji-search" type="search" placeholder="Search emoji, :shortcode:, tag or category" autocomplete="off" />
-        <button class="catalog-search-submit" type="submit" aria-label="Search">
+        <input id="emoji-search" type="search" placeholder="Search emoji, :shortcode:, tag or category" autocomplete="off" tabindex="-1" />
+        <button class="catalog-search-submit" type="submit" aria-label="Search" tabindex="-1">
           <span class="search-submit-label">Search</span>
           <span class="search-submit-spinner" aria-hidden="true"></span>
         </button>
       </label>
 
-      <div class="filter-row">
-        <select id="category-filter" aria-label="Filter by category">
-          <option value="">All categories</option>
+      <div class="filter-row beui-native-proxy-block" aria-hidden="true">
+        <select id="category-filter" aria-label="Filter by category" tabindex="-1">
+          <option value="">All categories · {emojis.length.toLocaleString('en-US')}</option>
           {categories.map((item) => <option value={item.slug}>{item.name} · {item.count.toLocaleString('en-US')}</option>)}
         </select>
-        <select id="source-filter" aria-label="Filter by source">
-          <option value="">All sources</option>
+        <select id="source-filter" aria-label="Filter by source" tabindex="-1">
+          <option value="">All sources · {emojis.length.toLocaleString('en-US')}</option>
           {sources.map((item) => <option value={item.slug}>{item.name} · {item.count.toLocaleString('en-US')}</option>)}
         </select>
-        <select id="motion-filter" aria-label="Filter by animation">
-          <option value="">Static + animated</option>
-          <option value="yes">Animated only</option>
-          <option value="no">Static only</option>
+        <select id="motion-filter" aria-label="Filter by animation" tabindex="-1">
+          <option value="">Static + animated · {emojis.length.toLocaleString('en-US')}</option>
+          <option value="yes">Animated only · {animatedCount.toLocaleString('en-US')}</option>
+          <option value="no">Static only · {staticCount.toLocaleString('en-US')}</option>
         </select>
-        <button class="clear-filters" id="clear-filters" type="button" hidden>Clear</button>
+        <button class="clear-filters" id="clear-filters" type="button" hidden tabindex="-1">Clear</button>
       </div>
+
+      <CatalogBeuiEnhancer
+        search={{
+          proxyId: 'emoji-search',
+          placeholder: 'Search emoji, :shortcode:, tag or category',
+          label: 'Search emoji',
+          submitProxySelector: '.catalog-search-submit',
+          showSubmit: true
+        }}
+        selects={browseSelects}
+        clearProxyId="clear-filters"
+        className="beui-catalog-control-stack"
+        client:load
+      />
     </form>
 
     <div class="results-toolbar">
       <p class="results-summary" id="range-count" aria-live="polite">
         Showing 1–{Math.min(PAGE_SIZE, emojis.length).toLocaleString('en-US')} of {emojis.length.toLocaleString('en-US')}
       </p>
-      <div class="browse-mode-switcher" role="group" aria-label="Choose how emoji are loaded">
-        <button class="browse-mode-button is-active" type="button" data-browse-mode="scroll" aria-pressed="true"><span aria-hidden="true">↕</span> Scroll</button>
-        <button class="browse-mode-button" type="button" data-browse-mode="pagination" aria-pressed="false"><span aria-hidden="true">☷</span> Pages</button>
+      <div class="browse-mode-switcher beui-native-proxy" role="group" aria-label="Choose how emoji are loaded" aria-hidden="true">
+        <button class="browse-mode-button is-active" type="button" data-browse-mode="scroll" aria-pressed="true" tabindex="-1"><span aria-hidden="true">↕</span> Scroll</button>
+        <button class="browse-mode-button" type="button" data-browse-mode="pagination" aria-pressed="false" tabindex="-1"><span aria-hidden="true">☷</span> Pages</button>
       </div>
+      <CatalogBeuiEnhancer
+        mode={{ proxySelector: '#explorer .browse-mode-switcher', label: 'Choose how emoji are loaded' }}
+        className="beui-mode-control"
+        client:load
+      />
     </div>
 
     <div class="catalog-results-stage" id="catalog-results-stage">
@@ -472,13 +524,15 @@ const sources = [...sourceCounts.values()].sort((a, b) => b.count - a.count || a
       clearFilters.hidden = !hasFilters();
     }
 
-    async function applyFilters(reason = 'filter') {
+    async function applyFilters(reason = 'filter', { silent = false } = {}) {
       if (busy) return;
       const term = search.value.trim();
-      if (reason === 'search' && term) {
-        setLoading('Searching emoji…', `Finding “${term}” in the static search index.`);
-      } else {
-        setLoading('Filtering emoji…', 'Loading the matching facet shard and result chunks.');
+      if (!silent) {
+        if (reason === 'search' && term) {
+          setLoading('Searching emoji…', `Finding “${term}” in the static search index.`);
+        } else {
+          setLoading('Filtering emoji…', 'Loading the matching facet shard and result chunks.');
+        }
       }
       try {
         resultIds = await resolveIds();
@@ -490,12 +544,14 @@ const sources = [...sourceCounts.values()].sort((a, b) => b.count - a.count || a
         syncUrl();
       } catch (error) {
         console.error('Could not update emoji results', error);
-        if (loadingTitle) loadingTitle.textContent = 'Could not load results';
-        if (loadingDetail) loadingDetail.textContent = 'Please retry the search or filter.';
-        setTimeout(clearLoading, 1200);
+        if (!silent) {
+          if (loadingTitle) loadingTitle.textContent = 'Could not load results';
+          if (loadingDetail) loadingDetail.textContent = 'Please retry the search or filter.';
+          setTimeout(clearLoading, 1200);
+        }
         return;
       }
-      clearLoading();
+      if (!silent) clearLoading();
     }
 
     async function loadMore() {
@@ -578,7 +634,7 @@ const sources = [...sourceCounts.values()].sort((a, b) => b.count - a.count || a
     clearFilters.hidden = !hasFilters();
 
     if (hasFilters() || currentPage > 1 || mode === 'pagination') {
-      requestAnimationFrame(() => applyFilters(search.value.trim() ? 'search' : 'filter'));
+      requestAnimationFrame(() => applyFilters(search.value.trim() ? 'search' : 'filter', { silent: true }));
     }
   </script>
 </Layout>
