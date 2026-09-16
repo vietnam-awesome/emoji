@@ -11,6 +11,7 @@ const sourceRef = process.env.SOURCE_REF || 'HEAD';
 const deployMode = process.env.DEPLOY_MODE || 'site';
 const distDir = resolve(repoRoot, process.env.DIST_DIR || 'dist');
 const outputFile = process.env.GITHUB_OUTPUT || '';
+const assetTreeMarker = '.emoji-assets-tree';
 
 if (!['site', 'assets'].includes(deployMode)) {
   throw new Error(`Unsupported DEPLOY_MODE: ${deployMode}`);
@@ -44,27 +45,89 @@ function tryGit(args) {
   return result.status === 0 ? result.stdout.trim() : '';
 }
 
-function treeEntryName(entry) {
-  const tab = entry.indexOf('\t');
-  return tab === -1 ? '' : entry.slice(tab + 1);
-}
-
-function replaceRootTreeEntry(treeSha, name, childTreeSha) {
-  const raw = runGit(['ls-tree', '-z', treeSha], { encoding: 'buffer' });
-  const entries = raw
-    .toString('utf8')
+function parseTreeEntries(treeSha) {
+  if (!treeSha) return [];
+  const raw = runGit(['ls-tree', '-z', treeSha], { encoding: 'buffer' }).toString('utf8');
+  return raw
     .split('\0')
     .filter(Boolean)
-    .filter((entry) => treeEntryName(entry) !== name);
+    .map((entry) => {
+      const tab = entry.indexOf('\t');
+      if (tab === -1) throw new Error(`Invalid git tree entry: ${entry}`);
+      const [mode, type, sha] = entry.slice(0, tab).split(' ');
+      return { mode, type, sha, name: entry.slice(tab + 1) };
+    });
+}
 
-  entries.push(`040000 tree ${childTreeSha}\t${name}`);
-  entries.sort((left, right) => Buffer.compare(
-    Buffer.from(treeEntryName(left), 'utf8'),
-    Buffer.from(treeEntryName(right), 'utf8')
-  ));
+function treeSortKey(entry) {
+  return Buffer.from(`${entry.name}${entry.type === 'tree' ? '/' : ''}`, 'utf8');
+}
 
-  const input = Buffer.from(`${entries.join('\0')}\0`, 'utf8');
-  return runGit(['mktree', '-z'], { input, encoding: 'buffer' }).toString('utf8').trim();
+function writeTreeEntries(entries) {
+  const ordered = [...entries].sort((left, right) => Buffer.compare(treeSortKey(left), treeSortKey(right)));
+  const payload = Buffer.from(
+    `${ordered.map((entry) => `${entry.mode} ${entry.type} ${entry.sha}\t${entry.name}`).join('\0')}\0`,
+    'utf8'
+  );
+  return runGit(['mktree', '-z'], { input: payload, encoding: 'buffer' }).toString('utf8').trim();
+}
+
+function upsertTreeEntry(treeSha, replacement) {
+  const entries = parseTreeEntries(treeSha);
+  const index = entries.findIndex((entry) => entry.name === replacement.name);
+  if (index === -1) entries.push(replacement);
+  else entries[index] = replacement;
+  return writeTreeEntries(entries);
+}
+
+function mergeDisjointTrees(baseTreeSha, overlayTreeSha, label) {
+  const base = parseTreeEntries(baseTreeSha);
+  const overlay = parseTreeEntries(overlayTreeSha);
+  const baseByName = new Map(base.map((entry) => [entry.name, entry]));
+
+  for (const entry of overlay) {
+    if (baseByName.has(entry.name)) {
+      throw new Error(
+        `${label} tree collision at ${entry.name}. ` +
+        'Generated /emojis routes and production emoji asset top-level paths must remain disjoint.'
+      );
+    }
+  }
+
+  return writeTreeEntries([...base, ...overlay]);
+}
+
+function subtractExactTreeEntries(mergedTreeSha, subtractTreeSha, label) {
+  const merged = parseTreeEntries(mergedTreeSha);
+  const subtract = new Map(parseTreeEntries(subtractTreeSha).map((entry) => [entry.name, entry]));
+  const kept = [];
+
+  for (const entry of merged) {
+    const previousAsset = subtract.get(entry.name);
+    if (!previousAsset) {
+      kept.push(entry);
+      continue;
+    }
+
+    if (
+      previousAsset.mode !== entry.mode ||
+      previousAsset.type !== entry.type ||
+      previousAsset.sha !== entry.sha
+    ) {
+      throw new Error(
+        `${label} cannot safely remove previous asset entry ${entry.name}: ` +
+        'the published tree no longer matches the recorded asset tree.'
+      );
+    }
+  }
+
+  for (const name of subtract.keys()) {
+    if (!merged.some((entry) => entry.name === name)) {
+      throw new Error(`${label} is missing previously published asset entry ${name}. Run a full site publish.`);
+    }
+  }
+
+  return writeTreeEntries(kept);
 }
 
 function setOutput(key, value) {
@@ -83,17 +146,46 @@ try {
     if (!parentCommit) {
       throw new Error('Asset-only publish requires an existing gh-pages branch. Run a full site publish first.');
     }
+
+    const previousEmojiTree = tryGit(['show', `${parentCommit}:${assetTreeMarker}`]);
+    if (!previousEmojiTree) {
+      throw new Error(`Published ${publishBranch} is missing ${assetTreeMarker}. Run a full site publish first.`);
+    }
+
     const parentTree = runGit(['rev-parse', `${parentCommit}^{tree}`]).trim();
-    rootTree = replaceRootTreeEntry(parentTree, 'emojis', emojiTree);
+    const publishedEmojiTree = runGit(['rev-parse', `${parentCommit}:emojis`]).trim();
+    const generatedRouteTree = subtractExactTreeEntries(
+      publishedEmojiTree,
+      previousEmojiTree.trim(),
+      'Asset-only publish'
+    );
+    const mergedEmojiTree = mergeDisjointTrees(
+      emojiTree,
+      generatedRouteTree,
+      'Asset-only publish'
+    );
+
+    rootTree = upsertTreeEntry(parentTree, {
+      mode: '040000',
+      type: 'tree',
+      sha: mergedEmojiTree,
+      name: 'emojis'
+    });
+
+    const markerBlob = runGit(['hash-object', '-w', '--stdin'], { input: `${emojiTree}\n` }).trim();
+    rootTree = upsertTreeEntry(rootTree, {
+      mode: '100644',
+      type: 'blob',
+      sha: markerBlob,
+      name: assetTreeMarker
+    });
   } else {
     if (!existsSync(distDir)) {
       throw new Error(`Build output does not exist: ${distDir}`);
     }
-    if (existsSync(join(distDir, 'emojis'))) {
-      throw new Error('dist/emojis exists. Production UI builds must not materialize the emoji asset catalog.');
-    }
 
     writeFileSync(join(distDir, '.nojekyll'), '');
+    writeFileSync(join(distDir, assetTreeMarker), `${emojiTree}\n`);
     const sourceCname = resolve(repoRoot, 'public/CNAME');
     const distCname = join(distDir, 'CNAME');
     if (existsSync(sourceCname) && !existsSync(distCname)) copyFileSync(sourceCname, distCname);
@@ -111,7 +203,17 @@ try {
     ], { env: indexEnv });
 
     const distTree = runGit(['write-tree'], { env: indexEnv }).trim();
-    rootTree = replaceRootTreeEntry(distTree, 'emojis', emojiTree);
+    const generatedEmojiRouteTree = tryGit(['rev-parse', `${distTree}:emojis`]);
+    const mergedEmojiTree = generatedEmojiRouteTree
+      ? mergeDisjointTrees(emojiTree, generatedEmojiRouteTree, 'Full site publish')
+      : emojiTree;
+
+    rootTree = upsertTreeEntry(distTree, {
+      mode: '040000',
+      type: 'tree',
+      sha: mergedEmojiTree,
+      name: 'emojis'
+    });
   }
 
   const previousTree = parentCommit ? runGit(['rev-parse', `${parentCommit}^{tree}`]).trim() : '';
@@ -138,7 +240,8 @@ try {
 
     console.log(`Prepared ${publishBranch} commit ${commitSha}`);
     console.log(`Source: ${sourceSha}`);
-    console.log(`Emoji tree reused from ${sourceRef}:public/emojis: ${emojiTree}`);
+    console.log(`Emoji asset tree reused from ${sourceRef}:public/emojis: ${emojiTree}`);
+    console.log('Generated /emojis route entries are merged into the same published subtree.');
     console.log(`Deployment mode: ${deployMode}`);
 
     setOutput('changed', 'true');
