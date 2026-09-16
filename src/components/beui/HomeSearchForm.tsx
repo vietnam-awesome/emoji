@@ -33,9 +33,9 @@ export default function HomeSearchForm({ action }: HomeSearchFormProps) {
       <Button
         type="submit"
         size="md"
-        variant="secondary"
+        variant="primary"
         ripple
-        className="beui-search-button shrink-0 !border !border-border !bg-background !text-foreground !shadow-sm hover:!bg-card dark:!border-foreground dark:!bg-foreground dark:!text-background dark:hover:!bg-foreground/90"
+        className="beui-search-button shrink-0 !border !border-primary !bg-primary !text-primary-foreground !shadow-sm hover:!bg-primary/90"
       >
         Search
       </Button>
