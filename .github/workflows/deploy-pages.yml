@@ -92,9 +92,16 @@ jobs:
         run: |
           set -euo pipefail
           test -s dist/index.html
-          test ! -e dist/emojis
+          test -s dist/emojis/index.html
+
+          unexpected_file="$(find dist/emojis -type f ! -path 'dist/emojis/index.html' -print -quit)"
+          if [ -n "$unexpected_file" ]; then
+            echo "::error title=Unexpected emoji payload in UI build::Found $unexpected_file under dist/emojis. UI deploys may contain only the /emojis route index; binary emoji assets are published separately."
+            exit 1
+          fi
+
           touch dist/.nojekyll
-          echo "Production UI build size without /emojis:"
+          echo "Production UI build size without emoji binaries:"
           du -sh dist
 
       - name: Fetch current gh-pages metadata only
@@ -181,5 +188,5 @@ jobs:
             echo "- Preserved emoji tree: \`${{ steps.publish.outputs.emoji_tree }}\`"
             echo "- Changed: \`${{ steps.publish.outputs.changed }}\`"
             echo
-            echo 'UI deploys preserve the existing `/emojis` tree on `gh-pages`. Emoji binaries are published only by the dedicated asset workflow.'
+            echo 'UI deploys preserve the existing `/emojis` binary tree while updating `/emojis/index.html`. Emoji binaries are published only by the dedicated asset workflow.'
           } >> "$GITHUB_STEP_SUMMARY"
