@@ -166,11 +166,19 @@ export default function SiteHeader({ homeUrl, emojisUrl, categoriesUrl, routePat
                   leftIcon={<Search aria-hidden="true" />}
                   className="min-w-0 flex-1"
                   classNames={{
-                    field: 'h-10 border-border bg-background/90',
+                    field: '!h-10 !border-border !bg-background/90 !shadow-sm',
                     input: 'text-sm'
                   }}
                 />
-                <Button type="submit" size="sm" ripple className="shrink-0">Search</Button>
+                <Button
+                  type="submit"
+                  size="sm"
+                  variant="secondary"
+                  ripple
+                  className="shrink-0 !border !border-border !bg-background !text-foreground !shadow-sm hover:!bg-card"
+                >
+                  Search
+                </Button>
               </form>
             </motion.div>
           ) : null}
