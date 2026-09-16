@@ -3,6 +3,7 @@ import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '../motion/button';
 import { Input } from '../motion/input';
+import { ThemeToggle } from '../motion/theme-toggle';
 import { SPRING_LAYOUT, SPRING_PANEL } from '../../lib/ease';
 
 interface SiteHeaderProps {
@@ -133,6 +134,12 @@ export default function SiteHeader({ homeUrl, emojisUrl, categoriesUrl, routePat
         </nav>
 
         <div className="ml-auto flex items-center gap-1.5 md:ml-0">
+          <ThemeToggle
+            variant="circle-blur"
+            start="top-right"
+            className="size-9 rounded-full border border-border bg-card text-foreground shadow-sm transition-colors hover:border-border-strong hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            iconClassName="size-4"
+          />
           <Button
             variant="secondary"
             size="icon"
