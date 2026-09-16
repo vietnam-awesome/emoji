@@ -5,6 +5,8 @@ interface FigmaCursorPoint {
   y: number;
 }
 
+type CursorState = 'default' | 'click' | 'type' | 'drag' | 'disabled';
+
 interface FigmaCursorProps {
   name?: string;
   color?: string;
@@ -13,6 +15,67 @@ interface FigmaCursorProps {
   corner?: number;
   ease?: number;
   point?: FigmaCursorPoint;
+}
+
+const CLICK_SELECTOR = [
+  'a[href]',
+  'button',
+  'summary',
+  'select',
+  'label[for]',
+  '[role="button"]',
+  '[role="option"]',
+  '[role="tab"]',
+  '[role="menuitem"]',
+  '[role="checkbox"]',
+  '[role="radio"]',
+  'input[type="button"]',
+  'input[type="submit"]',
+  'input[type="reset"]',
+  'input[type="checkbox"]',
+  'input[type="radio"]',
+  'input[type="file"]',
+  'input[type="range"]',
+].join(',');
+
+const TYPE_SELECTOR = [
+  'textarea',
+  '[contenteditable="true"]',
+  'input:not([type])',
+  'input[type="text"]',
+  'input[type="search"]',
+  'input[type="email"]',
+  'input[type="url"]',
+  'input[type="tel"]',
+  'input[type="password"]',
+  'input[type="number"]',
+].join(',');
+
+function readCursorState(target: Element | null): { state: CursorState; label?: string } {
+  if (!target) return { state: 'default' };
+
+  const override = target.closest<HTMLElement>('[data-cursor]');
+  const overrideState = override?.dataset.cursor as CursorState | undefined;
+  const overrideLabel = override?.dataset.cursorLabel;
+  if (overrideState && ['default', 'click', 'type', 'drag', 'disabled'].includes(overrideState)) {
+    return { state: overrideState, label: overrideLabel };
+  }
+
+  const disabled = target.closest<HTMLElement>(
+    ':disabled, [aria-disabled="true"], [data-disabled="true"], [inert]',
+  );
+  if (disabled) return { state: 'disabled', label: disabled.dataset.cursorLabel };
+
+  const typeTarget = target.closest<HTMLElement>(TYPE_SELECTOR);
+  if (typeTarget) return { state: 'type', label: typeTarget.dataset.cursorLabel };
+
+  const dragTarget = target.closest<HTMLElement>('[draggable="true"], [data-drag-handle], [data-cursor="drag"]');
+  if (dragTarget) return { state: 'drag', label: dragTarget.dataset.cursorLabel };
+
+  const clickTarget = target.closest<HTMLElement>(CLICK_SELECTOR);
+  if (clickTarget) return { state: 'click', label: clickTarget.dataset.cursorLabel };
+
+  return { state: 'default' };
 }
 
 export function FigmaCursor({
@@ -25,10 +88,14 @@ export function FigmaCursor({
   point,
 }: FigmaCursorProps) {
   const ref = useRef<HTMLDivElement>(null);
+  const innerRef = useRef<HTMLDivElement>(null);
+  const tagRef = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
     const node = ref.current;
-    if (!node) return;
+    const inner = innerRef.current;
+    const tag = tagRef.current;
+    if (!node || !inner || !tag) return;
 
     const remote = Boolean(point);
     const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
@@ -61,21 +128,91 @@ export function FigmaCursor({
     let y = my;
     let frame = 0;
     let visible = remote;
+    let pressed = false;
+    let state: CursorState = 'default';
+    let customLabel: string | undefined;
+
+    const labels: Record<CursorState, string> = {
+      default: name,
+      click: 'click',
+      type: 'type',
+      drag: 'drag',
+      disabled: 'disabled',
+    };
+
+    const applyState = () => {
+      const scaleByState: Record<CursorState, number> = {
+        default: 1,
+        click: 1.12,
+        type: 0.9,
+        drag: 1.16,
+        disabled: 0.92,
+      };
+      const rotationByState: Record<CursorState, number> = {
+        default: 0,
+        click: -3,
+        type: 1,
+        drag: -7,
+        disabled: 0,
+      };
+
+      const pressScale = pressed && state !== 'disabled' ? 0.82 : 1;
+      inner.style.transform = `scale(${scaleByState[state] * pressScale}) rotate(${rotationByState[state]}deg)`;
+      inner.style.opacity = state === 'disabled' ? '0.42' : '1';
+      inner.style.filter = state === 'disabled' ? 'grayscale(1)' : 'none';
+      tag.textContent = customLabel || labels[state];
+      tag.style.opacity = state === 'disabled' ? '0.72' : '1';
+      tag.style.transform = pressed && state !== 'disabled' ? 'translateY(1px) scale(.96)' : 'translateY(0) scale(1)';
+    };
+
+    const updateTargetState = (target: EventTarget | null) => {
+      if (remote) return;
+      const element = target instanceof Element ? target : null;
+      const next = readCursorState(element);
+      if (next.state === state && next.label === customLabel) return;
+      state = next.state;
+      customLabel = next.label;
+      applyState();
+    };
 
     const move = (event: PointerEvent) => {
       mx = event.clientX;
       my = event.clientY;
+      updateTargetState(event.target);
       if (!visible) {
         visible = true;
         node.style.opacity = '1';
       }
     };
 
+    const down = (event: PointerEvent) => {
+      pressed = true;
+      updateTargetState(event.target);
+      applyState();
+    };
+
+    const up = (event: PointerEvent) => {
+      pressed = false;
+      updateTargetState(event.target);
+      applyState();
+    };
+
+    const leave = () => {
+      if (remote) return;
+      visible = false;
+      node.style.opacity = '0';
+    };
+
     if (!remote) {
       window.addEventListener('pointermove', move, { passive: true });
+      window.addEventListener('pointerdown', down, { passive: true });
+      window.addEventListener('pointerup', up, { passive: true });
+      document.documentElement.addEventListener('mouseleave', leave);
     } else {
       node.style.opacity = '1';
     }
+
+    applyState();
 
     const loop = () => {
       if (point) {
@@ -93,12 +230,15 @@ export function FigmaCursor({
     return () => {
       if (!remote) {
         window.removeEventListener('pointermove', move);
+        window.removeEventListener('pointerdown', down);
+        window.removeEventListener('pointerup', up);
+        document.documentElement.removeEventListener('mouseleave', leave);
         delete document.documentElement.dataset.figmaCursor;
         style.remove();
       }
       cancelAnimationFrame(frame);
     };
-  }, [ease, point]);
+  }, [ease, name, point]);
 
   return (
     <div
@@ -112,36 +252,50 @@ export function FigmaCursor({
         pointerEvents: 'none',
         willChange: 'transform',
         opacity: 0,
+        transition: 'opacity 140ms ease',
       }}
     >
-      <svg width={size} height={size} viewBox="0 0 24 24" style={{ overflow: 'visible' }}>
-        <path
-          d="M5 2l14 7-6 1.7L11 18z"
-          fill={color}
-          stroke={color}
-          strokeWidth={corner * 2}
-          strokeLinejoin="round"
-          strokeLinecap="round"
-        />
-      </svg>
-      <span
+      <div
+        ref={innerRef}
         style={{
-          position: 'absolute',
-          top: 16,
-          left: 14,
-          padding: '2px 7px',
-          borderRadius: 999,
-          background: color,
-          color: tagTextColor,
-          font: '400 10px/1.4 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
-          letterSpacing: '.06em',
-          textTransform: 'uppercase',
-          whiteSpace: 'nowrap',
-          boxShadow: '0 1px 3px rgb(0 0 0 / 0.18)',
+          position: 'relative',
+          transformOrigin: '4px 2px',
+          transition: 'transform 150ms cubic-bezier(.2,.8,.2,1), opacity 150ms ease, filter 150ms ease',
+          willChange: 'transform',
         }}
       >
-        {name}
-      </span>
+        <svg width={size} height={size} viewBox="0 0 24 24" style={{ overflow: 'visible' }}>
+          <path
+            d="M5 2l14 7-6 1.7L11 18z"
+            fill={color}
+            stroke={color}
+            strokeWidth={corner * 2}
+            strokeLinejoin="round"
+            strokeLinecap="round"
+          />
+        </svg>
+        <span
+          ref={tagRef}
+          style={{
+            position: 'absolute',
+            top: 16,
+            left: 14,
+            padding: '2px 7px',
+            borderRadius: 999,
+            background: color,
+            color: tagTextColor,
+            font: '400 10px/1.4 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+            letterSpacing: '.06em',
+            textTransform: 'uppercase',
+            whiteSpace: 'nowrap',
+            boxShadow: '0 1px 3px rgb(0 0 0 / 0.18)',
+            transformOrigin: 'left center',
+            transition: 'transform 120ms ease, opacity 120ms ease',
+          }}
+        >
+          {name}
+        </span>
+      </div>
     </div>
   );
 }
