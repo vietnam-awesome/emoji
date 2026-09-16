@@ -1,20 +1,11 @@
-name: Deploy UI to GitHub Pages
+name: Deploy Emoji Assets
 
 on:
   push:
     branches: [main]
     paths:
-      - 'src/**'
-      - 'public/**'
-      - '!public/api/**'
-      - '!public/emojis/**'
-      - 'scripts/build-static-search.mjs'
-      - 'scripts/emoji-store.mjs'
-      - 'scripts/publish-gh-pages.mjs'
-      - 'astro.config.mjs'
-      - 'package.json'
-      - 'package-lock.json'
-      - '.github/workflows/deploy-pages.yml'
+      - 'public/emojis/**'
+      - '.github/workflows/deploy-emoji-assets.yml'
   workflow_dispatch:
 
 permissions:
@@ -26,11 +17,11 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  publish-ui:
+  publish-assets:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 20
     steps:
-      - name: Checkout UI source without emoji binaries
+      - name: Checkout repository metadata without emoji binaries
         uses: actions/checkout@v7
         with:
           ref: main
@@ -41,74 +32,31 @@ jobs:
             !/public/emojis/
           sparse-checkout-cone-mode: false
 
-      - name: Verify emoji binaries are not materialized
+      - name: Verify source emoji tree without materializing binaries
         shell: bash
         run: |
           set -euo pipefail
+          emoji_tree="$(git rev-parse HEAD:public/emojis)"
+          test -n "$emoji_tree"
           test ! -e public/emojis
-          echo "UI deploy is isolated from production emoji binaries."
+          echo "Emoji source tree: $emoji_tree"
 
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:
           node-version: 22
 
-      - name: Cache npm downloads
-        uses: actions/cache@v4
-        with:
-          path: ~/.npm
-          key: npm-${{ runner.os }}-${{ hashFiles('package.json') }}
-          restore-keys: |
-            npm-${{ runner.os }}-
-
-      - name: Install dependencies and hydrate metadata
-        run: npm install --no-audit --no-fund
-
-      - name: Restore static search cache
-        id: search-cache
-        uses: actions/cache/restore@v4
-        with:
-          path: public/search
-          key: static-search-v3-${{ hashFiles('src/data/emojis/*.json', 'scripts/build-static-search.mjs') }}
-
-      - name: Build static search shards from repository data
-        if: steps.search-cache.outputs.cache-hit != 'true'
-        env:
-          STATIC_DATA_SOURCE: local
-        run: npm run build:static-data
-
-      - name: Save static search cache
-        if: steps.search-cache.outputs.cache-hit != 'true' && success()
-        uses: actions/cache/save@v4
-        with:
-          path: public/search
-          key: static-search-v3-${{ hashFiles('src/data/emojis/*.json', 'scripts/build-static-search.mjs') }}
-
-      - name: Build Astro UI without emoji binaries
-        run: npx astro build
-
-      - name: Validate lightweight production output
-        shell: bash
-        run: |
-          set -euo pipefail
-          test -s dist/index.html
-          test ! -e dist/emojis
-          touch dist/.nojekyll
-          echo "Production UI build size without /emojis:"
-          du -sh dist
-
       - name: Fetch current gh-pages metadata only
         shell: bash
         run: |
           set -euo pipefail
           git fetch --no-tags --filter=blob:none origin \
-            '+refs/heads/gh-pages:refs/remotes/origin/gh-pages' || true
+            '+refs/heads/gh-pages:refs/remotes/origin/gh-pages'
 
-      - name: Prepare UI-only gh-pages commit
+      - name: Prepare asset-only gh-pages commit
         id: publish
         env:
-          DEPLOY_MODE: site
-          DIST_DIR: dist
+          DEPLOY_MODE: assets
           PUBLISH_BRANCH: gh-pages
           SOURCE_REF: HEAD
         run: node scripts/publish-gh-pages.mjs
@@ -136,11 +84,7 @@ jobs:
           if [ "$build_type" = "legacy" ] && [ "$source_branch" = "gh-pages" ] && [ "$source_path" = "/" ]; then
             active=true
           fi
-
           echo "active=$active" >> "$GITHUB_OUTPUT"
-          if [ "$active" != "true" ]; then
-            echo "::notice title=One-time GitHub Pages setting required::Open Settings → Pages, choose Deploy from a branch, then select gh-pages and /(root)."
-          fi
 
       - name: Request Pages build explicitly
         if: steps.publish.outputs.changed == 'true' && steps.pages.outputs.active == 'true'
@@ -174,12 +118,12 @@ jobs:
         shell: bash
         run: |
           {
-            echo '## UI-only GitHub Pages deploy'
+            echo '## Emoji asset-only deploy'
             echo
             echo "- Source: \`${GITHUB_SHA}\`"
             echo "- gh-pages commit: \`${{ steps.publish.outputs.commit }}\`"
-            echo "- Preserved emoji tree: \`${{ steps.publish.outputs.emoji_tree }}\`"
+            echo "- Emoji tree: \`${{ steps.publish.outputs.emoji_tree }}\`"
             echo "- Changed: \`${{ steps.publish.outputs.changed }}\`"
             echo
-            echo 'UI deploys preserve the existing `/emojis` tree on `gh-pages`. Emoji binaries are published only by the dedicated asset workflow.'
+            echo 'This workflow updates only `/emojis` on `gh-pages`; it does not rebuild Astro/UI.'
           } >> "$GITHUB_STEP_SUMMARY"

@@ -57,7 +57,10 @@ function replaceRootTreeEntry(treeSha, name, childTreeSha) {
     .filter(Boolean)
     .filter((entry) => treeEntryName(entry) !== name);
 
-  entries.push(`040000 tree ${childTreeSha}\t${name}`);
+  if (childTreeSha) {
+    entries.push(`040000 tree ${childTreeSha}\t${name}`);
+  }
+
   entries.sort((left, right) => Buffer.compare(
     Buffer.from(treeEntryName(left), 'utf8'),
     Buffer.from(treeEntryName(right), 'utf8')
@@ -67,14 +70,21 @@ function replaceRootTreeEntry(treeSha, name, childTreeSha) {
   return runGit(['mktree', '-z'], { input, encoding: 'buffer' }).toString('utf8').trim();
 }
 
+function getRootTreeEntry(treeish, name) {
+  const result = tryGit(['rev-parse', `${treeish}:${name}`]);
+  return result || '';
+}
+
 function setOutput(key, value) {
   if (outputFile) appendFileSync(outputFile, `${key}=${value}\n`);
   console.log(`${key}=${value}`);
 }
 
-const emojiTree = runGit(['rev-parse', `${sourceRef}:public/emojis`]).trim();
+const sourceEmojiTree = getRootTreeEntry(sourceRef, 'public/emojis');
 const remoteRef = `refs/remotes/origin/${publishBranch}`;
 const parentCommit = tryGit(['rev-parse', '--verify', remoteRef]);
+const deployedEmojiTree = parentCommit ? getRootTreeEntry(parentCommit, 'emojis') : '';
+let emojiTree = '';
 let rootTree;
 let tempIndexDir = '';
 
@@ -83,6 +93,11 @@ try {
     if (!parentCommit) {
       throw new Error('Asset-only publish requires an existing gh-pages branch. Run a full site publish first.');
     }
+    if (!sourceEmojiTree) {
+      throw new Error(`Emoji source tree is missing at ${sourceRef}:public/emojis`);
+    }
+
+    emojiTree = sourceEmojiTree;
     const parentTree = runGit(['rev-parse', `${parentCommit}^{tree}`]).trim();
     rootTree = replaceRootTreeEntry(parentTree, 'emojis', emojiTree);
   } else {
@@ -111,6 +126,14 @@ try {
     ], { env: indexEnv });
 
     const distTree = runGit(['write-tree'], { env: indexEnv }).trim();
+
+    // UI deploys must preserve the already-published emoji asset tree. This keeps
+    // CSS/component/page changes independent from the large binary catalog.
+    // Only the dedicated asset workflow is allowed to advance /emojis.
+    emojiTree = deployedEmojiTree || sourceEmojiTree;
+    if (!emojiTree) {
+      throw new Error('No emoji tree is available. Publish emoji assets once before deploying the UI.');
+    }
     rootTree = replaceRootTreeEntry(distTree, 'emojis', emojiTree);
   }
 
@@ -138,7 +161,7 @@ try {
 
     console.log(`Prepared ${publishBranch} commit ${commitSha}`);
     console.log(`Source: ${sourceSha}`);
-    console.log(`Emoji tree reused from ${sourceRef}:public/emojis: ${emojiTree}`);
+    console.log(`Emoji tree: ${emojiTree}`);
     console.log(`Deployment mode: ${deployMode}`);
 
     setOutput('changed', 'true');
