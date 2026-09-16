@@ -1,0 +1,454 @@
+name: Emoji Catalog Pipeline
+
+on:
+  workflow_dispatch:
+    inputs:
+      operation:
+        description: Catalog operation to run
+        required: true
+        default: all
+        type: choice
+        options:
+          - all
+          - licensed
+          - community
+          - discords
+          - emojigg
+      licensed_source:
+        description: Licensed source (licensed/all operations)
+        required: true
+        default: all
+        type: choice
+        options:
+          - all
+          - openmoji
+          - twemoji
+          - noto
+      licensed_limit:
+        description: Maximum new licensed assets per source; 0 = all remaining
+        required: true
+        default: '250'
+        type: string
+      community_source:
+        description: Community source (community/all operations)
+        required: true
+        default: all
+        type: choice
+        options:
+          - all
+          - slackmojis
+          - discadia
+      community_limit:
+        description: Maximum community emoji per selected source; Slackmojis accepts 0
+        required: true
+        default: '200'
+        type: string
+      slackmojis_mode:
+        description: Slackmojis catalog mode
+        required: true
+        default: recent
+        type: choice
+        options:
+          - recent
+          - all
+      slackmojis_concurrency:
+        description: Parallel Slackmojis image downloads (1-12)
+        required: true
+        default: '6'
+        type: string
+      discords_tag:
+        description: Discords.com category; all auto-discovers safe categories
+        required: true
+        default: all
+        type: string
+      discords_limit:
+        description: Maximum missing Discords.com emoji; 0 = all discovered
+        required: true
+        default: '200'
+        type: string
+      discords_start_batch:
+        description: First Discords.com Load more batch
+        required: true
+        default: '1'
+        type: string
+      discords_max_pages:
+        description: Number of Discords.com batches to scan
+        required: true
+        default: '25'
+        type: string
+      discords_concurrency:
+        description: Parallel Discords.com image downloads (1-8)
+        required: true
+        default: '4'
+        type: string
+      emojigg_category:
+        description: Emoji.gg category, ID, comma-separated values, or all
+        required: true
+        default: all
+        type: string
+      emojigg_limit_per_category:
+        description: Maximum missing Emoji.gg emoji per category; 0 = all missing
+        required: true
+        default: '250'
+        type: string
+      emojigg_max_pages_per_category:
+        description: Emoji.gg pagination safety cap
+        required: true
+        default: '1500'
+        type: string
+  schedule:
+    # Weekly catalog refresh: Sunday 00:30 UTC = 07:30 Asia/Ho_Chi_Minh.
+    # Previous workflows all used this window; consolidation serializes them in one job.
+    - cron: '30 0 * * 0'
+
+permissions:
+  contents: write
+
+concurrency:
+  # Preserve the shared writer lock previously used by all catalog-mutating workflows.
+  group: emoji-data-write
+  cancel-in-progress: false
+
+jobs:
+  catalog:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    env:
+      # Manual defaults match the previous source workflows. Scheduled runs keep their
+      # former conservative limits: licensed=250; community/Discords/Emoji.gg=75.
+      OPERATION: ${{ github.event_name == 'workflow_dispatch' && inputs.operation || 'all' }}
+      LICENSED_SOURCE: ${{ github.event_name == 'workflow_dispatch' && inputs.licensed_source || 'all' }}
+      LICENSED_LIMIT: ${{ github.event_name == 'workflow_dispatch' && inputs.licensed_limit || '250' }}
+      COMMUNITY_SOURCE: ${{ github.event_name == 'workflow_dispatch' && inputs.community_source || 'all' }}
+      COMMUNITY_LIMIT: ${{ github.event_name == 'workflow_dispatch' && inputs.community_limit || '75' }}
+      SLACKMOJIS_MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.slackmojis_mode || 'recent' }}
+      SLACKMOJIS_CONCURRENCY: ${{ github.event_name == 'workflow_dispatch' && inputs.slackmojis_concurrency || '6' }}
+      DISCORDS_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.discords_tag || 'all' }}
+      DISCORDS_LIMIT: ${{ github.event_name == 'workflow_dispatch' && inputs.discords_limit || '75' }}
+      DISCORDS_START_BATCH: ${{ github.event_name == 'workflow_dispatch' && inputs.discords_start_batch || '1' }}
+      DISCORDS_MAX_PAGES: ${{ github.event_name == 'workflow_dispatch' && inputs.discords_max_pages || '25' }}
+      DISCORDS_CONCURRENCY: ${{ github.event_name == 'workflow_dispatch' && inputs.discords_concurrency || '4' }}
+      EMOJIGG_CATEGORY: ${{ github.event_name == 'workflow_dispatch' && inputs.emojigg_category || 'all' }}
+      EMOJIGG_LIMIT_PER_CATEGORY: ${{ github.event_name == 'workflow_dispatch' && inputs.emojigg_limit_per_category || '75' }}
+      EMOJIGG_MAX_PAGES_PER_CATEGORY: ${{ github.event_name == 'workflow_dispatch' && inputs.emojigg_max_pages_per_category || '750' }}
+
+    steps:
+      - name: Checkout latest main
+        uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Sync latest main
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          git checkout main
+          git reset --hard origin/main
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm install --ignore-scripts --no-audit --no-fund
+
+      - name: Hydrate canonical emoji index
+        run: node scripts/emoji-store.mjs hydrate
+
+      - name: Install Chromium when required
+        if: env.OPERATION == 'all' || env.OPERATION == 'discords' || env.OPERATION == 'emojigg' || (env.OPERATION == 'community' && (env.COMMUNITY_SOURCE == 'all' || env.COMMUNITY_SOURCE == 'discadia'))
+        run: npx playwright install --with-deps chromium
+
+      - name: Sync licensed emoji sources
+        if: env.OPERATION == 'all' || env.OPERATION == 'licensed'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          node scripts/sync.mjs \
+            --source="$LICENSED_SOURCE" \
+            --limit="$LICENSED_LIMIT"
+
+      - name: Import community emoji
+        if: env.OPERATION == 'all' || env.OPERATION == 'community'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ "$COMMUNITY_SOURCE" = "all" ] || [ "$COMMUNITY_SOURCE" = "slackmojis" ]; then
+            echo "Importing Slackmojis (mode=$SLACKMOJIS_MODE, limit=$COMMUNITY_LIMIT, concurrency=$SLACKMOJIS_CONCURRENCY)..."
+            node scripts/import-slackmojis.mjs \
+              --mode="$SLACKMOJIS_MODE" \
+              --limit="$COMMUNITY_LIMIT" \
+              --concurrency="$SLACKMOJIS_CONCURRENCY"
+          fi
+
+          if [ "$COMMUNITY_SOURCE" = "all" ] || [ "$COMMUNITY_SOURCE" = "discadia" ]; then
+            echo "Importing Discadia (limit=$COMMUNITY_LIMIT)..."
+            node scripts/import-community.mjs \
+              --source=discadia \
+              --limit="$COMMUNITY_LIMIT" \
+              --concurrency=4
+          fi
+
+      - name: Import Discords.com emoji
+        if: env.OPERATION == 'all' || env.OPERATION == 'discords'
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Category: $DISCORDS_TAG"
+          echo "Download limit: $DISCORDS_LIMIT"
+          echo "Start batch: $DISCORDS_START_BATCH"
+          echo "Batches to scan: $DISCORDS_MAX_PAGES"
+          echo "Concurrency: $DISCORDS_CONCURRENCY"
+          echo "18+ filter: enabled"
+
+          node scripts/import-discords.mjs \
+            --tag="$DISCORDS_TAG" \
+            --limit="$DISCORDS_LIMIT" \
+            --start-batch="$DISCORDS_START_BATCH" \
+            --max-pages="$DISCORDS_MAX_PAGES" \
+            --concurrency="$DISCORDS_CONCURRENCY" \
+            --delay-ms=350
+
+      - name: Import Emoji.gg catalog
+        if: env.OPERATION == 'all' || env.OPERATION == 'emojigg'
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Category: $EMOJIGG_CATEGORY"
+          echo "Limit/category: $EMOJIGG_LIMIT_PER_CATEGORY (0 = all missing)"
+          echo "Max pages/category: $EMOJIGG_MAX_PAGES_PER_CATEGORY"
+
+          node scripts/import-emojigg.mjs \
+            --category="$EMOJIGG_CATEGORY" \
+            --limit-per-category="$EMOJIGG_LIMIT_PER_CATEGORY" \
+            --max-pages-per-category="$EMOJIGG_MAX_PAGES_PER_CATEGORY" \
+            --empty-page-stop=3 \
+            --concurrency=8
+
+      - name: Verify emoji index
+        # Same verifier used by the previous licensed workflow (scripts/verify-data.mjs).
+        run: npm run check:data
+
+      - name: Show source-specific import summary
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFile } from 'node:fs/promises';
+          const emojis = JSON.parse(await readFile('src/data/emojis.json', 'utf8'));
+          const readJson = async (path, fallback) => {
+            try { return JSON.parse(await readFile(path, 'utf8')); }
+            catch { return fallback; }
+          };
+          const state = await readJson('src/data/community-sync-state.json', {});
+          const categories = await readJson('src/data/categories.json', []);
+          const count = (source) => emojis.filter((item) => item.source === source).length;
+
+          console.log(`All emoji indexed: ${emojis.length}`);
+          console.log(`OpenMoji indexed: ${count('openmoji')}`);
+          console.log(`Twemoji indexed: ${count('twemoji')}`);
+          console.log(`Noto indexed: ${count('noto')}`);
+          console.log(`Slackmojis indexed: ${count('slackmojis')}`);
+          console.log(`Discadia indexed: ${count('discadia')}`);
+          console.log(`Discords.com indexed: ${count('discords')}`);
+          console.log(`Emoji.gg indexed: ${count('emojigg')}`);
+
+          if (state.discords) {
+            const discordCategories = Object.keys(state.discords.categories || {});
+            console.log(`Discords.com categories scanned: ${discordCategories.length}`);
+            console.log(`Discords.com batch range: ${state.discords.startBatch || 1}-${state.discords.endBatch || '?'}`);
+            console.log(`Discords.com discovered this run: ${state.discords.discovered || 0}`);
+            console.log(`18+ emoji filtered this run: ${state.discords.adultFilteredThisRun || 0}`);
+            console.log(`Existing 18+ records purged: ${state.discords.purgedAdultRecords || 0}`);
+          }
+
+          if (categories.length) {
+            console.log(`Emoji.gg categories: ${categories.length}`);
+            for (const category of categories) {
+              console.log(`- ${category.name}: ${category.count} (${category.animated} animated, ${category.static} static)`);
+            }
+          }
+          NODE
+
+      - name: Shard emoji index for Git
+        run: npm run emoji-store:shard
+
+      - name: Commit catalog updates once
+        id: catalog_commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add -A src/data/emojis public/emojis
+          if [ -f src/data/community-sync-state.json ]; then
+            git add src/data/community-sync-state.json
+          fi
+          if [ -f src/data/categories.json ]; then
+            git add src/data/categories.json
+          fi
+          if [ -f public/api/categories.json ]; then
+            git add public/api/categories.json
+          fi
+
+          if git diff --cached --quiet; then
+            echo "No catalog updates found."
+            echo "created=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          git commit -m "chore: refresh emoji catalog ($OPERATION)"
+          echo "created=true" >> "$GITHUB_OUTPUT"
+          echo "commit=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Push catalog commit safely
+        if: steps.catalog_commit.outputs.created == 'true'
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          run_selected_operations() {
+            if [ "$OPERATION" = "all" ] || [ "$OPERATION" = "licensed" ]; then
+              node scripts/sync.mjs \
+                --source="$LICENSED_SOURCE" \
+                --limit="$LICENSED_LIMIT"
+            fi
+
+            if [ "$OPERATION" = "all" ] || [ "$OPERATION" = "community" ]; then
+              if [ "$COMMUNITY_SOURCE" = "all" ] || [ "$COMMUNITY_SOURCE" = "slackmojis" ]; then
+                node scripts/import-slackmojis.mjs \
+                  --mode="$SLACKMOJIS_MODE" \
+                  --limit="$COMMUNITY_LIMIT" \
+                  --concurrency="$SLACKMOJIS_CONCURRENCY"
+              fi
+              if [ "$COMMUNITY_SOURCE" = "all" ] || [ "$COMMUNITY_SOURCE" = "discadia" ]; then
+                node scripts/import-community.mjs \
+                  --source=discadia \
+                  --limit="$COMMUNITY_LIMIT" \
+                  --concurrency=4
+              fi
+            fi
+
+            if [ "$OPERATION" = "all" ] || [ "$OPERATION" = "discords" ]; then
+              node scripts/import-discords.mjs \
+                --tag="$DISCORDS_TAG" \
+                --limit="$DISCORDS_LIMIT" \
+                --start-batch="$DISCORDS_START_BATCH" \
+                --max-pages="$DISCORDS_MAX_PAGES" \
+                --concurrency="$DISCORDS_CONCURRENCY" \
+                --delay-ms=350
+            fi
+
+            if [ "$OPERATION" = "all" ] || [ "$OPERATION" = "emojigg" ]; then
+              node scripts/import-emojigg.mjs \
+                --category="$EMOJIGG_CATEGORY" \
+                --limit-per-category="$EMOJIGG_LIMIT_PER_CATEGORY" \
+                --max-pages-per-category="$EMOJIGG_MAX_PAGES_PER_CATEGORY" \
+                --empty-page-stop=3 \
+                --concurrency=8
+            fi
+          }
+
+          stage_catalog() {
+            git add -A src/data/emojis public/emojis
+            if [ -f src/data/community-sync-state.json ]; then
+              git add src/data/community-sync-state.json
+            fi
+            if [ -f src/data/categories.json ]; then
+              git add src/data/categories.json
+            fi
+            if [ -f public/api/categories.json ]; then
+              git add public/api/categories.json
+            fi
+          }
+
+          # Preserve and generalize import-community's old race-safe behavior:
+          # recompute on top of the latest catalog instead of rebasing stale import results.
+          rebuild_on_latest_main() {
+            echo "main changed during catalog refresh; rebuilding selected operations on latest main..."
+            git reset --hard origin/main
+            git clean -fd -- public/emojis src/data/community-sync-state.json src/data/categories.json public/api/categories.json
+            rm -f src/data/emojis.json public/api/emojis.json
+            node scripts/emoji-store.mjs hydrate
+
+            run_selected_operations
+            npm run check:data
+            npm run emoji-store:shard
+            stage_catalog
+
+            if git diff --cached --quiet; then
+              echo "Latest main already contains the requested catalog updates."
+              return 1
+            fi
+
+            git commit -m "chore: refresh emoji catalog ($OPERATION)"
+            return 0
+          }
+
+          for attempt in 1 2 3; do
+            echo "Push attempt $attempt/3"
+            git fetch origin main
+
+            remote_sha="$(git rev-parse origin/main)"
+            parent_sha="$(git rev-parse HEAD^)"
+
+            if [ "$parent_sha" != "$remote_sha" ]; then
+              if ! rebuild_on_latest_main; then
+                exit 0
+              fi
+            fi
+
+            if git push origin HEAD:main; then
+              echo "Catalog refresh pushed successfully."
+              exit 0
+            fi
+
+            echo "main changed while pushing; rebuilding and retrying..."
+            sleep $((attempt * 5))
+          done
+
+          echo "Push failed after 3 attempts." >&2
+          exit 1
+
+      - name: Create rescue archive after push failure
+        if: failure() && steps.catalog_commit.outputs.created == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git rebase --abort 2>/dev/null || true
+          rescue="/tmp/emoji-catalog-${GITHUB_RUN_ID}.tar"
+          git diff-tree --no-commit-id --name-only -r -z HEAD > /tmp/emoji-catalog-files.zlist
+          tar --null -T /tmp/emoji-catalog-files.zlist -cf "$rescue"
+          echo "RESCUE_ARCHIVE=$rescue" >> "$GITHUB_ENV"
+          echo "Rescue archive: $rescue"
+
+      - name: Upload rescue artifact
+        if: failure() && steps.catalog_commit.outputs.created == 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          name: emoji-catalog-rescue-${{ github.run_id }}
+          path: ${{ env.RESCUE_ARCHIVE }}
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 0
+
+      - name: Pipeline summary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo '## Emoji Catalog Pipeline'
+            echo
+            echo "- Operation: \`$OPERATION\`"
+            echo "- Commit created: \`${{ steps.catalog_commit.outputs.created }}\`"
+            echo "- Initial commit: \`${{ steps.catalog_commit.outputs.commit }}\`"
+            echo
+            echo 'Scheduled runs refresh all catalog sources sequentially and push one final commit. If main changes while an import is running, the selected operations are rebuilt against the latest main before retrying the push, preserving the previous race-safe community-import behavior.'
+          } >> "$GITHUB_STEP_SUMMARY"
