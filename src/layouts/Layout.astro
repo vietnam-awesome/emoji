@@ -7,7 +7,6 @@ import CatalogDownload from '../components/CatalogDownload.astro';
 import FilterCompatibility from '../components/FilterCompatibility.astro';
 import SiteHeader from '../components/beui/SiteHeader';
 import BackToTop from '../components/beui/BackToTop';
-import CatalogBeuiEnhancer from '../components/beui/CatalogBeuiEnhancer';
 
 interface Props {
   title?: string;
@@ -166,7 +165,6 @@ const schemaJson = JSON.stringify({
     />
 
     <main><slot /></main>
-    {(isBrowseIndex || isCategoryDetail) && <CatalogBeuiEnhancer client:load />}
     {isBrowseIndex && <FilterCompatibility />}
     {isBrowseIndex && <CatalogDownload />}
 
