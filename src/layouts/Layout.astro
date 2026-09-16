@@ -244,11 +244,11 @@ const schemaJson = JSON.stringify({
           const tag = document.activeElement?.tagName;
           if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
 
-          const pageSearch = document.querySelector('#emoji-search, #home-emoji-search, #category-search');
-          if (pageSearch instanceof HTMLInputElement) {
+          const visibleSearch = document.querySelector('[data-beui-visible-search], #home-emoji-search, #emoji-search:not(.beui-native-proxy), #category-search:not(.beui-native-proxy)');
+          if (visibleSearch instanceof HTMLInputElement) {
             event.preventDefault();
-            pageSearch.focus();
-            pageSearch.select();
+            visibleSearch.focus();
+            visibleSearch.select();
             return;
           }
 
