@@ -149,14 +149,14 @@ jobs:
         with:
           node-version: 22
 
-      - name: Install dependencies and hydrate emoji index
-        run: npm install --no-audit --no-fund
+      - name: Install dependencies
+        run: npm install --ignore-scripts --no-audit --no-fund
 
-      - name: Explicitly hydrate canonical emoji index
+      - name: Hydrate canonical emoji index
         run: node scripts/emoji-store.mjs hydrate
 
       - name: Install Chromium when required
-        if: env.OPERATION != 'licensed'
+        if: env.OPERATION == 'all' || env.OPERATION == 'discords' || env.OPERATION == 'emojigg' || (env.OPERATION == 'community' && (env.COMMUNITY_SOURCE == 'all' || env.COMMUNITY_SOURCE == 'discadia'))
         run: npx playwright install --with-deps chromium
 
       - name: Sync licensed emoji sources
@@ -368,7 +368,7 @@ jobs:
           rebuild_on_latest_main() {
             echo "main changed during catalog refresh; rebuilding selected operations on latest main..."
             git reset --hard origin/main
-            git clean -fd -- public/emojis
+            git clean -fd -- public/emojis src/data/community-sync-state.json src/data/categories.json public/api/categories.json
             rm -f src/data/emojis.json public/api/emojis.json
             node scripts/emoji-store.mjs hydrate
 
