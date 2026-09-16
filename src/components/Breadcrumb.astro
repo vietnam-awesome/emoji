@@ -34,6 +34,10 @@ const { items = [] } = Astro.props;
 </nav>
 
 <style>
+  :global(.category-breadcrumb) {
+    display: none !important;
+  }
+
   .breadcrumb {
     min-width: 0;
     padding-top: 1rem;
