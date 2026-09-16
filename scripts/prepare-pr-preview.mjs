@@ -5,6 +5,7 @@ const dist = path.resolve('dist');
 const base = String(process.env.PR_PREVIEW_BASE || process.argv[2] || '/')
   .replace(/^\/+|\/+$/g, '');
 const publicBase = base ? `/${base}/` : '/';
+const previewRoot = publicBase.replace(/\/$/, '');
 
 async function collectHtmlFiles(root) {
   const files = [];
@@ -58,17 +59,31 @@ function rewriteUrl(value) {
   return mapped ? `${mapped}${suffix}` : value;
 }
 
+const runtimeRouter = previewRoot
+  ? `<script data-pr-preview-router>\n(() => {\n  const root = ${JSON.stringify(previewRoot)};\n  const mapUrl = (value) => {\n    const url = new URL(value, window.location.href);\n    if (url.origin !== window.location.origin) return null;\n    if (url.pathname !== root && !url.pathname.startsWith(root + '/')) return null;\n    const relative = url.pathname.slice(root.length);\n    if (!relative || relative === '/' || relative.endsWith('/index.html')) return null;\n    const last = relative.split('/').filter(Boolean).at(-1) || '';\n    if (/\\.[a-z0-9]{1,8}$/i.test(last)) return null;\n    url.pathname = url.pathname.replace(/\\/+$/, '') + '/index.html';\n    return url;\n  };\n\n  document.addEventListener('click', (event) => {\n    if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;\n    const anchor = event.target instanceof Element ? event.target.closest('a[href]') : null;\n    if (!(anchor instanceof HTMLAnchorElement) || anchor.hasAttribute('download') || anchor.target === '_blank') return;\n    const mapped = mapUrl(anchor.href);\n    if (!mapped) return;\n    event.preventDefault();\n    window.location.assign(mapped.href);\n  }, true);\n\n  document.addEventListener('submit', (event) => {\n    const form = event.target;\n    if (!(form instanceof HTMLFormElement)) return;\n    const mapped = mapUrl(form.action);\n    if (mapped) form.action = mapped.href;\n  }, true);\n})();\n</script>`
+  : '';
+
 let rewrites = 0;
+let runtimeInjections = 0;
 for (const file of htmlFiles) {
   const original = await readFile(file, 'utf8');
-  const updated = original.replace(/\b(href|action)=(['"])(.*?)\2/g, (match, attr, quote, value) => {
+  let updated = original.replace(/\b(href|action)=(['"])(.*?)\2/g, (match, attr, quote, value) => {
     const next = rewriteUrl(value);
     if (next === value) return match;
     rewrites += 1;
     return `${attr}=${quote}${next}${quote}`;
   });
 
+  if (runtimeRouter && !updated.includes('data-pr-preview-router')) {
+    if (updated.includes('</body>')) updated = updated.replace('</body>', `${runtimeRouter}</body>`);
+    else updated += runtimeRouter;
+    runtimeInjections += 1;
+  }
+
   if (updated !== original) await writeFile(file, updated);
 }
 
-console.log(`Prepared ${htmlFiles.length} HTML files for static PR preview; rewrote ${rewrites} route link(s).`);
+console.log(
+  `Prepared ${htmlFiles.length} HTML files for static PR preview; rewrote ${rewrites} route link(s); ` +
+  `injected runtime routing into ${runtimeInjections} page(s).`
+);

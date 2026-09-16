@@ -139,3 +139,86 @@
     border: 1px solid var(--glass-border);
   }
 }
+
+/*
+ * The site deliberately skips Tailwind preflight. Keep the beUI controls fully
+ * self-contained and stop legacy catalog grid rules / browser button defaults
+ * from leaking into the Motion components.
+ */
+body[data-ui="beui"][data-page="browse"] .catalog-controls {
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 10px;
+}
+
+body[data-ui="beui"][data-page="browse"] .beui-catalog-search-host {
+  width: 100%;
+  min-width: 0;
+  grid-column: 1 / -1;
+}
+
+body[data-ui="beui"][data-page="browse"] .filter-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) auto !important;
+  align-items: center !important;
+  gap: 8px;
+  min-width: 0;
+}
+
+body[data-ui="beui"][data-page="browse"] .filter-row > *,
+body[data-ui="beui"] .beui-control-host,
+body[data-ui="beui"] .beui-control-host > * {
+  min-width: 0;
+}
+
+body[data-ui="beui"] .beui-control-host button[aria-haspopup="listbox"] {
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+}
+
+body[data-ui="beui"] .beui-control-host button[aria-haspopup="listbox"] > span:first-child {
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+body[data-ui="beui"] .beui-mode-host [role="tab"] {
+  appearance: none;
+  margin: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  line-height: 1;
+  box-shadow: none;
+}
+
+body[data-ui="beui"] [role="listbox"] [role="option"] {
+  appearance: none;
+  margin: 0;
+  border: 0;
+  font: inherit;
+}
+
+body[data-ui="beui"] .beui-mode-host [role="tab"]:focus-visible,
+body[data-ui="beui"] [role="listbox"] [role="option"]:focus-visible {
+  outline: 0;
+}
+
+@media (max-width: 900px) {
+  body[data-ui="beui"][data-page="browse"] .filter-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 560px) {
+  body[data-ui="beui"][data-page="browse"] .filter-row {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  body[data-ui="beui"] .beui-mode-host [role="tab"] {
+    padding-inline: 10px;
+  }
+}

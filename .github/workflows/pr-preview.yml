@@ -40,6 +40,7 @@ jobs:
       PR_PREVIEW_SITE: https://raw.githack.com/${{ github.repository }}/pr-preview-${{ github.event.pull_request.number }}/
       PREVIEW_URL: https://raw.githack.com/${{ github.repository }}/pr-preview-${{ github.event.pull_request.number }}/index.html
       PR_PREVIEW_ASSET_ORIGIN: https://emoji.eplus.dev
+      PREVIEW_EMOJI_LIMIT: '600'
 
     steps:
       - name: Checkout representative preview source
@@ -77,15 +78,13 @@ jobs:
         run: npm install --ignore-scripts --no-audit --no-fund
 
       - name: Prepare representative emoji catalog
-        env:
-          PREVIEW_EMOJI_LIMIT: '600'
         run: node scripts/prepare-preview-data.mjs
 
       - name: Build lightweight live preview
         env:
           STATIC_DATA_SOURCE: local
           FAST_BUILD: '1'
-          FAST_BUILD_DETAIL_LIMIT: '80'
+          FAST_BUILD_DETAIL_LIMIT: '600'
         run: npm run build
 
       - name: Prepare preview routes
@@ -95,8 +94,14 @@ jobs:
         run: |
           set -euo pipefail
           test -s dist/index.html
+          test -s dist/emojis/index.html
           grep -q 'ePlus Emoji' dist/index.html
-          echo "Representative preview build validated locally."
+          grep -q 'data-pr-preview-router' dist/emojis/index.html
+
+          expected_details="$(node -e "const fs=require('fs'); console.log(JSON.parse(fs.readFileSync('src/data/emojis.json','utf8')).length)")"
+          actual_details="$(find dist/emoji -type f -name index.html | wc -l | tr -d ' ')"
+          test "$actual_details" -eq "$expected_details"
+          echo "Representative preview validated: ${actual_details}/${expected_details} detail routes are available."
 
       - name: Publish preview branch
         env:
@@ -124,7 +129,7 @@ jobs:
             echo
             echo "[Open the live site]($PREVIEW_URL)"
             echo
-            echo 'This preview intentionally uses a representative sample (~600 emoji, ~80 detail pages) and production-hosted emoji assets so UI review stays fast and cheap.'
+            echo 'This preview uses about 600 representative emoji records and renders a matching detail page for every record. Production-hosted emoji assets are reused so UI review stays fast and cheap.'
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Post or update live preview link on PR
@@ -135,7 +140,7 @@ jobs:
           script: |
             const marker = '<!-- emoji-live-pr-preview -->';
             const shortSha = context.payload.pull_request.head.sha.slice(0, 7);
-            const body = `${marker}\n## 🌐 Live Preview\n\n**[Open PR preview →](${process.env.PREVIEW_URL})**\n\nBuilt from commit \`${shortSha}\`. This is an interactive representative build for UI review: about 600 emoji records, about 80 detail pages, with emoji images reused from production instead of rebuilding the full catalog.\n\n> The preview updates automatically when this PR receives a new commit and is not the production site.`;
+            const body = `${marker}\n## 🌐 Live Preview\n\n**[Open PR preview →](${process.env.PREVIEW_URL})**\n\nBuilt from commit \`${shortSha}\`. This interactive preview uses about 600 representative emoji records and now renders a matching detail page for every record, including links created dynamically by search, shuffle and infinite loading. Emoji images are reused from production.\n\n> The preview updates automatically when this PR receives a new commit and is not the production site.`;
 
             const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner,
