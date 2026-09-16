@@ -21,8 +21,9 @@ if (poolNode && randomGrid) {
         image.src = emoji.image;
         image.alt = emoji.name;
         image.loading = 'eager';
-        image.width = 80;
-        image.height = 80;
+        image.width = 64;
+        image.height = 64;
+        image.className = '!size-16 !max-h-16 !max-w-16 object-contain';
         link.append(image);
 
         if (emoji.animated) {
