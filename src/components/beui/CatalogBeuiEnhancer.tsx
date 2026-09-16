@@ -83,7 +83,7 @@ function SelectAdapter({ proxy }: { proxy: HTMLSelectElement }) {
       <SelectTrigger className="h-10 w-full bg-background shadow-sm" aria-label={snapshot.label}>
         <SelectValue placeholder={snapshot.label} />
       </SelectTrigger>
-      <SelectContent className="max-h-72 overflow-auto">
+      <SelectContent className="[&>div]:max-h-72 [&>div]:overflow-y-auto [&>div]:scrollbar-hide">
         {snapshot.options.map((option) => (
           <SelectItem key={option.value || '__all__'} value={option.value} disabled={option.disabled}>
             {option.label}
