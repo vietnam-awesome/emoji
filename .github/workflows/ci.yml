@@ -23,6 +23,7 @@ jobs:
         uses: actions/checkout@v7
         with:
           fetch-depth: 1
+          filter: blob:none
           sparse-checkout: |
             /*
             !/public/emojis/
@@ -54,6 +55,9 @@ jobs:
 
       - name: Validate static search generator
         run: node --check scripts/build-static-search.mjs
+
+      - name: Validate incremental Pages publisher
+        run: node --check scripts/publish-gh-pages.mjs
 
       - name: Build representative static site
         env:
