@@ -17,18 +17,20 @@ export default function CategoryPills({ items }: Props) {
   const canHover = useHoverCapable();
 
   return (
-    <div className="category-list beui-category-list">
+    <div className="flex flex-wrap gap-2">
       {items.map((item) => (
         <motion.a
           key={item.href}
-          className="category-chip beui-category-pill"
+          className="inline-flex h-9 items-center gap-2 rounded-full border border-border bg-background px-3 text-xs font-medium text-foreground no-underline shadow-sm transition-colors hover:border-border-strong hover:bg-card"
           href={item.href}
-          whileHover={canHover && !reduceMotion ? { y: -2, scale: 1.015 } : undefined}
-          whileTap={reduceMotion ? undefined : { scale: 0.97 }}
+          whileHover={canHover && !reduceMotion ? { y: -1, scale: 1.01 } : undefined}
+          whileTap={reduceMotion ? undefined : { scale: 0.96 }}
           transition={SPRING_PRESS}
         >
           <span>{item.name}</span>
-          <small>{item.count.toLocaleString('en-US')}</small>
+          <small className="border-l border-border pl-2 text-[.68rem] text-muted-foreground">
+            {item.count.toLocaleString('en-US')}
+          </small>
         </motion.a>
       ))}
     </div>
