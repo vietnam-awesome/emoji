@@ -2,7 +2,7 @@
 
 import { appendFileSync, copyFileSync, existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { basename, join, resolve } from 'node:path';
+import { join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 
 const repoRoot = process.cwd();
@@ -78,42 +78,42 @@ const parentCommit = tryGit(['rev-parse', '--verify', remoteRef]);
 let rootTree;
 let tempIndexDir = '';
 
-if (deployMode === 'assets') {
-  if (!parentCommit) {
-    throw new Error('Asset-only publish requires an existing gh-pages branch. Run a full site publish first.');
-  }
-  const parentTree = runGit(['rev-parse', `${parentCommit}^{tree}`]).trim();
-  rootTree = replaceRootTreeEntry(parentTree, 'emojis', emojiTree);
-} else {
-  if (!existsSync(distDir)) {
-    throw new Error(`Build output does not exist: ${distDir}`);
-  }
-  if (existsSync(join(distDir, 'emojis'))) {
-    throw new Error('dist/emojis exists. Production UI builds must not materialize the emoji asset catalog.');
-  }
-
-  writeFileSync(join(distDir, '.nojekyll'), '');
-  const sourceCname = resolve(repoRoot, 'public/CNAME');
-  const distCname = join(distDir, 'CNAME');
-  if (existsSync(sourceCname) && !existsSync(distCname)) copyFileSync(sourceCname, distCname);
-
-  tempIndexDir = mkdtempSync(join(tmpdir(), 'emoji-pages-index-'));
-  const indexFile = join(tempIndexDir, 'index');
-  const indexEnv = { GIT_INDEX_FILE: indexFile };
-  const gitDir = resolve(repoRoot, runGit(['rev-parse', '--git-dir']).trim());
-
-  runGit(['read-tree', '--empty'], { env: indexEnv });
-  runGit([
-    `--git-dir=${gitDir}`,
-    `--work-tree=${distDir}`,
-    'add', '-A', '--', '.'
-  ], { env: indexEnv });
-
-  const distTree = runGit(['write-tree'], { env: indexEnv }).trim();
-  rootTree = replaceRootTreeEntry(distTree, 'emojis', emojiTree);
-}
-
 try {
+  if (deployMode === 'assets') {
+    if (!parentCommit) {
+      throw new Error('Asset-only publish requires an existing gh-pages branch. Run a full site publish first.');
+    }
+    const parentTree = runGit(['rev-parse', `${parentCommit}^{tree}`]).trim();
+    rootTree = replaceRootTreeEntry(parentTree, 'emojis', emojiTree);
+  } else {
+    if (!existsSync(distDir)) {
+      throw new Error(`Build output does not exist: ${distDir}`);
+    }
+    if (existsSync(join(distDir, 'emojis'))) {
+      throw new Error('dist/emojis exists. Production UI builds must not materialize the emoji asset catalog.');
+    }
+
+    writeFileSync(join(distDir, '.nojekyll'), '');
+    const sourceCname = resolve(repoRoot, 'public/CNAME');
+    const distCname = join(distDir, 'CNAME');
+    if (existsSync(sourceCname) && !existsSync(distCname)) copyFileSync(sourceCname, distCname);
+
+    tempIndexDir = mkdtempSync(join(tmpdir(), 'emoji-pages-index-'));
+    const indexFile = join(tempIndexDir, 'index');
+    const indexEnv = { GIT_INDEX_FILE: indexFile };
+    const gitDir = resolve(repoRoot, runGit(['rev-parse', '--git-dir']).trim());
+
+    runGit(['read-tree', '--empty'], { env: indexEnv });
+    runGit([
+      `--git-dir=${gitDir}`,
+      `--work-tree=${distDir}`,
+      'add', '-A', '--', '.'
+    ], { env: indexEnv });
+
+    const distTree = runGit(['write-tree'], { env: indexEnv }).trim();
+    rootTree = replaceRootTreeEntry(distTree, 'emojis', emojiTree);
+  }
+
   const previousTree = parentCommit ? runGit(['rev-parse', `${parentCommit}^{tree}`]).trim() : '';
   if (previousTree && previousTree === rootTree) {
     console.log('gh-pages already matches the requested production tree.');
@@ -122,32 +122,31 @@ try {
     setOutput('tree', rootTree);
     setOutput('emoji_tree', emojiTree);
     setOutput('mode', deployMode);
-    process.exit(0);
+  } else {
+    const sourceSha = runGit(['rev-parse', sourceRef]).trim();
+    const commitArgs = ['commit-tree', rootTree];
+    if (parentCommit) commitArgs.push('-p', parentCommit);
+
+    const identity = {
+      GIT_AUTHOR_NAME: 'github-actions[bot]',
+      GIT_AUTHOR_EMAIL: '41898282+github-actions[bot]@users.noreply.github.com',
+      GIT_COMMITTER_NAME: 'github-actions[bot]',
+      GIT_COMMITTER_EMAIL: '41898282+github-actions[bot]@users.noreply.github.com'
+    };
+    const message = `deploy: ${deployMode} from ${sourceSha.slice(0, 12)}\n`;
+    const commitSha = runGit(commitArgs, { env: identity, input: message }).trim();
+
+    console.log(`Prepared ${publishBranch} commit ${commitSha}`);
+    console.log(`Source: ${sourceSha}`);
+    console.log(`Emoji tree reused from ${sourceRef}:public/emojis: ${emojiTree}`);
+    console.log(`Deployment mode: ${deployMode}`);
+
+    setOutput('changed', 'true');
+    setOutput('commit', commitSha);
+    setOutput('tree', rootTree);
+    setOutput('emoji_tree', emojiTree);
+    setOutput('mode', deployMode);
   }
-
-  const sourceSha = runGit(['rev-parse', sourceRef]).trim();
-  const commitArgs = ['commit-tree', rootTree];
-  if (parentCommit) commitArgs.push('-p', parentCommit);
-
-  const identity = {
-    GIT_AUTHOR_NAME: 'github-actions[bot]',
-    GIT_AUTHOR_EMAIL: '41898282+github-actions[bot]@users.noreply.github.com',
-    GIT_COMMITTER_NAME: 'github-actions[bot]',
-    GIT_COMMITTER_EMAIL: '41898282+github-actions[bot]@users.noreply.github.com'
-  };
-  const message = `deploy: ${deployMode} from ${sourceSha.slice(0, 12)}\n`;
-  const commitSha = runGit(commitArgs, { env: identity, input: message }).trim();
-
-  console.log(`Prepared ${publishBranch} commit ${commitSha}`);
-  console.log(`Source: ${sourceSha}`);
-  console.log(`Emoji tree reused from ${sourceRef}:public/emojis: ${emojiTree}`);
-  console.log(`Deployment mode: ${deployMode}`);
-
-  setOutput('changed', 'true');
-  setOutput('commit', commitSha);
-  setOutput('tree', rootTree);
-  setOutput('emoji_tree', emojiTree);
-  setOutput('mode', deployMode);
 } finally {
   if (tempIndexDir) rmSync(tempIndexDir, { recursive: true, force: true });
 }
