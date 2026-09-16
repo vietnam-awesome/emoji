@@ -1,3 +1,4 @@
+import { ExternalLink } from 'lucide-react';
 import { ButtonLink } from '../motion/button';
 
 export default function DeveloperGithubButton() {
@@ -6,10 +7,10 @@ export default function DeveloperGithubButton() {
       href="https://github.com/vietnam-awesome/emoji"
       rel="noreferrer"
       variant="secondary"
-      className="beui-github-button"
+      className="bg-background text-foreground hover:bg-card"
     >
       GitHub
-      <span aria-hidden="true">↗</span>
+      <ExternalLink className="size-3.5" aria-hidden="true" />
     </ButtonLink>
   );
 }
