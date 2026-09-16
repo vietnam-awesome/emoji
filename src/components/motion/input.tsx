@@ -99,8 +99,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
         ref={fieldRef}
         data-state={hasError ? "error" : success ? "success" : focused ? "focused" : "idle"}
         className={cn(
-          "relative h-11 overflow-hidden rounded-full border border-border transition-colors duration-200",
-          focused && !hasError && "border-foreground/40 ring-2 ring-ring/40",
+          "relative h-11 overflow-hidden rounded-full border border-border transition-[border-color,box-shadow] duration-200",
+          focused && !hasError && "border-border-strong ring-2 ring-accent/15",
           hasError && "border-destructive ring-2 ring-destructive/25",
           disabled && "opacity-60",
           classNames?.field,
