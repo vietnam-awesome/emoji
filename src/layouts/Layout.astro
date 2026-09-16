@@ -1,7 +1,5 @@
 ---
-import '../styles/global.css';
 import '../styles/beui.css';
-import '../styles/beui-system.css';
 import { withBase } from '../lib/url';
 import CatalogDownload from '../components/CatalogDownload.astro';
 import FilterCompatibility from '../components/FilterCompatibility.astro';
@@ -145,7 +143,6 @@ const schemaJson = JSON.stringify({
     <link rel="icon" type="image/svg+xml" href={faviconUrl} />
     <link rel="canonical" href={canonical} />
     <script type="application/ld+json" set:html={schemaJson}></script>
-    <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-Z8VQQ5NSBH"></script>
     <script is:inline>
       window.dataLayer = window.dataLayer || [];

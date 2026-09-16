@@ -9,7 +9,6 @@ import { emojiAssetUrl } from '../lib/emojiAsset';
 import { withBase } from '../lib/url';
 import emojis from '../data/emojis.json';
 import categories from '../data/categories.json';
-import '../styles/home.css';
 
 const base = import.meta.env.BASE_URL;
 const allEmojiUrl = withBase('/emojis', base);
@@ -74,7 +73,6 @@ const sections = [
 
         <div class="hero-search-shell" id="home-search-shell" data-asset-base={previewAssetBase}>
           <HomeSearchForm action={allEmojiUrl} client:load />
-
           <div class="home-search-results" id="home-search-results" aria-live="polite" hidden>
             <div class="home-search-results-head">
               <strong id="home-search-summary">Searching…</strong>
@@ -151,23 +149,3 @@ const sections = [
     <div class="developer-actions"><DeveloperGithubButton client:visible /></div>
   </section>
 </Layout>
-
-<style>
-  .hero-library-actions { display:flex; align-items:center; gap:10px; }
-  .hero-shuffle svg { width:14px; height:14px; }
-
-  .hero-search-shell { position:relative; z-index:20; max-width:680px; margin-top:30px; }
-  .home-search-results { position:absolute; top:calc(100% + 8px); left:0; right:0; overflow:hidden; max-height:min(520px, 58vh); border:1px solid var(--line-strong); border-radius:16px; background:var(--surface); box-shadow:0 20px 50px rgba(16,24,40,.14); }
-  .home-search-results[hidden] { display:none; }
-  .home-search-results-head { display:flex; align-items:center; justify-content:space-between; gap:16px; min-height:38px; padding:0 12px; border-bottom:1px solid var(--line); background:var(--surface-subtle); color:var(--muted-light); font-size:.64rem; }
-  .home-search-results-head strong { color:var(--ink-soft); font-size:.7rem; }
-  .home-search-list { overflow:auto; max-height:390px; }
-  .home-search-all { display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:42px; padding:0 12px; border-top:1px solid var(--line); background:var(--surface-subtle); color:var(--ink-soft); font-size:.7rem; font-weight:720; text-decoration:none; }
-  .home-search-all:hover { color:var(--ink); background:var(--surface-subtle); }
-
-  @media (max-width:520px) {
-    .hero-library-actions > span,
-    .hero-shuffle span { display:none; }
-    .hero-shuffle { width:32px; justify-content:center; padding:0; }
-  }
-</style>
