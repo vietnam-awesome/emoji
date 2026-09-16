@@ -107,16 +107,18 @@ export default function SiteHeader({ homeUrl, emojisUrl, categoriesUrl, routePat
                 onPointerEnter={() => setNavPreviewHref(item.href)}
                 onFocus={() => setNavPreviewHref(item.href)}
                 onBlur={() => setNavPreviewHref(null)}
-                className="relative isolate flex h-8 items-center rounded-full px-3.5 text-xs font-medium no-underline outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="relative flex h-8 items-center rounded-full px-3.5 text-xs font-medium no-underline outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 {highlighted ? (
                   <motion.span
                     layoutId="beui-header-nav-pill"
-                    className={`absolute inset-0 -z-10 rounded-full ${previewing ? 'bg-muted/80' : 'border border-border bg-background shadow-sm'}`}
+                    className={`absolute inset-0 z-0 rounded-full border border-border shadow-sm ${previewing ? 'bg-background/75' : 'bg-background'}`}
                     transition={reduceMotion ? { duration: 0 } : SPRING_LAYOUT}
+                    aria-hidden="true"
                   />
                 ) : null}
                 <motion.span
+                  className="relative z-10"
                   animate={{
                     color: highlighted ? 'var(--foreground)' : 'var(--muted-foreground)',
                     y: highlighted && !reduceMotion ? -0.25 : 0
