@@ -1,6 +1,6 @@
-import { Search } from 'lucide-react';
+import { ChevronsDown, Database, Files, Search, Shapes, Sparkles } from 'lucide-react';
 import { createPortal } from 'react-dom';
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useState } from 'react';
 import { Button } from '../motion/button';
 import { Input } from '../motion/input';
 import {
@@ -50,8 +50,15 @@ function readSelect(proxy: HTMLSelectElement): SelectSnapshot {
   };
 }
 
+function filterIcon(controlId: string) {
+  if (controlId === 'category-filter') return Shapes;
+  if (controlId === 'source-filter') return Database;
+  return Sparkles;
+}
+
 function SelectAdapter({ proxy }: { proxy: HTMLSelectElement }) {
   const [snapshot, setSnapshot] = useState<SelectSnapshot>(() => readSelect(proxy));
+  const Icon = filterIcon(proxy.id);
 
   useEffect(() => {
     const sync = () => setSnapshot(readSelect(proxy));
@@ -81,7 +88,10 @@ function SelectAdapter({ proxy }: { proxy: HTMLSelectElement }) {
       className="w-full"
     >
       <SelectTrigger className="h-10 w-full bg-background shadow-sm" aria-label={snapshot.label}>
-        <SelectValue placeholder={snapshot.label} />
+        <span className="flex min-w-0 flex-1 items-center gap-2">
+          <Icon className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+          <SelectValue className="min-w-0 truncate" placeholder={snapshot.label} />
+        </span>
       </SelectTrigger>
       <SelectContent className="[&>div]:max-h-72 [&>div]:overflow-y-auto [&>div]:scrollbar-hide">
         {snapshot.options.map((option) => (
@@ -148,9 +158,10 @@ function SearchAdapter({ proxy, submitProxy }: Pick<SearchMount, 'proxy' | 'subm
           variant="secondary"
           ripple
           disabled={busy}
-          className="h-11 shrink-0 !border !border-border !bg-background !px-5 !text-foreground !shadow-sm hover:!bg-card"
+          className="h-11 shrink-0 gap-2 !border !border-border !bg-background !px-5 !text-foreground !shadow-sm hover:!bg-card"
         >
-          {busy ? 'Searching…' : 'Search'}
+          <Search className="size-3.5" aria-hidden="true" />
+          <span>{busy ? 'Searching…' : 'Search'}</span>
         </Button>
       ) : null}
     </div>
@@ -188,8 +199,14 @@ function BrowseModeAdapter({ proxy }: { proxy: HTMLElement }) {
       variant="segment"
     >
       <TabsList aria-label="Choose how emoji are loaded" className="border border-border bg-card shadow-sm">
-        <TabsTrigger value="scroll">Scroll</TabsTrigger>
-        <TabsTrigger value="pagination">Pages</TabsTrigger>
+        <TabsTrigger value="scroll" className="gap-1.5">
+          <ChevronsDown className="size-3.5" aria-hidden="true" />
+          <span>Scroll</span>
+        </TabsTrigger>
+        <TabsTrigger value="pagination" className="gap-1.5">
+          <Files className="size-3.5" aria-hidden="true" />
+          <span>Pages</span>
+        </TabsTrigger>
       </TabsList>
     </Tabs>
   );
@@ -200,7 +217,10 @@ export default function CatalogBeuiEnhancer() {
   const [modeMounts, setModeMounts] = useState<ModeMount[]>([]);
   const [searchMounts, setSearchMounts] = useState<SearchMount[]>([]);
 
-  useEffect(() => {
+  // Layout effect shortens the hydration hand-off. The legacy visual controls are
+  // already hidden by beui.css on first paint, so this no longer swaps old UI
+  // for new UI after the page becomes visible.
+  useLayoutEffect(() => {
     const createdHosts: HTMLElement[] = [];
 
     const selects = Array.from(document.querySelectorAll<HTMLSelectElement>(
