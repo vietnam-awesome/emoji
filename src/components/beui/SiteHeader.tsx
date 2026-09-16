@@ -16,6 +16,7 @@ export default function SiteHeader({ homeUrl, emojisUrl, categoriesUrl, routePat
   const reduceMotion = useReducedMotion();
   const [searchOpen, setSearchOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [navPreviewHref, setNavPreviewHref] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const rootRef = useRef<HTMLElement>(null);
 
@@ -24,6 +25,9 @@ export default function SiteHeader({ homeUrl, emojisUrl, categoriesUrl, routePat
     { label: 'Browse', href: emojisUrl, active: routePath === '/emojis' || routePath.startsWith('/emoji/') },
     { label: 'Categories', href: categoriesUrl, active: routePath === '/categories' || routePath.startsWith('/categories/') }
   ], [homeUrl, emojisUrl, categoriesUrl, routePath]);
+
+  const activeNavHref = nav.find((item) => item.active)?.href ?? null;
+  const highlightedNavHref = navPreviewHref ?? activeNavHref;
 
   useEffect(() => {
     if (!searchOpen) return;
@@ -89,24 +93,41 @@ export default function SiteHeader({ homeUrl, emojisUrl, categoriesUrl, routePat
         <nav
           className="mx-auto hidden items-center rounded-full border border-border bg-card p-1 md:flex"
           aria-label="Primary navigation"
+          onPointerLeave={() => setNavPreviewHref(null)}
         >
-          {nav.map((item) => (
-            <a
-              key={item.href}
-              href={item.href}
-              aria-current={item.active ? 'page' : undefined}
-              className="relative isolate flex h-8 items-center rounded-full px-3.5 text-xs font-medium no-underline outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              {item.active ? (
+          {nav.map((item) => {
+            const highlighted = highlightedNavHref === item.href;
+            const previewing = navPreviewHref === item.href && !item.active;
+
+            return (
+              <a
+                key={item.href}
+                href={item.href}
+                aria-current={item.active ? 'page' : undefined}
+                onPointerEnter={() => setNavPreviewHref(item.href)}
+                onFocus={() => setNavPreviewHref(item.href)}
+                onBlur={() => setNavPreviewHref(null)}
+                className="relative isolate flex h-8 items-center rounded-full px-3.5 text-xs font-medium no-underline outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                {highlighted ? (
+                  <motion.span
+                    layoutId="beui-header-nav-pill"
+                    className={`absolute inset-0 -z-10 rounded-full ${previewing ? 'bg-muted/80' : 'border border-border bg-background shadow-sm'}`}
+                    transition={reduceMotion ? { duration: 0 } : SPRING_LAYOUT}
+                  />
+                ) : null}
                 <motion.span
-                  layoutId="beui-header-active"
-                  className="absolute inset-0 -z-10 rounded-full border border-border bg-background shadow-sm"
-                  transition={reduceMotion ? { duration: 0 } : SPRING_LAYOUT}
-                />
-              ) : null}
-              <span className={item.active ? 'text-foreground' : 'text-muted-foreground'}>{item.label}</span>
-            </a>
-          ))}
+                  animate={{
+                    color: highlighted ? 'var(--foreground)' : 'var(--muted-foreground)',
+                    y: highlighted && !reduceMotion ? -0.25 : 0
+                  }}
+                  transition={reduceMotion ? { duration: 0 } : { duration: 0.16 }}
+                >
+                  {item.label}
+                </motion.span>
+              </a>
+            );
+          })}
         </nav>
 
         <div className="ml-auto flex items-center gap-1.5 md:ml-0">
