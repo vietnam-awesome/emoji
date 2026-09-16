@@ -3,17 +3,25 @@ import '../styles/beui.css';
 import { withBase } from '../lib/url';
 import CatalogDownload from '../components/CatalogDownload.astro';
 import FilterCompatibility from '../components/FilterCompatibility.astro';
+import Breadcrumb from '../components/Breadcrumb.astro';
 import SiteHeader from '../components/beui/SiteHeader';
 import BackToTop from '../components/beui/BackToTop';
+
+interface BreadcrumbItem {
+  name: string;
+  href?: string;
+}
 
 interface Props {
   title?: string;
   description?: string;
+  breadcrumbs?: BreadcrumbItem[];
 }
 
 const {
   title = 'ePlus Emoji',
-  description = 'An open custom emoji directory for developers and communities.'
+  description = 'An open custom emoji directory for developers and communities.',
+  breadcrumbs
 } = Astro.props;
 
 const base = import.meta.env.BASE_URL;
@@ -55,6 +63,27 @@ const absoluteCategoriesUrl = new URL(categoriesUrl, origin).toString();
 const websiteId = `${absoluteHomeUrl}#website`;
 const webpageId = `${canonical.toString()}#webpage`;
 
+const defaultBreadcrumbs: BreadcrumbItem[] = [];
+if (isBrowse) {
+  defaultBreadcrumbs.push(
+    { name: 'Home', href: homeUrl },
+    { name: 'Browse', href: emojisUrl }
+  );
+  if (isEmojiDetail) {
+    defaultBreadcrumbs.push({ name: title.split('—')[0].trim() });
+  }
+}
+if (isCategories) {
+  defaultBreadcrumbs.push(
+    { name: 'Home', href: homeUrl },
+    { name: 'Categories', href: categoriesUrl }
+  );
+  if (isCategoryDetail) {
+    defaultBreadcrumbs.push({ name: title.split('—')[0].trim() });
+  }
+}
+const breadcrumbItems: BreadcrumbItem[] = breadcrumbs?.length ? breadcrumbs : defaultBreadcrumbs;
+
 const schemaGraph = [
   {
     '@type': 'WebSite',
@@ -89,38 +118,17 @@ const schemaGraph = [
   }
 ];
 
-if (isBrowse || isCategories) {
-  const itemListElement = [
-    { '@type': 'ListItem', position: 1, name: 'Home', item: absoluteHomeUrl }
-  ];
-
-  if (isBrowse) {
-    itemListElement.push({ '@type': 'ListItem', position: 2, name: 'Browse', item: absoluteBrowseUrl });
-    if (isEmojiDetail) {
-      itemListElement.push({
-        '@type': 'ListItem',
-        position: 3,
-        name: title.split('—')[0].trim(),
-        item: canonical.toString()
-      });
-    }
-  }
-
-  if (isCategories) {
-    itemListElement.push({ '@type': 'ListItem', position: 2, name: 'Categories', item: absoluteCategoriesUrl });
-    if (isCategoryDetail) {
-      itemListElement.push({
-        '@type': 'ListItem',
-        position: 3,
-        name: title.split('—')[0].trim(),
-        item: canonical.toString()
-      });
-    }
-  }
-
+if (breadcrumbItems.length > 1) {
   schemaGraph.push({
     '@type': 'BreadcrumbList',
-    itemListElement
+    itemListElement: breadcrumbItems.map((item, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: item.name,
+      item: item.href
+        ? new URL(item.href, origin).toString()
+        : canonical.toString()
+    }))
   });
 }
 
@@ -178,7 +186,14 @@ const schemaJson = JSON.stringify({
       client:load
     />
 
-    <main><slot /></main>
+    <main>
+      {breadcrumbItems.length > 1 && (
+        <div class="shell">
+          <Breadcrumb items={breadcrumbItems} />
+        </div>
+      )}
+      <slot />
+    </main>
     {isBrowseIndex && <FilterCompatibility />}
     <CatalogDownload />
 

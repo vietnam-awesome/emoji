@@ -1,0 +1,114 @@
+---
+interface BreadcrumbItem {
+  name: string;
+  href?: string;
+}
+
+interface Props {
+  items: BreadcrumbItem[];
+}
+
+const { items = [] } = Astro.props;
+---
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <ol>
+    {items.map((item, index) => {
+      const isCurrent = index === items.length - 1;
+      return (
+        <li>
+          {index > 0 && (
+            <svg class="breadcrumb-separator" viewBox="0 0 16 16" aria-hidden="true">
+              <path d="m6 3 5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          )}
+          {item.href && !isCurrent ? (
+            <a href={item.href}>{item.name}</a>
+          ) : (
+            <span aria-current={isCurrent ? 'page' : undefined}>{item.name}</span>
+          )}
+        </li>
+      );
+    })}
+  </ol>
+</nav>
+
+<style>
+  :global(.category-breadcrumb) {
+    display: none !important;
+  }
+
+  .breadcrumb {
+    min-width: 0;
+    padding-top: 1rem;
+  }
+
+  .breadcrumb ol {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    color: var(--muted-foreground);
+    font-size: 0.8125rem;
+    line-height: 1.4;
+  }
+
+  .breadcrumb li {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    min-width: 0;
+  }
+
+  .breadcrumb a,
+  .breadcrumb span {
+    display: block;
+    max-width: min(34vw, 18rem);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .breadcrumb a {
+    color: inherit;
+    text-decoration: none;
+    transition: color 150ms ease;
+  }
+
+  .breadcrumb a:hover,
+  .breadcrumb a:focus-visible {
+    color: var(--foreground);
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
+
+  .breadcrumb span[aria-current='page'] {
+    color: var(--foreground);
+    font-weight: 600;
+  }
+
+  .breadcrumb-separator {
+    width: 0.75rem;
+    height: 0.75rem;
+    flex: 0 0 auto;
+    opacity: 0.6;
+  }
+
+  @media (max-width: 640px) {
+    .breadcrumb {
+      padding-top: 0.75rem;
+    }
+
+    .breadcrumb ol {
+      font-size: 0.75rem;
+    }
+
+    .breadcrumb a,
+    .breadcrumb span {
+      max-width: 34vw;
+    }
+  }
+</style>
