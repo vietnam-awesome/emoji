@@ -2,6 +2,8 @@
 import Layout from '../../layouts/Layout.astro';
 import EmojiDetail from '../../components/beui/EmojiDetail.astro';
 import emojis from '../../data/emojis.json';
+import { emojiCategorySlug } from '../../lib/category';
+import { withBase } from '../../lib/url';
 
 export function getStaticPaths() {
   const fastBuild = process.env.FAST_BUILD === '1';
@@ -44,6 +46,14 @@ const normalizeIdentity = (value) => String(value || '')
   .replace(/[^a-z0-9]+/g, '');
 
 const { emoji } = Astro.props;
+const base = import.meta.env.BASE_URL;
+const categoryName = emoji.category || String(emoji.group || '').replaceAll('-', ' ') || 'Other';
+const categoryUrl = withBase(`/categories/${emojiCategorySlug(emoji)}`, base);
+const breadcrumbs = [
+  { name: 'Home', href: withBase('/', base) },
+  { name: categoryName, href: categoryUrl },
+  { name: emoji.name }
+];
 const hasDistinctShortcode = Boolean(
   emoji.shortcode && normalizeIdentity(emoji.shortcode) !== normalizeIdentity(emoji.name)
 );
@@ -52,6 +62,6 @@ const description = hasDistinctShortcode
   ? `Download ${emoji.name} from ${emoji.sourceLabel}, copy :${emoji.shortcode}: and view source, format and license metadata.`
   : `Download ${emoji.name} from ${emoji.sourceLabel} and view source, format and license metadata.`;
 ---
-<Layout title={title} description={description}>
+<Layout title={title} description={description} breadcrumbs={breadcrumbs}>
   <EmojiDetail emoji={emoji} />
 </Layout>
