@@ -138,16 +138,26 @@ jobs:
 
       - name: Build lightweight Astro UI
         env:
-          SKIP_EMOJI_DETAIL_PAGES: '1'
+          FAST_BUILD: '1'
+          FAST_BUILD_DETAIL_LIMIT: '1'
         run: npx astro build
 
-      - name: Validate lightweight production output
+      - name: Validate and trim lightweight production output
         shell: bash
         run: |
           set -euo pipefail
           test -s dist/index.html
           test -s dist/emojis/index.html
-          test ! -e dist/emoji
+
+          detail_count=0
+          if [ -d dist/emoji ]; then
+            detail_count="$(find dist/emoji -type f -name index.html | wc -l | tr -d ' ')"
+          fi
+          if [ "$detail_count" -gt 1 ]; then
+            echo "::error title=Unexpected emoji detail build::Lightweight UI build rendered $detail_count detail pages; expected at most one representative page."
+            exit 1
+          fi
+          rm -rf dist/emoji
 
           unexpected_file="$(find dist/emojis -type f ! -path 'dist/emojis/index.html' -print -quit)"
           if [ -n "$unexpected_file" ]; then
@@ -155,8 +165,9 @@ jobs:
             exit 1
           fi
 
+          test ! -e dist/emoji
           touch dist/.nojekyll
-          echo "Lightweight UI build size (no binaries, no /emoji detail pages):"
+          echo "Lightweight UI build size (no binaries, preserved /emoji detail tree):"
           du -sh dist
 
       - name: Fetch current gh-pages metadata only
@@ -282,5 +293,5 @@ jobs:
             echo "- Detail commit: \`${{ steps.publish_details.outputs.commit }}\`"
             echo "- Detail changed: \`${{ steps.publish_details.outputs.changed }}\`"
             echo
-            echo 'Normal UI changes skip all `/emoji/<slug>` generation and preserve the existing detail tree. Detail pages are rebuilt only when emoji metadata/detail code changes (or when requested manually). `/emojis` binary files remain owned by the dedicated asset workflow.'
+            echo 'Normal UI changes render at most one representative detail page for build validation, discard it before publishing, and preserve the existing `/emoji` tree. Full detail pages are rebuilt only when emoji metadata/detail code changes (or when requested manually). `/emojis` binary files remain owned by the dedicated asset workflow.'
           } >> "$GITHUB_STEP_SUMMARY"
