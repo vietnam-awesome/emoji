@@ -7,6 +7,7 @@ import CatalogDownload from '../components/CatalogDownload.astro';
 import FilterCompatibility from '../components/FilterCompatibility.astro';
 import SiteHeader from '../components/beui/SiteHeader';
 import BackToTop from '../components/beui/BackToTop';
+import CatalogBeuiEnhancer from '../components/beui/CatalogBeuiEnhancer';
 
 interface Props {
   title?: string;
@@ -31,6 +32,7 @@ const normalizedBase = base === '/' ? '' : base.replace(/\/+$/, '');
 const routePath = normalizedBase && normalizedPath.startsWith(normalizedBase)
   ? normalizedPath.slice(normalizedBase.length) || '/'
   : normalizedPath;
+const isHome = routePath === '/';
 const isEmojiDetail = routePath.startsWith('/emoji/');
 const isBrowseIndex = routePath === '/emojis';
 const isBrowse = isBrowseIndex || isEmojiDetail;
@@ -38,6 +40,17 @@ const isCategoriesIndex = routePath === '/categories';
 const isCategoryDetail = routePath.startsWith('/categories/');
 const isCategories = isCategoriesIndex || isCategoryDetail;
 const isCollectionPage = isBrowseIndex || isCategoriesIndex || isCategoryDetail;
+const pageKind = isHome
+  ? 'home'
+  : isBrowseIndex
+    ? 'browse'
+    : isEmojiDetail
+      ? 'emoji-detail'
+      : isCategoriesIndex
+        ? 'categories'
+        : isCategoryDetail
+          ? 'category-detail'
+          : 'page';
 
 const absoluteHomeUrl = new URL(homeUrl, origin).toString();
 const absoluteBrowseUrl = new URL(emojisUrl, origin).toString();
@@ -125,7 +138,7 @@ const schemaJson = JSON.stringify({
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={description} />
-    <meta name="theme-color" content="#101828" />
+    <meta name="theme-color" content="#ffffff" />
     <meta property="og:type" content="website" />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
@@ -143,7 +156,7 @@ const schemaJson = JSON.stringify({
     </script>
     <title>{title}</title>
   </head>
-  <body data-ui="beui">
+  <body data-ui="beui" data-page={pageKind}>
     <SiteHeader
       homeUrl={homeUrl}
       emojisUrl={emojisUrl}
@@ -153,6 +166,7 @@ const schemaJson = JSON.stringify({
     />
 
     <main><slot /></main>
+    {(isBrowseIndex || isCategoryDetail) && <CatalogBeuiEnhancer client:load />}
     {isBrowseIndex && <FilterCompatibility />}
     {isBrowseIndex && <CatalogDownload />}
 
