@@ -219,11 +219,11 @@ body[data-ui="beui"] [role="listbox"] [role="option"]:focus-visible {
 
 /* Emoji detail metadata should read like a beUI description list, not a tight table. */
 body[data-ui="beui"] .detail-page .metadata-list > div {
-  min-height: 52px;
-  grid-template-columns: 128px minmax(0, 1fr);
-  align-items: center;
-  gap: 22px;
-  padding: 14px 20px;
+  min-height: 54px !important;
+  grid-template-columns: 128px minmax(0, 1fr) !important;
+  align-items: center !important;
+  gap: 24px !important;
+  padding: 15px 20px !important;
 }
 
 body[data-ui="beui"] .detail-page .metadata-list dt {
@@ -251,10 +251,10 @@ body[data-ui="beui"] .detail-page .metadata-list dd a {
 
 @media (max-width: 640px) {
   body[data-ui="beui"] .detail-page .metadata-list > div {
-    min-height: 48px;
-    grid-template-columns: 104px minmax(0, 1fr);
-    gap: 14px;
-    padding: 12px 14px;
+    min-height: 48px !important;
+    grid-template-columns: 104px minmax(0, 1fr) !important;
+    gap: 14px !important;
+    padding: 12px 14px !important;
   }
 }
 
