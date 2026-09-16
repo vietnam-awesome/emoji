@@ -134,7 +134,13 @@ body .emoji-card[data-emoji-card] .emoji-card-download {
   backdrop-filter: blur(8px);
 }
 
-body .emoji-card[data-emoji-card] .emoji-select-control { left: 8px; cursor: pointer; }
+body .emoji-card[data-emoji-card] .emoji-select-control {
+  left: 8px;
+  cursor: pointer;
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+}
 body .emoji-card[data-emoji-card] .emoji-card-download { right: 8px; text-decoration: none; }
 body .emoji-card[data-emoji-card] .emoji-card-download svg { width: 15px; height: 15px; }
 
@@ -193,7 +199,7 @@ body .emoji-card[data-emoji-card].emoji-card--compact .card-motion-badge {
 }
 
 @media (hover: hover) and (pointer: fine) {
-  body .emoji-card[data-emoji-card] .emoji-select-control,
+  /* Multi-select is a primary Browse action, so keep its checkbox discoverable. */
   body .emoji-card[data-emoji-card] .emoji-card-download {
     opacity: 0;
     transform: translateY(-4px) scale(.96);
@@ -201,11 +207,8 @@ body .emoji-card[data-emoji-card].emoji-card--compact .card-motion-badge {
     transition: opacity .14s ease, transform .14s ease;
   }
 
-  body .emoji-card[data-emoji-card]:hover .emoji-select-control,
   body .emoji-card[data-emoji-card]:hover .emoji-card-download,
-  body .emoji-card[data-emoji-card]:focus-within .emoji-select-control,
-  body .emoji-card[data-emoji-card]:focus-within .emoji-card-download,
-  body .emoji-card[data-emoji-card].is-selected .emoji-select-control {
+  body .emoji-card[data-emoji-card]:focus-within .emoji-card-download {
     opacity: 1;
     transform: none;
     pointer-events: auto;
