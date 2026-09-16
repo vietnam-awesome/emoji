@@ -155,6 +155,12 @@ body[data-ui="beui"] .beui-catalog-control-stack {
   gap: 10px;
 }
 
+body[data-ui="beui"] .beui-category-search-control {
+  width: min(100%, 560px);
+  min-width: 0;
+  margin-bottom: 20px;
+}
+
 body[data-ui="beui"] .beui-filter-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
