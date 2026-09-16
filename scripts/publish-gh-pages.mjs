@@ -49,29 +49,63 @@ function treeEntryName(entry) {
   return tab === -1 ? '' : entry.slice(tab + 1);
 }
 
-function replaceRootTreeEntry(treeSha, name, childTreeSha) {
+function readTreeEntries(treeSha) {
+  if (!treeSha) return [];
   const raw = runGit(['ls-tree', '-z', treeSha], { encoding: 'buffer' });
-  const entries = raw
+  return raw
     .toString('utf8')
     .split('\0')
-    .filter(Boolean)
-    .filter((entry) => treeEntryName(entry) !== name);
+    .filter(Boolean);
+}
 
-  if (childTreeSha) {
-    entries.push(`040000 tree ${childTreeSha}\t${name}`);
-  }
-
-  entries.sort((left, right) => Buffer.compare(
+function writeTreeEntries(entries) {
+  const sorted = [...entries].sort((left, right) => Buffer.compare(
     Buffer.from(treeEntryName(left), 'utf8'),
     Buffer.from(treeEntryName(right), 'utf8')
   ));
-
-  const input = Buffer.from(`${entries.join('\0')}\0`, 'utf8');
+  const input = Buffer.from(`${sorted.join('\0')}\0`, 'utf8');
   return runGit(['mktree', '-z'], { input, encoding: 'buffer' }).toString('utf8').trim();
 }
 
-function getRootTreeEntry(treeish, name) {
-  const result = tryGit(['rev-parse', `${treeish}:${name}`]);
+function replaceTreeEntry(treeSha, name, replacementEntry) {
+  const entries = readTreeEntries(treeSha)
+    .filter((entry) => treeEntryName(entry) !== name);
+
+  if (replacementEntry) entries.push(replacementEntry);
+  return writeTreeEntries(entries);
+}
+
+function replaceRootTreeEntry(treeSha, name, childTreeSha) {
+  return replaceTreeEntry(
+    treeSha,
+    name,
+    childTreeSha ? `040000 tree ${childTreeSha}\t${name}` : ''
+  );
+}
+
+function replaceBlobTreeEntry(treeSha, name, blobSha) {
+  return replaceTreeEntry(
+    treeSha,
+    name,
+    blobSha ? `100644 blob ${blobSha}\t${name}` : ''
+  );
+}
+
+function mergeTreeEntries(baseTreeSha, overlayTreeSha) {
+  const entriesByName = new Map();
+
+  for (const entry of readTreeEntries(baseTreeSha)) {
+    entriesByName.set(treeEntryName(entry), entry);
+  }
+  for (const entry of readTreeEntries(overlayTreeSha)) {
+    entriesByName.set(treeEntryName(entry), entry);
+  }
+
+  return writeTreeEntries([...entriesByName.values()]);
+}
+
+function getTreeEntry(treeish, path) {
+  const result = tryGit(['rev-parse', `${treeish}:${path}`]);
   return result || '';
 }
 
@@ -80,10 +114,11 @@ function setOutput(key, value) {
   console.log(`${key}=${value}`);
 }
 
-const sourceEmojiTree = getRootTreeEntry(sourceRef, 'public/emojis');
+const sourceEmojiTree = getTreeEntry(sourceRef, 'public/emojis');
 const remoteRef = `refs/remotes/origin/${publishBranch}`;
 const parentCommit = tryGit(['rev-parse', '--verify', remoteRef]);
-const deployedEmojiTree = parentCommit ? getRootTreeEntry(parentCommit, 'emojis') : '';
+const deployedEmojiTree = parentCommit ? getTreeEntry(parentCommit, 'emojis') : '';
+const deployedEmojiIndex = parentCommit ? getTreeEntry(parentCommit, 'emojis/index.html') : '';
 let emojiTree = '';
 let rootTree;
 let tempIndexDir = '';
@@ -97,15 +132,18 @@ try {
       throw new Error(`Emoji source tree is missing at ${sourceRef}:public/emojis`);
     }
 
+    // /emojis is both the public binary catalog and the Astro collection route.
+    // Replace the asset catalog from main, but keep the already-published route index.
     emojiTree = sourceEmojiTree;
+    if (deployedEmojiIndex) {
+      emojiTree = replaceBlobTreeEntry(emojiTree, 'index.html', deployedEmojiIndex);
+    }
+
     const parentTree = runGit(['rev-parse', `${parentCommit}^{tree}`]).trim();
     rootTree = replaceRootTreeEntry(parentTree, 'emojis', emojiTree);
   } else {
     if (!existsSync(distDir)) {
       throw new Error(`Build output does not exist: ${distDir}`);
-    }
-    if (existsSync(join(distDir, 'emojis'))) {
-      throw new Error('dist/emojis exists. Production UI builds must not materialize the emoji asset catalog.');
     }
 
     writeFileSync(join(distDir, '.nojekyll'), '');
@@ -126,14 +164,20 @@ try {
     ], { env: indexEnv });
 
     const distTree = runGit(['write-tree'], { env: indexEnv }).trim();
+    const distEmojiRouteTree = getTreeEntry(distTree, 'emojis');
 
-    // UI deploys must preserve the already-published emoji asset tree. This keeps
-    // CSS/component/page changes independent from the large binary catalog.
-    // Only the dedicated asset workflow is allowed to advance /emojis.
-    emojiTree = deployedEmojiTree || sourceEmojiTree;
-    if (!emojiTree) {
-      throw new Error('No emoji tree is available. Publish emoji assets once before deploying the UI.');
+    // UI deploys preserve the already-published emoji binaries while overlaying
+    // the Astro /emojis route (currently index.html) from the fresh dist build.
+    // This avoids rebuilding/copying the large binary catalog for UI-only changes.
+    const assetEmojiTree = deployedEmojiTree || sourceEmojiTree;
+    if (!assetEmojiTree) {
+      throw new Error('No emoji asset tree is available. Publish emoji assets once before deploying the UI.');
     }
+    if (!distEmojiRouteTree) {
+      throw new Error('The Astro /emojis route is missing from dist. Expected dist/emojis/index.html.');
+    }
+
+    emojiTree = mergeTreeEntries(assetEmojiTree, distEmojiRouteTree);
     rootTree = replaceRootTreeEntry(distTree, 'emojis', emojiTree);
   }
 
