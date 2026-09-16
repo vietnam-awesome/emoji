@@ -217,9 +217,44 @@ body[data-ui="beui"] [role="listbox"] [role="option"]:focus-visible {
   outline: 0;
 }
 
+/* Emoji detail metadata should read like a beUI description list, not a tight table. */
+body[data-ui="beui"] .detail-page .metadata-list > div {
+  min-height: 52px;
+  grid-template-columns: 128px minmax(0, 1fr);
+  align-items: center;
+  gap: 22px;
+  padding: 14px 20px;
+}
+
+body[data-ui="beui"] .detail-page .metadata-list dt {
+  line-height: 1.35;
+  color: var(--muted-foreground);
+}
+
+body[data-ui="beui"] .detail-page .metadata-list dd {
+  min-width: 0;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+body[data-ui="beui"] .detail-page .metadata-list dd a {
+  color: inherit;
+  text-decoration-color: var(--border-strong);
+  text-underline-offset: 3px;
+}
+
 @media (max-width: 900px) {
   body[data-ui="beui"] .beui-filter-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  body[data-ui="beui"] .detail-page .metadata-list > div {
+    min-height: 48px;
+    grid-template-columns: 104px minmax(0, 1fr);
+    gap: 14px;
+    padding: 12px 14px;
   }
 }
 
