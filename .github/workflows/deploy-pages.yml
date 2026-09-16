@@ -97,7 +97,7 @@ jobs:
           if [ "$rebuild" = "true" ]; then
             echo "Emoji metadata/detail code changed: /emoji detail pages will be rebuilt after the lightweight UI publish."
           else
-            echo "No emoji metadata/detail change: preserving the existing /emoji detail tree."
+            echo "No emoji metadata/detail change detected. Existing /emoji detail pages will be preserved when present."
           fi
 
       - name: Setup Node.js
@@ -177,6 +177,22 @@ jobs:
           git fetch --no-tags --filter=blob:none origin \
             '+refs/heads/gh-pages:refs/remotes/origin/gh-pages' || true
 
+      - name: Check existing emoji detail tree
+        id: deployed_details
+        shell: bash
+        run: |
+          set -euo pipefail
+          exists=false
+          if git cat-file -e 'refs/remotes/origin/gh-pages:emoji' 2>/dev/null; then
+            exists=true
+          fi
+          echo "exists=$exists" >> "$GITHUB_OUTPUT"
+          if [ "$exists" = "true" ]; then
+            echo "Existing /emoji detail tree found on gh-pages."
+          else
+            echo "::warning title=Missing emoji detail tree::gh-pages has no /emoji tree. A full emoji detail rebuild will run to restore detail URLs."
+          fi
+
       - name: Prepare UI-only gh-pages commit
         id: publish_ui
         env:
@@ -193,8 +209,8 @@ jobs:
           set -euo pipefail
           git push origin "${{ steps.publish_ui.outputs.commit }}:refs/heads/gh-pages"
 
-      - name: Build emoji detail pages only when their data changed
-        if: steps.emoji_details.outputs.rebuild == 'true'
+      - name: Build emoji detail pages when changed or missing
+        if: steps.emoji_details.outputs.rebuild == 'true' || steps.deployed_details.outputs.exists != 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -203,10 +219,10 @@ jobs:
           test -d dist/emoji
           count="$(find dist/emoji -type f -name index.html | wc -l | tr -d ' ')"
           test "$count" -gt 0
-          echo "Built $count emoji detail pages because emoji metadata/detail code changed."
+          echo "Built $count emoji detail pages because the detail tree changed or was missing."
 
       - name: Refresh gh-pages metadata after UI publish
-        if: steps.emoji_details.outputs.rebuild == 'true'
+        if: steps.emoji_details.outputs.rebuild == 'true' || steps.deployed_details.outputs.exists != 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -214,7 +230,7 @@ jobs:
             '+refs/heads/gh-pages:refs/remotes/origin/gh-pages'
 
       - name: Prepare emoji-detail gh-pages commit
-        if: steps.emoji_details.outputs.rebuild == 'true'
+        if: steps.emoji_details.outputs.rebuild == 'true' || steps.deployed_details.outputs.exists != 'true'
         id: publish_details
         env:
           DEPLOY_MODE: details
@@ -224,13 +240,13 @@ jobs:
         run: node scripts/publish-gh-pages.mjs
 
       - name: Push emoji-detail gh-pages commit
-        if: steps.emoji_details.outputs.rebuild == 'true' && steps.publish_details.outputs.changed == 'true'
+        if: (steps.emoji_details.outputs.rebuild == 'true' || steps.deployed_details.outputs.exists != 'true') && steps.publish_details.outputs.changed == 'true'
         shell: bash
         run: |
           set -euo pipefail
           git push origin "${{ steps.publish_details.outputs.commit }}:refs/heads/gh-pages"
 
-      - name: Check whether branch-based Pages publishing is active
+      - name: Verify branch-based Pages publishing
         id: pages
         env:
           GH_TOKEN: ${{ github.token }}
@@ -242,42 +258,13 @@ jobs:
           source_branch="$(jq -r '.source.branch // ""' <<<"$current")"
           source_path="$(jq -r '.source.path // ""' <<<"$current")"
 
-          active=false
-          if [ "$build_type" = "legacy" ] && [ "$source_branch" = "gh-pages" ] && [ "$source_path" = "/" ]; then
-            active=true
+          if [ "$build_type" != "legacy" ] || [ "$source_branch" != "gh-pages" ] || [ "$source_path" != "/" ]; then
+            echo "::error title=GitHub Pages source is not gh-pages::Settings → Pages must use Deploy from a branch, gh-pages, /(root)."
+            exit 1
           fi
 
-          echo "active=$active" >> "$GITHUB_OUTPUT"
-          if [ "$active" != "true" ]; then
-            echo "::notice title=One-time GitHub Pages setting required::Open Settings → Pages, choose Deploy from a branch, then select gh-pages and /(root)."
-          fi
-
-      - name: Request Pages build explicitly
-        if: (steps.publish_ui.outputs.changed == 'true' || steps.publish_details.outputs.changed == 'true') && steps.pages.outputs.active == 'true'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          for attempt in 1 2 3 4; do
-            set +e
-            output="$(gh api --method POST "repos/${GITHUB_REPOSITORY}/pages/builds" 2>&1)"
-            status=$?
-            set -e
-
-            if [ "$status" -eq 0 ]; then
-              echo "$output"
-              exit 0
-            fi
-            if grep -q 'HTTP 409' <<<"$output"; then
-              sleep $((attempt * 8))
-              continue
-            fi
-            echo "$output" >&2
-            exit "$status"
-          done
-
-          echo "A Pages build is already queued/running."
+          echo "active=true" >> "$GITHUB_OUTPUT"
+          echo "GitHub Pages is publishing from gh-pages /(root). A push to gh-pages triggers Pages automatically."
 
       - name: Deployment summary
         if: always()
@@ -289,9 +276,10 @@ jobs:
             echo "- Source: \`${GITHUB_SHA}\`"
             echo "- UI commit: \`${{ steps.publish_ui.outputs.commit }}\`"
             echo "- UI changed: \`${{ steps.publish_ui.outputs.changed }}\`"
-            echo "- Emoji details rebuilt: \`${{ steps.emoji_details.outputs.rebuild }}\`"
+            echo "- Emoji detail tree existed before deploy: \`${{ steps.deployed_details.outputs.exists }}\`"
+            echo "- Emoji details requested by source changes: \`${{ steps.emoji_details.outputs.rebuild }}\`"
             echo "- Detail commit: \`${{ steps.publish_details.outputs.commit }}\`"
             echo "- Detail changed: \`${{ steps.publish_details.outputs.changed }}\`"
             echo
-            echo 'Normal UI changes render at most one representative detail page for build validation, discard it before publishing, and preserve the existing `/emoji` tree. Full detail pages are rebuilt only when emoji metadata/detail code changes (or when requested manually). `/emojis` binary files remain owned by the dedicated asset workflow.'
+            echo 'Normal UI changes render at most one representative detail page for validation and preserve the existing `/emoji` tree. If `/emoji` is missing on `gh-pages`, the workflow automatically performs a one-time full detail rebuild. `/emojis` binary files remain owned by the dedicated asset workflow. GitHub Pages itself publishes automatically from `gh-pages`.'
           } >> "$GITHUB_STEP_SUMMARY"
