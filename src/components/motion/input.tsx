@@ -131,7 +131,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
             onBlur?.(event);
           }}
           className={cn(
-            "peer h-full w-full bg-transparent text-base leading-6 text-foreground caret-foreground outline-none placeholder:text-muted-foreground/60",
+            "peer h-full w-full appearance-none border-0 bg-transparent p-0 text-base leading-6 text-foreground shadow-none caret-foreground outline-none placeholder:text-muted-foreground/60",
+            "[&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none",
             leftIcon ? "pl-10" : "pl-3.5",
             rightSlot || success ? "pr-10" : "pr-3.5",
             disabled && "cursor-not-allowed",
