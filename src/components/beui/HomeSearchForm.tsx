@@ -8,7 +8,12 @@ interface HomeSearchFormProps {
 
 export default function HomeSearchForm({ action }: HomeSearchFormProps) {
   return (
-    <form className="hero-search beui-hero-search" action={action} method="get" role="search">
+    <form
+      className="hero-search beui-hero-search !flex !items-center !gap-2 !border-0 !bg-transparent !p-0 !shadow-none"
+      action={action}
+      method="get"
+      role="search"
+    >
       <Input
         id="home-emoji-search"
         type="search"
@@ -21,7 +26,7 @@ export default function HomeSearchForm({ action }: HomeSearchFormProps) {
         leftIcon={<Search aria-hidden="true" />}
         className="min-w-0 flex-1"
         classNames={{
-          field: 'h-11 border-border bg-background shadow-sm',
+          field: '!h-11 !border-border !bg-background !shadow-sm',
           input: 'text-sm'
         }}
       />
@@ -30,7 +35,7 @@ export default function HomeSearchForm({ action }: HomeSearchFormProps) {
         size="md"
         variant="secondary"
         ripple
-        className="beui-search-button shrink-0 bg-background shadow-sm hover:bg-card"
+        className="beui-search-button shrink-0 !border !border-border !bg-background !text-foreground !shadow-sm hover:!bg-card"
       >
         Search
       </Button>
