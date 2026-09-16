@@ -252,17 +252,18 @@ const description = hasDistinctShortcode
     color: var(--ink);
   }
 
-  /* Detail preview: render at the asset's natural size and only shrink when the container requires it. */
+  /* Detail preview: render at the asset's natural size and keep the zoom control clear of the image. */
   .detail-preview {
     min-height: 320px;
     padding: 32px;
   }
   .detail-preview-image-button {
-    position: relative;
     display: grid;
     max-width: 100%;
     max-height: 100%;
-    place-items: center;
+    grid-template-rows: minmax(0, 1fr) auto;
+    justify-items: center;
+    gap: 14px;
     padding: 0;
     border: 0;
     background: transparent;
@@ -276,28 +277,29 @@ const description = hasDistinctShortcode
     object-fit: contain;
   }
   .detail-preview-zoom-hint {
-    position: absolute;
-    right: 8px;
-    bottom: 8px;
+    position: static;
     display: inline-flex;
     align-items: center;
-    gap: 5px;
-    padding: 5px 7px;
+    justify-content: center;
+    gap: 6px;
+    min-height: 32px;
+    padding: 6px 10px;
     border: 1px solid var(--line);
-    border-radius: 7px;
-    background: rgba(255,255,255,.92);
+    border-radius: 8px;
+    background: #fff;
     color: var(--muted);
     box-shadow: var(--shadow-sm);
-    font-size: .62rem;
+    font-size: .64rem;
     font-weight: 700;
-    opacity: .72;
+    opacity: 1;
     pointer-events: none;
-    transition: opacity .14s ease, transform .14s ease;
+    transition: border-color .14s ease, color .14s ease, transform .14s ease;
   }
-  .detail-preview-zoom-hint svg { width: 13px; height: 13px; }
+  .detail-preview-zoom-hint svg { width: 14px; height: 14px; }
   .detail-preview-image-button:hover .detail-preview-zoom-hint,
   .detail-preview-image-button:focus-visible .detail-preview-zoom-hint {
-    opacity: 1;
+    border-color: var(--line-strong);
+    color: var(--ink);
     transform: translateY(-1px);
   }
 
@@ -365,6 +367,7 @@ const description = hasDistinctShortcode
       min-height: 220px;
       padding: 24px;
     }
+    .detail-preview-image-button { gap: 12px; }
     .detail-preview-image-button img { max-height: 52vh; }
     .detail-lightbox { width: 96vw; height: 88vh; }
     .detail-lightbox-toolbar { grid-template-columns: 1fr auto; gap: 8px; }
