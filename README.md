@@ -141,7 +141,9 @@ The publisher has two modes:
 - `site`: used for source/UI/data changes. Astro and the static search index are rebuilt, but emoji binaries are not materialized into `dist`.
 - `assets`: used when a push changes only `public/emojis/**`. The workflow updates only the `emojis` subtree on `gh-pages` and skips Node installation and the Astro build entirely.
 
-The workflow configures GitHub Pages to publish from `gh-pages` at `/(root)`, writes `.nojekyll`, preserves `CNAME`, and explicitly requests a Pages build after pushing because pushes made with `GITHUB_TOKEN` do not trigger a branch-based Pages build by themselves.
+After the migration is merged and the first `gh-pages` commit has been prepared, perform the one-time repository setting change **Settings → Pages → Source: Deploy from a branch → `gh-pages` → `/(root)`**. GitHub does not allow the normal workflow `GITHUB_TOKEN` to change this repository administration setting.
+
+The workflow writes `.nojekyll`, preserves `CNAME`, checks whether branch-based Pages is active, and explicitly requests a Pages build on later pushes because pushes made with `GITHUB_TOKEN` do not trigger a branch-based Pages build by themselves.
 
 PR previews remain separate and intentionally use a representative catalog sample plus production-hosted emoji assets.
 
