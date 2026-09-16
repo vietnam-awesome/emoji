@@ -47,7 +47,7 @@ const { items = [] } = Astro.props;
     margin: 0;
     padding: 0;
     list-style: none;
-    color: var(--text-muted, #667085);
+    color: var(--muted-foreground);
     font-size: 0.8125rem;
     line-height: 1.4;
   }
@@ -76,13 +76,13 @@ const { items = [] } = Astro.props;
 
   .breadcrumb a:hover,
   .breadcrumb a:focus-visible {
-    color: var(--text, #101828);
+    color: var(--foreground);
     text-decoration: underline;
     text-underline-offset: 0.2em;
   }
 
   .breadcrumb span[aria-current='page'] {
-    color: var(--text, #101828);
+    color: var(--foreground);
     font-weight: 600;
   }
 
