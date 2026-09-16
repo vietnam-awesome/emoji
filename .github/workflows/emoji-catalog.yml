@@ -98,13 +98,14 @@ on:
         type: string
   schedule:
     # Weekly catalog refresh: Sunday 00:30 UTC = 07:30 Asia/Ho_Chi_Minh.
-    # All sources run sequentially in one job and produce one catalog commit.
+    # Previous workflows all used this window; consolidation serializes them in one job.
     - cron: '30 0 * * 0'
 
 permissions:
   contents: write
 
 concurrency:
+  # Preserve the shared writer lock previously used by all catalog-mutating workflows.
   group: emoji-data-write
   cancel-in-progress: false
 
@@ -113,6 +114,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 300
     env:
+      # Manual defaults match the previous source workflows. Scheduled runs keep their
+      # former conservative limits: licensed=250; community/Discords/Emoji.gg=75.
       OPERATION: ${{ github.event_name == 'workflow_dispatch' && inputs.operation || 'all' }}
       LICENSED_SOURCE: ${{ github.event_name == 'workflow_dispatch' && inputs.licensed_source || 'all' }}
       LICENSED_LIMIT: ${{ github.event_name == 'workflow_dispatch' && inputs.licensed_limit || '250' }}
@@ -228,6 +231,7 @@ jobs:
             --concurrency=8
 
       - name: Verify emoji index
+        # Same verifier used by the previous licensed workflow (scripts/verify-data.mjs).
         run: npm run check:data
 
       - name: Show source-specific import summary
@@ -365,6 +369,8 @@ jobs:
             fi
           }
 
+          # Preserve and generalize import-community's old race-safe behavior:
+          # recompute on top of the latest catalog instead of rebasing stale import results.
           rebuild_on_latest_main() {
             echo "main changed during catalog refresh; rebuilding selected operations on latest main..."
             git reset --hard origin/main
