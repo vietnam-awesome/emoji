@@ -5,7 +5,7 @@ interface FigmaCursorPoint {
   y: number;
 }
 
-type CursorState = 'default' | 'click' | 'type' | 'drag' | 'disabled';
+type CursorState = 'default' | 'click' | 'type' | 'drag' | 'selected' | 'disabled';
 
 interface FigmaCursorProps {
   name?: string;
@@ -62,12 +62,17 @@ function readCursorState(target: Element | null): { state: CursorState; label?: 
   const override = target.closest<HTMLElement>('[data-cursor]');
   const overrideState = override?.dataset.cursor as CursorState | undefined;
   const overrideLabel = override?.dataset.cursorLabel;
-  if (overrideState && ['default', 'click', 'type', 'drag'].includes(overrideState)) {
+  if (overrideState && ['default', 'click', 'type', 'drag', 'selected'].includes(overrideState)) {
     return { state: overrideState, label: overrideLabel };
   }
 
   const typeTarget = target.closest<HTMLElement>(TYPE_SELECTOR);
   if (typeTarget) return { state: 'type', label: typeTarget.dataset.cursorLabel };
+
+  const selected = target.closest<HTMLElement>(
+    '[aria-selected="true"], [aria-pressed="true"], [aria-current="page"], input:checked',
+  );
+  if (selected) return { state: 'selected', label: selected.dataset.cursorLabel };
 
   const dragTarget = target.closest<HTMLElement>('[draggable="true"], [data-drag-handle], [data-cursor="drag"]');
   if (dragTarget) return { state: 'drag', label: dragTarget.dataset.cursorLabel };
@@ -137,6 +142,7 @@ export function FigmaCursor({
       click: 'click',
       type: 'type',
       drag: 'drag',
+      selected: 'selected',
       disabled: 'disabled',
     };
 
@@ -146,6 +152,7 @@ export function FigmaCursor({
         click: 1.12,
         type: 0.9,
         drag: 1.16,
+        selected: 1.08,
         disabled: 0.92,
       };
       const rotationByState: Record<CursorState, number> = {
@@ -153,6 +160,7 @@ export function FigmaCursor({
         click: -3,
         type: 1,
         drag: -7,
+        selected: -2,
         disabled: 0,
       };
 
@@ -163,6 +171,8 @@ export function FigmaCursor({
       tag.textContent = customLabel || labels[state];
       tag.style.opacity = state === 'disabled' ? '0.72' : '1';
       tag.style.transform = pressed && state !== 'disabled' ? 'translateY(1px) scale(.96)' : 'translateY(0) scale(1)';
+      tag.style.outline = state === 'selected' ? '1px solid color-mix(in srgb, currentColor 28%, transparent)' : 'none';
+      tag.style.outlineOffset = state === 'selected' ? '2px' : '0';
     };
 
     const updateTargetState = (target: EventTarget | null) => {
@@ -290,7 +300,7 @@ export function FigmaCursor({
             whiteSpace: 'nowrap',
             boxShadow: '0 1px 3px rgb(0 0 0 / 0.18)',
             transformOrigin: 'left center',
-            transition: 'transform 120ms ease, opacity 120ms ease',
+            transition: 'transform 120ms ease, opacity 120ms ease, outline-color 120ms ease',
           }}
         >
           {name}
