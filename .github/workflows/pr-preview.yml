@@ -12,8 +12,11 @@ on:
       - 'src/styles/**'
       - 'astro.config.mjs'
       - 'package.json'
+      - 'scripts/build-static-search.mjs'
+      - 'scripts/emoji-store.mjs'
       - 'scripts/prepare-pr-preview.mjs'
       - 'scripts/prepare-preview-data.mjs'
+      - 'scripts/verify-build.mjs'
       - '.github/workflows/pr-preview.yml'
       - 'public/**'
       - '!public/api/**'
@@ -40,6 +43,7 @@ jobs:
       PR_PREVIEW_SITE: https://raw.githack.com/${{ github.repository }}/pr-preview-${{ github.event.pull_request.number }}-${{ github.event.pull_request.head.sha }}/
       PREVIEW_URL: https://raw.githack.com/${{ github.repository }}/pr-preview-${{ github.event.pull_request.number }}-${{ github.event.pull_request.head.sha }}/index.html
       PR_PREVIEW_ASSET_ORIGIN: https://raw.githubusercontent.com/vietnam-awesome/emoji/data/public
+      VERIFY_ASSET_ORIGIN: https://raw.githubusercontent.com/vietnam-awesome/emoji/data/public
       PREVIEW_EMOJI_LIMIT: '600'
 
     steps:
@@ -112,6 +116,11 @@ jobs:
           expected_details="$(node -e "const fs=require('fs'); console.log(JSON.parse(fs.readFileSync('src/data/emojis.json','utf8')).length)")"
           actual_details="$(find dist/emoji -type f -name index.html | wc -l | tr -d ' ')"
           test "$actual_details" -eq "$expected_details"
+          if grep -R --include='*.json' -n '"i":"/emojis/' dist/search/chunks | head -n 1; then
+            echo 'Preview static search still contains local /emojis asset URLs.' >&2
+            exit 1
+          fi
+          grep -R --include='*.json' -F -q "\"i\":\"${PR_PREVIEW_ASSET_ORIGIN}/emojis/" dist/search/chunks
 
       - name: Publish versioned preview branch
         env:
