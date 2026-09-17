@@ -103,7 +103,7 @@ jobs:
 
       - name: Build static Astro site
         env:
-          EMOJI_ASSET_ORIGIN: https://cdn.jsdelivr.net/gh/vietnam-awesome/emoji@data/public
+          EMOJI_ASSET_ORIGIN: https://raw.githubusercontent.com/vietnam-awesome/emoji/data/public
         run: npx astro build
 
       - name: Verify emoji binaries are absent from Pages artifact
