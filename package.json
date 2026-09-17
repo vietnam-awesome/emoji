@@ -17,6 +17,7 @@
     "import:emojigg": "node scripts/import-emojigg.mjs",
     "import:slackmojis": "node scripts/import-slackmojis.mjs",
     "import:discords": "node scripts/import-discords.mjs",
+    "import:eplus": "node scripts/import-eplus.mjs",
     "turso:schema": "node scripts/sync-turso.mjs --schema-only",
     "turso:sync": "node scripts/sync-turso.mjs",
     "turso:verify": "node scripts/verify-turso.mjs",
