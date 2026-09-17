@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - name: Checkout source without production emoji assets
+      - name: Checkout source without production emoji data
         uses: actions/checkout@v7
         with:
           fetch-depth: 1
@@ -27,7 +27,26 @@ jobs:
           sparse-checkout: |
             /*
             !/public/emojis/
+            !/src/data/
           sparse-checkout-cone-mode: false
+
+      - name: Checkout catalog metadata from data branch
+        uses: actions/checkout@v7
+        with:
+          ref: data
+          path: .emoji-data
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: |
+            /src/data/
+          sparse-checkout-cone-mode: false
+
+      - name: Overlay catalog metadata
+        run: |
+          rm -rf src/data
+          mkdir -p src
+          cp -a .emoji-data/src/data src/data
+          rm -rf .emoji-data
 
       - name: Setup Node.js
         uses: actions/setup-node@v7
@@ -45,6 +64,9 @@ jobs:
       - name: Install dependencies
         run: npm install --no-audit --no-fund
 
+      - name: Hydrate emoji catalog
+        run: npm run emoji-store:hydrate
+
       - name: Run unit tests
         run: npm test
 
@@ -56,13 +78,11 @@ jobs:
       - name: Validate static search generator
         run: node --check scripts/build-static-search.mjs
 
-      - name: Validate incremental Pages publisher
-        run: node --check scripts/publish-gh-pages.mjs
-
       - name: Build representative static site
         env:
           FAST_BUILD: '1'
           FAST_BUILD_DETAIL_LIMIT: '300'
+          EMOJI_ASSET_ORIGIN: https://cdn.jsdelivr.net/gh/vietnam-awesome/emoji@data/public
         run: npx astro build
 
       - name: Verify representative built links
