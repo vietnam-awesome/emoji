@@ -1,0 +1,225 @@
+/* Dark-mode hardening for BEUI controls and overlays.
+ * Keep this file after beui.css so semantic surface tokens win over
+ * component-local utility defaults without duplicating component markup.
+ */
+
+:root {
+  --beui-control-bg: oklch(100% 0 0);
+  --beui-control-hover: oklch(94.5% 0 0);
+  --beui-overlay: rgb(15 15 15 / 0.26);
+  color-scheme: light;
+}
+
+:root.dark {
+  /* Keep background/card/popover/muted visually distinct. Previously card,
+     popover and muted were all #1c1c1c, so menu hover/selected states vanished. */
+  --card: #1d1d1d;
+  --popover: #232323;
+  --secondary: #1d1d1d;
+  --beui-muted: #2b2b2b;
+  --muted-foreground: oklch(72% 0 0);
+  --border: rgb(255 255 255 / 0.09);
+  --border-strong: rgb(255 255 255 / 0.18);
+  --glass-bg: rgb(28 28 28 / 0.94);
+  --glass-border: rgb(255 255 255 / 0.12);
+  --beui-control-bg: #202020;
+  --beui-control-hover: #2b2b2b;
+  --beui-overlay: rgb(0 0 0 / 0.58);
+  color-scheme: dark;
+}
+
+/* BEUI inputs: make the field itself own a semantic surface instead of
+   relying on transparent/native browser rendering. */
+[data-ui="beui"] div[data-state]:has(> input:not(.beui-native-proxy)) {
+  background: var(--beui-control-bg) !important;
+  border-color: var(--border) !important;
+  color: var(--foreground);
+}
+
+[data-ui="beui"] div[data-state="focused"]:has(> input:not(.beui-native-proxy)) {
+  border-color: var(--border-strong) !important;
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--foreground) 8%, transparent) !important;
+}
+
+[data-ui="beui"] input:not(.beui-native-proxy) {
+  color: var(--foreground) !important;
+  caret-color: var(--foreground);
+  color-scheme: inherit;
+}
+
+[data-ui="beui"] input:not(.beui-native-proxy)::placeholder {
+  color: var(--muted-foreground) !important;
+  opacity: 0.78;
+}
+
+[data-ui="beui"] input:not(.beui-native-proxy):-webkit-autofill,
+[data-ui="beui"] input:not(.beui-native-proxy):-webkit-autofill:hover,
+[data-ui="beui"] input:not(.beui-native-proxy):-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--foreground) !important;
+  caret-color: var(--foreground);
+  box-shadow: 0 0 0 1000px var(--beui-control-bg) inset !important;
+  transition: background-color 9999s ease-out 0s;
+}
+
+/* Header search / mobile menu. */
+[data-ui="beui"] header form[role="search"] {
+  background: var(--popover) !important;
+  color: var(--popover-foreground);
+  border-color: var(--border-strong) !important;
+}
+
+[data-ui="beui"] header nav[aria-label="Primary navigation"] {
+  border-color: var(--border-strong);
+}
+
+[data-ui="beui"] header nav[aria-label="Primary navigation"] a > span.absolute {
+  background: var(--beui-muted) !important;
+  border-color: var(--border-strong) !important;
+}
+
+[data-ui="beui"] header nav[aria-label="Mobile navigation"] {
+  background: var(--popover) !important;
+  color: var(--popover-foreground);
+  border-color: var(--border-strong) !important;
+}
+
+[data-ui="beui"] header button.absolute[aria-label="Close navigation"] {
+  background: var(--beui-overlay) !important;
+}
+
+:root.dark [data-ui="beui"] header nav[aria-label="Mobile navigation"] a[aria-current="page"] {
+  background: var(--beui-muted) !important;
+  color: var(--foreground) !important;
+}
+
+/* BEUI Select menus. This covers catalog filters and any future select using
+   the shared motion/select component. */
+[data-ui="beui"] [role="listbox"] {
+  background: var(--popover) !important;
+  color: var(--popover-foreground) !important;
+  border-color: var(--border-strong) !important;
+  box-shadow: 0 16px 42px rgb(0 0 0 / 0.28) !important;
+}
+
+[data-ui="beui"] button[aria-haspopup="listbox"] {
+  background: var(--beui-control-bg) !important;
+  border-color: var(--border) !important;
+  color: var(--foreground) !important;
+}
+
+[data-ui="beui"] button[aria-haspopup="listbox"]:hover,
+[data-ui="beui"] button[aria-haspopup="listbox"]:focus-visible {
+  background: var(--beui-control-hover) !important;
+  border-color: var(--border-strong) !important;
+}
+
+[data-ui="beui"] [role="option"] {
+  color: var(--muted-foreground) !important;
+}
+
+[data-ui="beui"] [role="option"][aria-selected="true"],
+[data-ui="beui"] [role="option"]:hover,
+[data-ui="beui"] [role="option"]:focus-visible {
+  background: var(--beui-muted) !important;
+  color: var(--foreground) !important;
+}
+
+/* Home autocomplete results should behave like a popover, not a page panel. */
+[data-ui="beui"] .home-search-results {
+  background: var(--popover) !important;
+  color: var(--popover-foreground);
+  border-color: var(--border-strong) !important;
+  box-shadow: 0 20px 54px rgb(0 0 0 / 0.28);
+}
+
+[data-ui="beui"] .home-search-results-head,
+[data-ui="beui"] .home-search-all {
+  background: var(--card);
+}
+
+[data-ui="beui"] .home-search-item:hover,
+[data-ui="beui"] .home-search-item:focus-visible {
+  background: var(--beui-muted) !important;
+  outline: none;
+}
+
+[data-ui="beui"] .home-search-thumb {
+  background: var(--beui-control-bg);
+  border-color: var(--border-strong);
+}
+
+:root.dark [data-ui="beui"] .home-search-list,
+:root.dark [data-ui="beui"] [role="listbox"] > div {
+  scrollbar-color: var(--border-strong) transparent;
+}
+
+/* Emoji detail zoom lightbox. The base stylesheet used --background for both
+   hover and active zoom buttons, which turns the selected item into an almost
+   black pill in dark mode. Keep dialog, control, hover, and selected surfaces
+   distinct and animate the state change consistently with the rest of BEUI. */
+[data-ui="beui"] .detail-lightbox {
+  background: var(--popover) !important;
+  color: var(--popover-foreground);
+  border-color: var(--border-strong) !important;
+}
+
+[data-ui="beui"] .detail-lightbox::backdrop {
+  background: var(--beui-overlay) !important;
+  backdrop-filter: blur(5px);
+}
+
+[data-ui="beui"] .detail-lightbox-toolbar {
+  background: var(--popover) !important;
+  border-color: var(--border-strong) !important;
+}
+
+[data-ui="beui"] .detail-lightbox-zoom-levels {
+  background: var(--beui-control-bg) !important;
+  border-color: var(--border-strong) !important;
+}
+
+[data-ui="beui"] .detail-lightbox-zoom-levels button,
+[data-ui="beui"] .detail-lightbox-close {
+  color: var(--muted-foreground) !important;
+  box-shadow: none !important;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+[data-ui="beui"] .detail-lightbox-zoom-levels button:hover,
+[data-ui="beui"] .detail-lightbox-zoom-levels button:focus-visible,
+[data-ui="beui"] .detail-lightbox-close:hover,
+[data-ui="beui"] .detail-lightbox-close:focus-visible {
+  background: var(--beui-control-hover) !important;
+  color: var(--foreground) !important;
+  outline: none;
+}
+
+[data-ui="beui"] .detail-lightbox-zoom-levels button:focus-visible,
+[data-ui="beui"] .detail-lightbox-close:focus-visible {
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--foreground) 14%, transparent) !important;
+}
+
+[data-ui="beui"] .detail-lightbox-zoom-levels button.is-active,
+[data-ui="beui"] .detail-lightbox-zoom-levels button[aria-pressed="true"] {
+  background: var(--beui-muted) !important;
+  color: var(--foreground) !important;
+  box-shadow:
+    inset 0 0 0 1px var(--border-strong),
+    0 1px 2px rgb(0 0 0 / 0.16) !important;
+  transform: scale(1.03);
+}
+
+[data-ui="beui"] .detail-lightbox-stage {
+  background: var(--card) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-ui="beui"] .detail-lightbox-zoom-levels button,
+  [data-ui="beui"] .detail-lightbox-close {
+    transition: none;
+  }
+}
