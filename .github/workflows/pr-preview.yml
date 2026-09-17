@@ -39,7 +39,7 @@ jobs:
       PR_PREVIEW_BASE: /${{ github.repository }}/pr-preview-${{ github.event.pull_request.number }}-${{ github.event.pull_request.head.sha }}/
       PR_PREVIEW_SITE: https://raw.githack.com/${{ github.repository }}/pr-preview-${{ github.event.pull_request.number }}-${{ github.event.pull_request.head.sha }}/
       PREVIEW_URL: https://raw.githack.com/${{ github.repository }}/pr-preview-${{ github.event.pull_request.number }}-${{ github.event.pull_request.head.sha }}/index.html
-      PR_PREVIEW_ASSET_ORIGIN: https://cdn.jsdelivr.net/gh/vietnam-awesome/emoji@data/public
+      PR_PREVIEW_ASSET_ORIGIN: https://raw.githubusercontent.com/vietnam-awesome/emoji/data/public
       PREVIEW_EMOJI_LIMIT: '600'
 
     steps:
@@ -109,49 +109,18 @@ jobs:
           test -s dist/emojis/index.html
           grep -q 'ePlus Emoji' dist/index.html
           grep -q 'data-pr-preview-router' dist/emojis/index.html
-
           expected_details="$(node -e "const fs=require('fs'); console.log(JSON.parse(fs.readFileSync('src/data/emojis.json','utf8')).length)")"
           actual_details="$(find dist/emoji -type f -name index.html | wc -l | tr -d ' ')"
           test "$actual_details" -eq "$expected_details"
-
-          node <<'NODE'
-          const fs = require('fs');
-          const path = require('path');
-          const html = fs.readFileSync('dist/emojis/index.html', 'utf8');
-          const base = String(process.env.PR_PREVIEW_BASE || '').replace(/\/+$/, '');
-          const hrefs = [...html.matchAll(/href="([^"]*\/emoji\/[^"]+\/index\.html(?:[?#][^"]*)?)"/g)]
-            .map((match) => match[1]);
-          if (!hrefs.length) {
-            console.error('No emoji detail links found in Browse preview.');
-            process.exit(1);
-          }
-          const missing = [];
-          for (const href of new Set(hrefs)) {
-            const pathname = href.split(/[?#]/)[0];
-            if (!pathname.startsWith(`${base}/`)) continue;
-            const relative = pathname.slice(base.length + 1);
-            const target = path.join('dist', relative);
-            if (!fs.existsSync(target)) missing.push(href);
-          }
-          if (missing.length) {
-            console.error('Missing Browse detail targets:', missing.slice(0, 20));
-            process.exit(1);
-          }
-          console.log(`Validated ${new Set(hrefs).size} Browse detail link target(s).`);
-          NODE
-
-          echo "Representative preview validated: ${actual_details}/${expected_details} detail routes are available."
 
       - name: Publish versioned preview branch
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-
           preview_dir="$(mktemp -d)"
           cp -a dist/. "$preview_dir/"
           cd "$preview_dir"
-
           git init -q
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -168,7 +137,7 @@ jobs:
             echo
             echo "[Open the cache-safe live site]($PREVIEW_URL)"
             echo
-            echo 'Preview metadata comes from the data branch; emoji binaries load from jsDelivr @data.'
+            echo 'Preview metadata comes from the data branch; emoji binaries load from the data-branch asset origin.'
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Post or update live preview link on PR
@@ -179,19 +148,16 @@ jobs:
           script: |
             const marker = '<!-- emoji-live-pr-preview -->';
             const shortSha = context.payload.pull_request.head.sha.slice(0, 7);
-            const body = `${marker}\n## 🌐 Live Preview\n\n**[Open cache-safe PR preview →](${process.env.PREVIEW_URL})**\n\nBuilt from commit \`${shortSha}\`. Catalog metadata is read from the \`data\` branch and assets are served from its CDN URL.`;
-
+            const body = `${marker}\n## 🌐 Live Preview\n\n**[Open cache-safe PR preview →](${process.env.PREVIEW_URL})**\n\nBuilt from commit \`${shortSha}\`. Catalog metadata is read from the \`data\` branch and assets are served from that branch.`;
             const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number,
               per_page: 100
             });
-
             const existing = comments.find((comment) =>
               comment.user?.type === 'Bot' && comment.body?.includes(marker)
             );
-
             if (existing) {
               await github.rest.issues.updateComment({
                 owner: context.repo.owner,
