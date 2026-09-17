@@ -6,6 +6,8 @@ export interface EmojiAssetRef {
   hexcode: string;
 }
 
+const DEFAULT_ASSET_ORIGIN = 'https://cdn.jsdelivr.net/gh/vietnam-awesome/emoji@data/public';
+
 function twemojiFilename(hexcode: string) {
   return `${hexcode
     .split('-')
@@ -30,10 +32,14 @@ export function localEmojiAssetPath(emoji: EmojiAssetRef) {
 
 export function emojiAssetUrl(emoji: EmojiAssetRef, base: string) {
   const assetPath = localEmojiAssetPath(emoji);
-  const previewAssetOrigin = String(process.env.PR_PREVIEW_ASSET_ORIGIN || '')
+  const assetOrigin = String(
+    process.env.PR_PREVIEW_ASSET_ORIGIN ||
+    process.env.EMOJI_ASSET_ORIGIN ||
+    DEFAULT_ASSET_ORIGIN
+  )
     .trim()
     .replace(/\/+$/, '');
 
-  if (previewAssetOrigin) return `${previewAssetOrigin}${assetPath}`;
+  if (assetOrigin) return `${assetOrigin}${assetPath}`;
   return withBase(assetPath, base);
 }
