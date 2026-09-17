@@ -5,25 +5,46 @@ import { Button } from '../motion/button';
 import { SPRING_PANEL } from '../../lib/ease';
 import FigmaCursor from './FigmaCursor';
 
+const MIN_SCROLLABLE_DISTANCE = 160;
+const MIN_REVEAL_DISTANCE = 120;
+const MAX_REVEAL_DISTANCE = 320;
+const REVEAL_RATIO = 0.18;
+
 export default function BackToTop() {
   const [visible, setVisible] = useState(false);
   const reduceMotion = useReducedMotion();
 
   useEffect(() => {
     let frame = 0;
+
     const sync = () => {
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => {
-        setVisible(window.scrollY >= Math.max(560, window.innerHeight * 0.72));
+        const maxScroll = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+        const canScroll = maxScroll > MIN_SCROLLABLE_DISTANCE;
+        const revealAt = Math.min(
+          MAX_REVEAL_DISTANCE,
+          Math.max(MIN_REVEAL_DISTANCE, maxScroll * REVEAL_RATIO),
+        );
+
+        setVisible(canScroll && window.scrollY >= revealAt);
       });
     };
+
     sync();
     window.addEventListener('scroll', sync, { passive: true });
     window.addEventListener('resize', sync, { passive: true });
+
+    const resizeObserver = typeof ResizeObserver !== 'undefined'
+      ? new ResizeObserver(sync)
+      : null;
+    resizeObserver?.observe(document.documentElement);
+
     return () => {
       cancelAnimationFrame(frame);
       window.removeEventListener('scroll', sync);
       window.removeEventListener('resize', sync);
+      resizeObserver?.disconnect();
     };
   }, []);
 
