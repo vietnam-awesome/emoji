@@ -238,10 +238,21 @@
 
   body[data-page="browse"] [data-beui-catalog-controls] button[type="submit"] {
     width: 44px;
+    min-width: 44px;
     padding-inline: 0 !important;
   }
 
-  body[data-page="browse"] [data-beui-catalog-controls] button[type="submit"] span {
+  /* Hide only the text label. The Button ripple also renders a span, so a broad
+   * `button span` selector collapses the visual contents of this icon button. */
+  body[data-page="browse"] [data-beui-catalog-controls] button[type="submit"] > span:last-child {
     display: none;
+  }
+
+  body[data-page="browse"] [data-beui-catalog-controls] button[type="submit"] > svg {
+    width: 18px !important;
+    height: 18px !important;
+    min-width: 18px;
+    min-height: 18px;
+    flex: 0 0 18px;
   }
 }
