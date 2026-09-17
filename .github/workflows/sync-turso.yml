@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       dry_run:
-        description: Compare local catalog with Turso without writing anything
+        description: Compare data-branch catalog with Turso without writing anything
         required: false
         default: true
         type: boolean
@@ -18,10 +18,7 @@ on:
         required: false
         default: false
         type: boolean
-  # The catalog changes slowly. Two scheduled delta syncs per month are enough and
-  # keep Turso Free-plan writes comfortably below the monthly allowance.
   schedule:
-    # 00:30 UTC = 07:30 Asia/Ho_Chi_Minh, on the 1st and 15th of each month.
     - cron: '30 0 1,15 * *'
 
 permissions:
@@ -41,10 +38,35 @@ jobs:
       TURSO_BATCH_SIZE: '200'
 
     steps:
-      - name: Checkout latest main
+      - name: Checkout application code
         uses: actions/checkout@v7
         with:
           ref: main
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: |
+            /*
+            !/public/emojis/
+            !/src/data/
+          sparse-checkout-cone-mode: false
+
+      - name: Checkout catalog metadata from data branch
+        uses: actions/checkout@v7
+        with:
+          ref: data
+          path: .emoji-data
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: |
+            /src/data/
+          sparse-checkout-cone-mode: false
+
+      - name: Overlay catalog metadata
+        run: |
+          rm -rf src/data
+          mkdir -p src
+          cp -a .emoji-data/src/data src/data
+          rm -rf .emoji-data
 
       - name: Setup Node.js
         uses: actions/setup-node@v7
@@ -67,9 +89,6 @@ jobs:
         run: |
           set -euo pipefail
           args=()
-
-          # Scheduled runs always perform the safe incremental sync. Manual runs
-          # default to dry-run so quota is not consumed accidentally.
           if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ inputs.dry_run }}" == "true" ]]; then
             args+=(--dry-run)
           fi
@@ -79,7 +98,6 @@ jobs:
           if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ inputs.optimize_fts }}" == "true" ]]; then
             args+=(--optimize-fts)
           fi
-
           npm run turso:sync -- "${args[@]}"
 
       - name: Verify Turso catalog
