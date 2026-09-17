@@ -50,6 +50,8 @@ const origin = Astro.site ?? Astro.url.origin;
 const homeUrl = withBase('/', base);
 const emojisUrl = withBase('/emojis', base);
 const categoriesUrl = withBase('/categories', base);
+const animatedEmojisUrl = `${emojisUrl}?motion=yes`;
+const staticEmojisUrl = `${emojisUrl}?motion=no`;
 const faviconIcoUrl = withBase('/favicon.ico', base);
 const faviconPngUrl = withBase('/favicon-48x48.png', base);
 const appleTouchIconUrl = withBase('/apple-touch-icon.png', base);
@@ -139,7 +141,7 @@ const schemaGraph = [
         '@type': 'EntryPoint',
         urlTemplate: `${absoluteBrowseUrl}?q={search_term_string}`
       },
-      'query-input': 'required name=search_term_string'
+      'query-input': 'required name={search_term_string}'
     }
   },
   {
@@ -278,13 +280,13 @@ const schemaJson = JSON.stringify({
         <div class="footer-links">
           <a href={emojisUrl}>Browse all</a>
           <a href={categoriesUrl}>Categories</a>
-          <a href="https://github.com/vietnam-awesome/emoji/blob/main/NOTICE.md" rel="noreferrer">Licenses</a>
-          <a href="https://github.com/vietnam-awesome/emoji" rel="noreferrer">Source</a>
+          <a href={animatedEmojisUrl}>Animated</a>
+          <a href={staticEmojisUrl}>Static</a>
         </div>
       </div>
       <div class="shell footer-bottom">
         <span>Built by ePlus.DEV</span>
-        <span>Emoji assets retain their upstream attribution and licenses.</span>
+        <span>Search, copy and download emoji for communities, apps and creative projects.</span>
       </div>
     </footer>
 
