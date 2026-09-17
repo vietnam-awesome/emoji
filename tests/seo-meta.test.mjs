@@ -43,10 +43,13 @@ test('head includes keywords, publisher, Open Graph and Twitter cards', async ()
   assert.match(layout, /publisher: \{ '@id': publisherId \}/);
   assert.match(layout, /property="og:site_name" content="ePlus Emoji"/);
   assert.match(layout, /property="og:image" content=\{absoluteSocialImageUrl\}/);
-  assert.match(layout, /property="og:image:width" content="1200"/);
+  assert.match(layout, /const defaultSocialImageWidth = 1731;/);
+  assert.match(layout, /const defaultSocialImageHeight = 909;/);
+  assert.match(layout, /property="og:image:width" content=\{String\(defaultSocialImageWidth\)\}/);
+  assert.match(layout, /property="og:image:height" content=\{String\(defaultSocialImageHeight\)\}/);
   assert.match(layout, /name="twitter:card" content="summary_large_image"/);
   assert.match(layout, /name="twitter:image" content=\{absoluteSocialImageUrl\}/);
 
   const ogImage = await readFile(new URL('../public/og-default.png', import.meta.url));
-  assert.deepEqual(pngDimensions(ogImage), { width: 1200, height: 630 });
+  assert.deepEqual(pngDimensions(ogImage), { width: 1731, height: 909 });
 });
