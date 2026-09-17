@@ -14,41 +14,65 @@ Keep the UI in the current repository:
 
 - `emoji.eplus.dev` -> HTML, CSS, JS, search metadata, detail pages
 
-Split binary assets into 8 repositories/sites:
+Split binary assets into as many independent repositories/sites as the planner needs:
 
 - `emoji-assets-01` -> `assets-01.emoji.eplus.dev`
 - `emoji-assets-02` -> `assets-02.emoji.eplus.dev`
 - `emoji-assets-03` -> `assets-03.emoji.eplus.dev`
-- `emoji-assets-04` -> `assets-04.emoji.eplus.dev`
-- `emoji-assets-05` -> `assets-05.emoji.eplus.dev`
-- `emoji-assets-06` -> `assets-06.emoji.eplus.dev`
-- `emoji-assets-07` -> `assets-07.emoji.eplus.dev`
-- `emoji-assets-08` -> `assets-08.emoji.eplus.dev`
+- ...
 
-With the current catalog size, 8 shards should average roughly 650-700 MB each. The actual sizes should be measured with the planner before creating any repositories.
+The planner no longer requires a manually selected shard count. By default it targets at most 700 MB per shard and automatically increases the shard count until the largest hash-distributed shard is below that ceiling.
 
-## Stable shard assignment
+## Automatic shard sizing
 
-`scripts/asset-shards.mjs` assigns each relative asset path to a shard using:
+Run:
 
-```text
-sha256(relative/path) -> first 32 bits -> modulo shard count -> 1-based shard
+```bash
+npm run assets:shards -- --report .tmp/emoji-shards.json
 ```
 
-The important property is that an existing asset remains on the same shard as long as the shard count remains unchanged.
+The planner:
 
-Do not change the production shard count after rollout without a migration plan, because modulo-based assignment would move many existing files.
+1. scans every file under `public/emojis`
+2. sums the current byte size
+3. starts with `ceil(total bytes / target bytes)` shards
+4. assigns paths using deterministic SHA-256 hashing
+5. checks the real byte size of every resulting shard
+6. increases the shard count until every shard fits below the target
 
-## Measure the current distribution
+The default target is 700 MB. A different safety target can be selected without manually calculating the shard count:
+
+```bash
+npm run assets:shards -- --target-mb 650 --report .tmp/emoji-shards.json
+```
+
+An exact count is still supported for experiments or for pinning a production layout:
 
 ```bash
 npm run assets:shards -- --count 8 --report .tmp/emoji-shards.json
 ```
 
-Example output:
+## Stable shard assignment and production rollout
+
+For a fixed shard count, `scripts/asset-shards.mjs` assigns each relative asset path using:
 
 ```text
-Emoji asset shard plan: 197,379 files, 5.3 GB, 8 shards
+sha256(relative/path) -> first 32 bits -> modulo shard count -> 1-based shard
+```
+
+That means an asset stays on the same shard while the shard count stays unchanged.
+
+There is an important production caveat: changing the modulo shard count later, for example from 8 to 9, would move many existing files between shard hosts. Therefore automatic sizing is ideal for determining the initial layout, but a production rollout should either:
+
+1. pin the selected count after the initial measurement and add a persistent assignment strategy before future expansion, or
+2. keep the public `/emojis/*` URL behind a proxy/CDN so internal shard movement never changes public URLs.
+
+A future production version should preserve existing assignments and place only new assets into shards with remaining capacity, creating a new shard only when required. That avoids rewriting old asset locations as the catalog grows.
+
+## Example output
+
+```text
+Emoji asset shard plan: 197,379 files, 5.3 GB, 8 shards (auto-size, target <= 700 MB)
 
 Shard  Files       Size
 -----  ----------  ----------
@@ -57,9 +81,13 @@ Shard  Files       Size
 ...
 ```
 
-The report only contains counts and byte totals. It does not copy emoji files.
+The actual shard count may be higher than `ceil(total / target)` because file sizes are not evenly distributed by hash.
+
+The report contains counts and byte totals. It does not copy emoji files.
 
 ## Export one shard for a real test
+
+First run the report and use the automatically selected `shardCount`. Then export a shard with that count pinned so the export uses exactly the measured layout:
 
 ```bash
 npm run assets:shards -- \
@@ -91,15 +119,15 @@ import new emoji
 public/emojis/<path>
       |
       v
-stable shard(path)
+stable assignment
       |
       +--> shard 01 repo/site
       +--> shard 02 repo/site
+      +--> shard 03 repo/site
       +--> ...
-      +--> shard 08 repo/site
 ```
 
-A future deployment workflow should determine which asset paths changed, calculate their shard number, and update only those destination repositories.
+A future deployment workflow should determine which asset paths changed and update only the destination shard repositories that contain those paths.
 
 The default `GITHUB_TOKEN` from this repository cannot be treated as a general cross-repository write credential. For cross-repository publishing, use either:
 
@@ -124,7 +152,7 @@ would become something like:
 https://assets-03.emoji.eplus.dev/emojis/example.gif
 ```
 
-This is the simplest setup and needs no Worker/proxy.
+This is the simplest setup and needs no Worker/proxy, but moving an existing asset to another shard would change its URL.
 
 ### Option B: preserve the existing public URL
 
@@ -136,17 +164,18 @@ https://emoji.eplus.dev/emojis/example.gif
 
 but route `/emojis/*` through a proxy/CDN layer to the correct shard host.
 
-This preserves old links but adds routing infrastructure, so it is outside this first POC.
+This preserves old links even if internal shard placement changes, but adds routing infrastructure, so it is outside this first POC.
 
 ## Recommended experiment before implementation
 
-1. Run the shard report and verify every shard stays comfortably below the Pages size ceiling.
+1. Run the automatic shard report and verify the selected count and largest shard size.
 2. Create only one temporary asset repository, for example `emoji-assets-poc`.
-3. Export shard 1 and publish it there.
+3. Export shard 1 using the selected count and publish it there.
 4. Test static files, GIFs, cache headers, bandwidth behavior, and custom-domain DNS.
-5. Only after that, decide whether to create all 8 repositories.
-6. Add a URL resolver behind a feature flag before changing production URLs.
-7. Finally remove `public/emojis` from the main Pages artifact.
+5. Only after that, decide whether to create all selected shard repositories.
+6. Choose a persistent assignment strategy before allowing the shard count to grow in production.
+7. Add a URL resolver behind a feature flag before changing production URLs.
+8. Finally remove `public/emojis` from the main Pages artifact.
 
 ## What this PR intentionally does not do
 
