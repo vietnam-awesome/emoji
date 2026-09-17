@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'src/**'
+      - '!src/data/**'
       - 'public/**'
       - '!public/emojis/**'
       - '!public/api/**'
@@ -29,11 +30,37 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
-      - name: Checkout latest main
+      - name: Checkout UI source without emoji data
         uses: actions/checkout@v7
         with:
           ref: main
           fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: |
+            /*
+            !/public/emojis/
+            !/src/data/
+          sparse-checkout-cone-mode: false
+
+      - name: Checkout catalog metadata from data branch
+        uses: actions/checkout@v7
+        with:
+          ref: data
+          path: .emoji-data
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: |
+            /src/data/
+          sparse-checkout-cone-mode: false
+
+      - name: Overlay catalog metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf src/data
+          mkdir -p src
+          cp -a .emoji-data/src/data src/data
+          rm -rf .emoji-data
 
       - name: Setup Node.js
         uses: actions/setup-node@v7
@@ -51,14 +78,17 @@ jobs:
       - name: Install dependencies
         run: npm install --no-audit --no-fund
 
+      - name: Hydrate emoji catalog
+        run: npm run emoji-store:hydrate
+
       - name: Restore static search cache
         id: search-cache
         uses: actions/cache/restore@v4
         with:
           path: public/search
-          key: static-search-v3-${{ hashFiles('src/data/emojis/*.json', 'scripts/build-static-search.mjs') }}
+          key: static-search-v4-data-${{ hashFiles('src/data/emojis/*.json', 'scripts/build-static-search.mjs') }}
 
-      - name: Build static search shards from repository data
+      - name: Build static search shards from data branch metadata
         if: steps.search-cache.outputs.cache-hit != 'true'
         env:
           STATIC_DATA_SOURCE: local
@@ -69,10 +99,22 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: public/search
-          key: static-search-v3-${{ hashFiles('src/data/emojis/*.json', 'scripts/build-static-search.mjs') }}
+          key: static-search-v4-data-${{ hashFiles('src/data/emojis/*.json', 'scripts/build-static-search.mjs') }}
 
       - name: Build static Astro site
+        env:
+          EMOJI_ASSET_ORIGIN: https://cdn.jsdelivr.net/gh/vietnam-awesome/emoji@data/public
         run: npx astro build
+
+      - name: Verify emoji binaries are absent from Pages artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -d dist/emojis ] && find dist/emojis -type f ! -name index.html -print -quit | grep -q .; then
+            echo 'Unexpected emoji binary copied into dist/emojis.' >&2
+            exit 1
+          fi
+          du -sh dist
 
       - name: Configure Pages
         uses: actions/configure-pages@v6
