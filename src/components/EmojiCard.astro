@@ -72,7 +72,7 @@ const compact = variant === 'compact';
 >
   {!compact && (
     <>
-      <label class="emoji-select-control !grid" title={`Select ${emoji.name}`}>
+      <label class="emoji-select-control !grid" data-beui-tooltip={`Select ${emoji.name}`}>
         <input type="checkbox" data-emoji-select aria-label={`Select ${emoji.name}`} />
         <span aria-hidden="true">✓</span>
       </label>
@@ -81,7 +81,7 @@ const compact = variant === 'compact';
         class="emoji-card-download"
         href={imageUrl}
         download={downloadFilename}
-        title={`Download ${emoji.name}`}
+        data-beui-tooltip={`Download ${emoji.name}`}
         aria-label={`Download ${emoji.name}`}
       >
         <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -102,7 +102,7 @@ const compact = variant === 'compact';
       {!compact && <span class="native-emoji" aria-hidden="true">{emoji.emoji}</span>}
     </div>
 
-    <a class="emoji-category" href={categoryUrl} title={`Browse ${category}`}>{category}</a>
+    <a class="emoji-category" href={categoryUrl} data-beui-tooltip={`Browse ${category}`}>{category}</a>
 
     {!compact && (
       <div class="emoji-meta">

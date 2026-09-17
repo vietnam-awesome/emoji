@@ -49,7 +49,7 @@ export default function BackToTop() {
               size="sm"
               ripple
               aria-label="Back to top"
-              title="Back to top"
+              data-beui-tooltip="Back to top"
               className="glass-thin h-10 gap-1.5 border-border px-3.5 shadow-lg"
               onClick={() => window.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' })}
             >

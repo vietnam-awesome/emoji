@@ -12,7 +12,7 @@ export default function HeroShuffleButton() {
       className="hero-shuffle"
       aria-controls="hero-random-grid"
       aria-label="Show another set of emoji"
-      title="Shuffle emoji"
+      data-beui-tooltip="Shuffle emoji"
     >
       <Shuffle className="size-3.5" aria-hidden="true" />
       <span>Shuffle</span>
