@@ -19,6 +19,30 @@ const browseUrl = withBase('/emojis', base);
     { name: 'Emoji editor' }
   ]}
 >
+  <script is:inline>
+    (() => {
+      try {
+        const url = new URL(window.location.href);
+        if (url.searchParams.get('handoff') !== 'cook' || url.searchParams.has('src')) return;
+        const source = sessionStorage.getItem('eplus-emoji-editor-handoff');
+        if (!source) return;
+        const name = sessionStorage.getItem('eplus-emoji-editor-handoff-name') || 'cooked-emoji.png';
+        url.searchParams.set('src', source);
+        url.searchParams.set('name', name);
+        history.replaceState({}, '', url);
+        sessionStorage.removeItem('eplus-emoji-editor-handoff');
+        sessionStorage.removeItem('eplus-emoji-editor-handoff-name');
+        window.setTimeout(() => {
+          const cleanUrl = new URL(window.location.href);
+          cleanUrl.searchParams.delete('src');
+          cleanUrl.searchParams.delete('handoff');
+          history.replaceState({}, '', cleanUrl);
+        }, 1500);
+      } catch {
+        // The editor remains usable even when browser storage is restricted.
+      }
+    })();
+  </script>
   <section class="shell">
     <EmojiEditor browseUrl={browseUrl} client:only="react" />
   </section>
