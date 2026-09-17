@@ -7,6 +7,14 @@ const CATEGORY_FILE = path.resolve('src/data/categories.json');
 const OUT_DIR = path.resolve('public/search');
 const CHUNK_SIZE = 1000;
 const DB_PAGE_SIZE = 5000;
+const DEFAULT_ASSET_ORIGIN = 'https://raw.githubusercontent.com/vietnam-awesome/emoji/data/public';
+const ASSET_ORIGIN = String(
+  process.env.PR_PREVIEW_ASSET_ORIGIN ||
+  process.env.EMOJI_ASSET_ORIGIN ||
+  DEFAULT_ASSET_ORIGIN
+)
+  .trim()
+  .replace(/\/+$/, '');
 
 function safeSlug(value, fallback = 'unknown') {
   const slug = String(value || '')
@@ -49,6 +57,12 @@ function recordTokens(record) {
   return [...tokens];
 }
 
+function assetUrl(value) {
+  const image = String(value || '');
+  if (image.startsWith('/emojis/') && ASSET_ORIGIN) return `${ASSET_ORIGIN}${image}`;
+  return image;
+}
+
 function compactRecord(record) {
   return {
     s: String(record.slug || ''),
@@ -60,7 +74,7 @@ function compactRecord(record) {
     t: Array.isArray(record.tags) ? record.tags.slice(0, 16) : [],
     src: String(record.source || ''),
     sl: String(record.sourceLabel || ''),
-    i: String(record.image || ''),
+    i: assetUrl(record.image),
     f: String(record.format || ''),
     a: Boolean(record.animated),
     e: String(record.emoji || ''),
