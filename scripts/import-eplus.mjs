@@ -43,6 +43,12 @@ function hashBuffer(buffer) {
   return createHash('sha256').update(buffer).digest('hex');
 }
 
+function normalizeShortcode(value, fallback) {
+  const normalized = String(value || fallback || '').trim().replace(/^:+|:+$/g, '');
+  if (!normalized) throw new Error('ePlus emoji shortcode cannot be empty.');
+  return normalized;
+}
+
 async function readJson(file, fallback) {
   try {
     return JSON.parse(await readFile(file, 'utf8'));
@@ -162,7 +168,7 @@ for (const filename of assetFiles) {
     id,
     slug: `eplus-${slug}`,
     name: String(config.name || titleCase(basename) || slug),
-    shortcode: String(config.shortcode || `:eplus_${slug.replace(/-/g, '_')}:`),
+    shortcode: normalizeShortcode(config.shortcode, `eplus_${slug.replace(/-/g, '_')}`),
     group: 'eplus-originals',
     subgroup: String(config.subgroup || 'originals'),
     tags,
