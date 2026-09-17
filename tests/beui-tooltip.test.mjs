@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict';
 import { readdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
-const root = new URL('../src/', import.meta.url);
+const root = fileURLToPath(new URL('../src/', import.meta.url));
 const tooltipLayer = await readFile(new URL('../src/components/beui/TooltipLayer.tsx', import.meta.url), 'utf8');
 const siteHeader = await readFile(new URL('../src/components/beui/SiteHeader.tsx', import.meta.url), 'utf8');
 const detail = await readFile(new URL('../src/components/beui/EmojiDetail.astro', import.meta.url), 'utf8');
@@ -50,7 +51,7 @@ test('source does not use native title attributes on interactive HTML controls',
   for (const file of files) {
     const content = await readFile(file, 'utf8');
     if (nativeTitle.test(content)) {
-      violations.push(path.relative(root.pathname, file));
+      violations.push(path.relative(root, file));
     }
     nativeTitle.lastIndex = 0;
   }
