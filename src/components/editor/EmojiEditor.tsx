@@ -5,6 +5,8 @@ import {
   FlipVertical2,
   ImagePlus,
   Move,
+  Pause,
+  Play,
   Redo2,
   RefreshCcw,
   RotateCcw,
@@ -13,9 +15,10 @@ import {
   Upload,
 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../motion/select';
 
 type FitMode = 'contain' | 'cover';
-type ExportFormat = 'png' | 'webp';
+type ExportFormat = 'png' | 'webp' | 'gif';
 
 type Settings = {
   size: number;
@@ -37,6 +40,19 @@ type SourceInfo = {
   bytes: number;
   mime: string;
   animated: boolean;
+  frameCount: number;
+};
+
+type GifFrame = {
+  canvas: HTMLCanvasElement;
+  delay: number;
+};
+
+type DecodedGifFrame = {
+  dims: { left: number; top: number; width: number; height: number };
+  patch: Uint8ClampedArray;
+  delay: number;
+  disposalType: number;
 };
 
 interface Props {
@@ -44,6 +60,8 @@ interface Props {
 }
 
 const PRESETS = [32, 64, 128, 256, 512];
+const GIF_SPEEDS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2, 3];
+const MAX_GIF_DECODE_PIXELS = 18_000_000;
 const DEFAULTS: Settings = {
   size: 128,
   padding: 8,
@@ -65,6 +83,10 @@ const formatBytes = (bytes: number) => {
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(bytes < 10240 ? 1 : 0)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 };
+const formatDuration = (milliseconds: number) => {
+  if (milliseconds < 1000) return `${Math.round(milliseconds)} ms`;
+  return `${(milliseconds / 1000).toFixed(milliseconds < 10_000 ? 1 : 0)} s`;
+};
 const fileStem = (name: string) => String(name || 'emoji')
   .replace(/\.[a-z0-9]+$/i, '')
   .trim()
@@ -72,9 +94,58 @@ const fileStem = (name: string) => String(name || 'emoji')
   .replace(/[^a-z0-9]+/g, '-')
   .replace(/^-+|-+$/g, '') || 'emoji';
 
+async function decodeGif(blob: Blob, width: number, height: number): Promise<GifFrame[]> {
+  const { parseGIF, decompressFrames } = await import('gifuct-js');
+  const parsed = parseGIF(await blob.arrayBuffer());
+  const decoded = decompressFrames(parsed, true) as DecodedGifFrame[];
+  if (decoded.length <= 1) return [];
+  if (width * height * decoded.length > MAX_GIF_DECODE_PIXELS) {
+    throw new Error(`This GIF has ${decoded.length} frames and is too large to edit safely in the browser.`);
+  }
+
+  const composite = document.createElement('canvas');
+  composite.width = width;
+  composite.height = height;
+  const context = composite.getContext('2d', { willReadFrequently: true });
+  if (!context) throw new Error('Canvas is unavailable in this browser.');
+  context.clearRect(0, 0, width, height);
+
+  const frames: GifFrame[] = [];
+  for (const frame of decoded) {
+    const restore = frame.disposalType === 3 ? context.getImageData(0, 0, width, height) : null;
+    const patchCanvas = document.createElement('canvas');
+    patchCanvas.width = frame.dims.width;
+    patchCanvas.height = frame.dims.height;
+    const patchContext = patchCanvas.getContext('2d');
+    if (!patchContext) throw new Error('Canvas is unavailable in this browser.');
+    patchContext.putImageData(
+      new ImageData(new Uint8ClampedArray(frame.patch), frame.dims.width, frame.dims.height),
+      0,
+      0,
+    );
+    context.drawImage(patchCanvas, frame.dims.left, frame.dims.top);
+
+    const rendered = document.createElement('canvas');
+    rendered.width = width;
+    rendered.height = height;
+    const renderedContext = rendered.getContext('2d');
+    if (!renderedContext) throw new Error('Canvas is unavailable in this browser.');
+    renderedContext.drawImage(composite, 0, 0);
+    frames.push({ canvas: rendered, delay: Math.max(20, frame.delay || 100) });
+
+    if (frame.disposalType === 2) {
+      context.clearRect(frame.dims.left, frame.dims.top, frame.dims.width, frame.dims.height);
+    } else if (frame.disposalType === 3 && restore) {
+      context.putImageData(restore, 0, 0);
+    }
+  }
+  return frames;
+}
+
 export default function EmojiEditor({ browseUrl }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
+  const gifFramesRef = useRef<GifFrame[]>([]);
   const objectUrlRef = useRef<string | null>(null);
   const settingsRef = useRef<Settings>(DEFAULTS);
   const gestureRef = useRef<Settings | null>(null);
@@ -89,6 +160,10 @@ export default function EmojiEditor({ browseUrl }: Props) {
   const [dragging, setDragging] = useState(false);
   const [error, setError] = useState('');
   const [status, setStatus] = useState('');
+  const [currentFrame, setCurrentFrame] = useState(0);
+  const [playing, setPlaying] = useState(false);
+  const [gifSpeed, setGifSpeed] = useState(1);
+  const [gifDuration, setGifDuration] = useState(0);
 
   const replace = useCallback((next: Settings) => {
     settingsRef.current = next;
@@ -141,9 +216,11 @@ export default function EmojiEditor({ browseUrl }: Props) {
       setFuture([]);
     }
     replace(DEFAULTS);
+    setCurrentFrame(0);
+    setGifSpeed(1);
   };
 
-  const loadBlob = useCallback(async (blob: Blob, name: string, animated: boolean) => {
+  const loadBlob = useCallback(async (blob: Blob, name: string, animatedHint: boolean) => {
     setError('');
     setStatus('');
     if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
@@ -157,7 +234,13 @@ export default function EmojiEditor({ browseUrl }: Props) {
       image.src = objectUrl;
     });
 
+    const isGif = blob.type === 'image/gif' || /\.gif$/i.test(name);
+    let gifFrames: GifFrame[] = [];
+    if (isGif) gifFrames = await decodeGif(blob, image.naturalWidth, image.naturalHeight);
+
     imageRef.current = image;
+    gifFramesRef.current = gifFrames;
+    const animated = gifFrames.length > 1;
     setSource({
       name,
       width: image.naturalWidth,
@@ -165,7 +248,16 @@ export default function EmojiEditor({ browseUrl }: Props) {
       bytes: blob.size,
       mime: blob.type || 'image/*',
       animated,
+      frameCount: animated ? gifFrames.length : 1,
     });
+    setGifDuration(animated ? gifFrames.reduce((total, frame) => total + frame.delay, 0) : 0);
+    setCurrentFrame(0);
+    setGifSpeed(1);
+    setPlaying(animated);
+    setFormat(animated ? 'gif' : 'png');
+    if (animatedHint && !animated && !isGif) {
+      setStatus('This animated format is currently loaded as a static frame. GIF editing is fully supported.');
+    }
     replace(DEFAULTS);
     setPast([]);
     setFuture([]);
@@ -196,10 +288,24 @@ export default function EmojiEditor({ browseUrl }: Props) {
     };
   }, [loadRemote]);
 
-  const draw = useCallback((canvas: HTMLCanvasElement, size: number) => {
+  useEffect(() => {
+    if (!source?.animated || !playing) return;
+    const frames = gifFramesRef.current;
+    if (!frames.length) return;
+    const delay = Math.max(20, Math.round((frames[currentFrame]?.delay || 100) / gifSpeed));
+    const timer = window.setTimeout(() => {
+      setCurrentFrame((index) => (index + 1) % frames.length);
+    }, delay);
+    return () => window.clearTimeout(timer);
+  }, [currentFrame, gifSpeed, playing, source?.animated]);
+
+  const draw = useCallback((canvas: HTMLCanvasElement, size: number, drawableOverride?: CanvasImageSource) => {
     const context = canvas.getContext('2d');
-    const image = imageRef.current;
     const current = settingsRef.current;
+    const drawable = drawableOverride
+      ?? gifFramesRef.current[currentFrame]?.canvas
+      ?? imageRef.current
+      ?? undefined;
     if (!context) return;
 
     canvas.width = size;
@@ -211,13 +317,15 @@ export default function EmojiEditor({ browseUrl }: Props) {
       context.fillStyle = current.background;
       context.fillRect(0, 0, size, size);
     }
-    if (!image) return;
+    if (!drawable || !source) return;
 
+    const sourceWidth = source.width;
+    const sourceHeight = source.height;
     const pad = size * clamp(current.padding, 0, 45) / 100;
     const available = Math.max(1, size - pad * 2);
     const quarterTurn = Math.abs(current.rotation % 180) === 90;
-    const rotatedWidth = quarterTurn ? image.naturalHeight : image.naturalWidth;
-    const rotatedHeight = quarterTurn ? image.naturalWidth : image.naturalHeight;
+    const rotatedWidth = quarterTurn ? sourceHeight : sourceWidth;
+    const rotatedHeight = quarterTurn ? sourceWidth : sourceHeight;
     const baseScale = current.fitMode === 'cover'
       ? Math.max(available / rotatedWidth, available / rotatedHeight)
       : Math.min(available / rotatedWidth, available / rotatedHeight);
@@ -233,16 +341,56 @@ export default function EmojiEditor({ browseUrl }: Props) {
     );
     context.rotate(current.rotation * Math.PI / 180);
     context.scale(current.flipX ? -scale : scale, current.flipY ? -scale : scale);
-    context.drawImage(image, -image.naturalWidth / 2, -image.naturalHeight / 2);
+    context.drawImage(drawable, -sourceWidth / 2, -sourceHeight / 2, sourceWidth, sourceHeight);
     context.restore();
-  }, []);
+  }, [currentFrame, source]);
 
   useEffect(() => {
     if (canvasRef.current) draw(canvasRef.current, settings.size);
-  }, [draw, settings, source]);
+  }, [draw, settings, source, currentFrame]);
+
+  const makeGifBlob = useCallback(async () => {
+    const frames = gifFramesRef.current;
+    if (!source?.animated || !frames.length) throw new Error('Load an animated GIF before exporting GIF.');
+    const { GIFEncoder, quantize, applyPalette } = await import('gifenc');
+    const gif = GIFEncoder();
+    const canvas = document.createElement('canvas');
+    const size = settingsRef.current.size;
+    const transparentBackground = settingsRef.current.background === 'transparent';
+    const paletteFormat = transparentBackground ? 'rgba4444' : 'rgb565';
+
+    for (let index = 0; index < frames.length; index += 1) {
+      draw(canvas, size, frames[index].canvas);
+      const context = canvas.getContext('2d', { willReadFrequently: true });
+      if (!context) throw new Error('Canvas is unavailable in this browser.');
+      const pixels = context.getImageData(0, 0, size, size).data;
+      const palette = quantize(pixels, 256, transparentBackground
+        ? { format: 'rgba4444', oneBitAlpha: true }
+        : { format: 'rgb565' });
+      const indexed = applyPalette(pixels, palette, paletteFormat);
+      const transparentIndex = transparentBackground
+        ? palette.findIndex((color: number[]) => color.length > 3 && color[3] === 0)
+        : -1;
+      gif.writeFrame(indexed, size, size, {
+        palette,
+        delay: Math.max(20, Math.round(frames[index].delay / gifSpeed)),
+        repeat: 0,
+        transparent: transparentIndex >= 0,
+        transparentIndex: Math.max(0, transparentIndex),
+        dispose: transparentIndex >= 0 ? 2 : 1,
+      });
+      if (index % 6 === 0 || index === frames.length - 1) {
+        setStatus(`Encoding GIF · ${index + 1}/${frames.length} frames`);
+        await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+      }
+    }
+    gif.finish();
+    return new Blob([gif.bytes()], { type: 'image/gif' });
+  }, [draw, gifSpeed, source?.animated]);
 
   const makeBlob = useCallback(async (target: ExportFormat) => {
     if (!imageRef.current) throw new Error('Choose an emoji or upload an image first.');
+    if (target === 'gif') return makeGifBlob();
     const canvas = document.createElement('canvas');
     draw(canvas, settingsRef.current.size);
     return await new Promise<Blob>((resolve, reject) => {
@@ -252,12 +400,12 @@ export default function EmojiEditor({ browseUrl }: Props) {
         target === 'webp' ? 0.92 : undefined,
       );
     });
-  }, [draw]);
+  }, [draw, makeGifBlob]);
 
   const download = async () => {
     try {
       setError('');
-      setStatus('Preparing export…');
+      setStatus(format === 'gif' ? 'Preparing animated GIF…' : 'Preparing export…');
       const blob = await makeBlob(format);
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -280,7 +428,7 @@ export default function EmojiEditor({ browseUrl }: Props) {
         throw new Error('Image copy is not supported by this browser. Use Download instead.');
       }
       setError('');
-      setStatus('Copying image…');
+      setStatus('Copying current frame…');
       const blob = await makeBlob('png');
       await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
       setStatus(`Copied PNG · ${formatBytes(blob.size)}`);
@@ -340,6 +488,7 @@ export default function EmojiEditor({ browseUrl }: Props) {
     onPointerDown: beginGesture,
     onPointerUp: endGesture,
   };
+  const frameDelay = source?.animated ? gifFramesRef.current[currentFrame]?.delay || 0 : 0;
 
   return (
     <div className="emoji-editor">
@@ -347,7 +496,7 @@ export default function EmojiEditor({ browseUrl }: Props) {
         <div>
           <p className="eyebrow">Browser-based image tool</p>
           <h1>Emoji editor</h1>
-          <p>Crop, resize and export emoji locally in your browser.</p>
+          <p>Crop, resize, animate and export emoji locally in your browser.</p>
         </div>
         <div className="editor-history-actions">
           <button type="button" onClick={undo} disabled={!past.length}><Undo2 /><span>Undo</span></button>
@@ -356,7 +505,11 @@ export default function EmojiEditor({ browseUrl }: Props) {
         </div>
       </div>
 
-      {source?.animated && <div className="editor-notice">Animated GIF editing is not enabled yet. Export creates a static PNG or WebP frame.</div>}
+      {source?.animated && (
+        <div className="editor-notice">
+          GIF editing is active. Crop, transform, resize and background changes are applied to every frame; animation speed is preserved unless you change it.
+        </div>
+      )}
       {error && <div className="editor-message" role="alert"><span>{error}</span><button type="button" onClick={() => setError('')}>Dismiss</button></div>}
 
       <div className="editor-workspace">
@@ -364,7 +517,7 @@ export default function EmojiEditor({ browseUrl }: Props) {
           <div className="editor-canvas-toolbar">
             <div>
               <strong>{source?.name || 'No image selected'}</strong>
-              <span>{source ? `${source.width}×${source.height}px · ${formatBytes(source.bytes)}` : 'Choose an emoji or upload an image.'}</span>
+              <span>{source ? `${source.width}×${source.height}px · ${formatBytes(source.bytes)}${source.animated ? ` · ${source.frameCount} frames` : ''}` : 'Choose an emoji or upload an image.'}</span>
             </div>
             <label className="editor-upload-button"><Upload /><span>{source ? 'Replace' : 'Upload image'}</span><input type="file" accept="image/*" onChange={(event) => void upload(event.target.files?.[0])} /></label>
           </div>
@@ -395,10 +548,53 @@ export default function EmojiEditor({ browseUrl }: Props) {
             )}
             {source && <div className="editor-drag-hint"><Move /> Drag to reposition</div>}
           </div>
-          <div className="editor-canvas-meta"><span>Output <strong>{settings.size}×{settings.size}px</strong></span><span>Zoom <strong>{Math.round(settings.zoom)}%</strong></span></div>
+          <div className="editor-canvas-meta">
+            <span>Output <strong>{settings.size}×{settings.size}px</strong></span>
+            <span>Zoom <strong>{Math.round(settings.zoom)}%</strong></span>
+            {source?.animated && <span>Frame <strong>{currentFrame + 1}/{source.frameCount}</strong></span>}
+          </div>
         </section>
 
         <aside className="editor-controls">
+          {source?.animated && (
+            <section className="editor-control-group editor-animation-group">
+              <div className="editor-control-heading"><strong>Animation</strong><small>{source.frameCount} frames · {formatDuration(gifDuration)}</small></div>
+              <div className="editor-animation-row">
+                <button
+                  type="button"
+                  className="editor-animation-play"
+                  onClick={() => setPlaying((value) => !value)}
+                  aria-label={playing ? 'Pause GIF preview' : 'Play GIF preview'}
+                >
+                  {playing ? <Pause /> : <Play />}
+                  <span>{playing ? 'Pause' : 'Play'}</span>
+                </button>
+                <div className="editor-animation-speed">
+                  <span>Speed</span>
+                  <Select value={String(gifSpeed)} onValueChange={(value) => setGifSpeed(Number(value))} className="editor-beui-select">
+                    <SelectTrigger className="editor-beui-select-trigger"><SelectValue /></SelectTrigger>
+                    <SelectContent className="editor-beui-select-content">
+                      {GIF_SPEEDS.map((speed) => <SelectItem key={speed} value={String(speed)}>{speed}×</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <label className="editor-range editor-frame-range">
+                <span>Frame <strong>{currentFrame + 1}/{source.frameCount} · {formatDuration(frameDelay)}</strong></span>
+                <input
+                  type="range"
+                  min="0"
+                  max={Math.max(0, source.frameCount - 1)}
+                  value={currentFrame}
+                  onChange={(event) => {
+                    setPlaying(false);
+                    setCurrentFrame(Number(event.target.value));
+                  }}
+                />
+              </label>
+            </section>
+          )}
+
           <section className="editor-control-group">
             <div className="editor-control-heading"><strong>Crop & position</strong><small>Fit, fill, zoom and drag</small></div>
             <div className="editor-segmented">
@@ -436,7 +632,17 @@ export default function EmojiEditor({ browseUrl }: Props) {
 
           <section className="editor-control-group editor-export-group">
             <div className="editor-control-heading"><strong>Export</strong></div>
-            <label className="editor-format"><span>Format</span><select value={format} onChange={(event) => setFormat(event.target.value as ExportFormat)}><option value="png">PNG · lossless</option><option value="webp">WebP · smaller</option></select></label>
+            <div className="editor-format">
+              <span>Format</span>
+              <Select value={format} onValueChange={(value) => setFormat(value as ExportFormat)} className="editor-beui-select">
+                <SelectTrigger className="editor-beui-select-trigger"><SelectValue /></SelectTrigger>
+                <SelectContent className="editor-beui-select-content">
+                  {source?.animated && <SelectItem value="gif">GIF · animated</SelectItem>}
+                  <SelectItem value="png">PNG · lossless</SelectItem>
+                  <SelectItem value="webp">WebP · smaller</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <div className="editor-export-actions">
               <button type="button" className="is-primary" onClick={() => void download()} disabled={!source}><Download /><span>Download {format.toUpperCase()}</span></button>
               <button type="button" onClick={() => void copyPng()} disabled={!source}><Clipboard /><span>Copy PNG</span></button>
@@ -450,7 +656,7 @@ export default function EmojiEditor({ browseUrl }: Props) {
 
       <div className="editor-mobile-actions">
         <button type="button" onClick={() => void copyPng()} disabled={!source}><Clipboard /><span>Copy</span></button>
-        <button type="button" className="is-primary" onClick={() => void download()} disabled={!source}><Download /><span>Export</span></button>
+        <button type="button" className="is-primary" onClick={() => void download()} disabled={!source}><Download /><span>Export {format.toUpperCase()}</span></button>
       </div>
     </div>
   );
