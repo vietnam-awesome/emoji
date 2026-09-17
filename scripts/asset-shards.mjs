@@ -6,13 +6,14 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const DEFAULT_SOURCE = 'public/emojis';
-const DEFAULT_SHARD_COUNT = 8;
+const DEFAULT_TARGET_MB = 700;
+const MB = 1024 * 1024;
 
 function normalizeRelativePath(value) {
   return String(value || '').replaceAll('\\', '/').replace(/^\/+/, '');
 }
 
-export function stableShard(relativePath, shardCount = DEFAULT_SHARD_COUNT) {
+export function stableShard(relativePath, shardCount) {
   const count = Number.parseInt(String(shardCount), 10);
   if (!Number.isInteger(count) || count < 1) {
     throw new Error(`Invalid shard count: ${shardCount}`);
@@ -58,10 +59,57 @@ async function walkFiles(rootDir, currentDir = rootDir, files = []) {
   return files;
 }
 
+function summarizeShards(files, shardCount) {
+  const shards = Array.from({ length: shardCount }, (_, index) => ({
+    shard: index + 1,
+    files: 0,
+    bytes: 0
+  }));
+
+  for (const file of files) {
+    const shardNumber = stableShard(file.relative, shardCount);
+    const shard = shards[shardNumber - 1];
+    shard.files += 1;
+    shard.bytes += file.bytes;
+  }
+
+  return shards;
+}
+
+export function chooseShardCount(files, targetBytes) {
+  const limit = Number(targetBytes);
+  if (!Number.isFinite(limit) || limit <= 0) {
+    throw new Error(`Invalid target shard size: ${targetBytes}`);
+  }
+  if (!files.length) return 1;
+
+  const largestFile = files.reduce((max, file) => Math.max(max, Number(file.bytes) || 0), 0);
+  if (largestFile > limit) {
+    throw new Error(
+      `A single asset (${formatBytes(largestFile)}) exceeds the target shard size (${formatBytes(limit)}).`
+    );
+  }
+
+  const totalBytes = files.reduce((sum, file) => sum + file.bytes, 0);
+  let shardCount = Math.max(1, Math.ceil(totalBytes / limit));
+
+  // Hash distribution is not perfectly equal by bytes, so grow the shard count
+  // until the largest resulting shard fits below the requested ceiling.
+  while (shardCount <= 4096) {
+    const shards = summarizeShards(files, shardCount);
+    const largestShardBytes = Math.max(...shards.map((shard) => shard.bytes));
+    if (largestShardBytes <= limit) return shardCount;
+    shardCount += 1;
+  }
+
+  throw new Error('Could not find a shard count under the requested size limit.');
+}
+
 function parseArgs(argv) {
   const args = {
     source: DEFAULT_SOURCE,
-    count: DEFAULT_SHARD_COUNT,
+    count: 0,
+    targetMb: DEFAULT_TARGET_MB,
     report: '',
     exportShard: 0,
     out: ''
@@ -75,6 +123,9 @@ function parseArgs(argv) {
       index += 1;
     } else if (arg === '--count' && next) {
       args.count = Number.parseInt(next, 10);
+      index += 1;
+    } else if (arg === '--target-mb' && next) {
+      args.targetMb = Number.parseFloat(next);
       index += 1;
     } else if (arg === '--report' && next) {
       args.report = next;
@@ -96,7 +147,7 @@ function parseArgs(argv) {
 }
 
 function printHelp() {
-  console.log(`Usage: node scripts/asset-shards.mjs [options]\n\nOptions:\n  --source <dir>          Asset source directory (default: public/emojis)\n  --count <n>             Number of stable shards (default: 8)\n  --report <file>         Write a JSON shard report\n  --export-shard <n>      Export one shard (1-based)\n  --out <dir>             Export destination; required with --export-shard\n  -h, --help              Show this help\n\nExamples:\n  node scripts/asset-shards.mjs --count 8 --report .tmp/emoji-shards.json\n  node scripts/asset-shards.mjs --count 8 --export-shard 1 --out .tmp/shard-01\n`);
+  console.log(`Usage: node scripts/asset-shards.mjs [options]\n\nOptions:\n  --source <dir>          Asset source directory (default: public/emojis)\n  --target-mb <mb>        Auto-select enough shards so each is <= this size (default: 700)\n  --count <n>             Pin an exact shard count instead of auto-sizing\n  --report <file>         Write a JSON shard report\n  --export-shard <n>      Export one shard (1-based)\n  --out <dir>             Export destination; required with --export-shard\n  -h, --help              Show this help\n\nExamples:\n  node scripts/asset-shards.mjs --report .tmp/emoji-shards.json\n  node scripts/asset-shards.mjs --target-mb 650 --report .tmp/emoji-shards.json\n  node scripts/asset-shards.mjs --count 8 --export-shard 1 --out .tmp/shard-01\n`);
 }
 
 async function exportShard(files, shardNumber, shardCount, outDir) {
@@ -129,28 +180,29 @@ async function exportShard(files, shardNumber, shardCount, outDir) {
   console.log(`Exported shard ${String(shardNumber).padStart(2, '0')} to ${resolvedOut}: ${copied.toLocaleString('en-US')} files, ${formatBytes(bytes)}`);
 }
 
-export async function buildShardPlan(sourceDir, shardCount = DEFAULT_SHARD_COUNT) {
-  const count = Number.parseInt(String(shardCount), 10);
-  if (!Number.isInteger(count) || count < 1) throw new Error(`Invalid shard count: ${shardCount}`);
-
+export async function buildShardPlan(sourceDir, options = {}) {
   const resolvedSource = path.resolve(sourceDir);
   const files = await walkFiles(resolvedSource);
-  const shards = Array.from({ length: count }, (_, index) => ({
-    shard: index + 1,
-    files: 0,
-    bytes: 0
-  }));
+  const requestedCount = Number.parseInt(String(options.count || 0), 10);
+  const targetBytes = Number(options.targetBytes || DEFAULT_TARGET_MB * MB);
 
-  for (const file of files) {
-    const shardNumber = stableShard(file.relative, count);
-    const shard = shards[shardNumber - 1];
-    shard.files += 1;
-    shard.bytes += file.bytes;
+  let shardCount;
+  let strategy;
+  if (requestedCount > 0) {
+    shardCount = requestedCount;
+    strategy = 'fixed-count';
+  } else {
+    shardCount = chooseShardCount(files, targetBytes);
+    strategy = 'auto-size';
   }
+
+  const shards = summarizeShards(files, shardCount);
 
   return {
     source: resolvedSource,
-    shardCount: count,
+    strategy,
+    targetBytes,
+    shardCount,
     totalFiles: files.length,
     totalBytes: files.reduce((sum, file) => sum + file.bytes, 0),
     shards,
@@ -165,10 +217,21 @@ async function main() {
     return;
   }
 
-  const plan = await buildShardPlan(args.source, args.count);
+  if (args.count < 0) throw new Error(`Invalid shard count: ${args.count}`);
+  if (!Number.isFinite(args.targetMb) || args.targetMb <= 0) {
+    throw new Error(`Invalid target size: ${args.targetMb} MB`);
+  }
+
+  const plan = await buildShardPlan(args.source, {
+    count: args.count,
+    targetBytes: args.targetMb * MB
+  });
   if (!plan.totalFiles) throw new Error(`No files found under ${plan.source}`);
 
-  console.log(`Emoji asset shard plan: ${plan.totalFiles.toLocaleString('en-US')} files, ${formatBytes(plan.totalBytes)}, ${plan.shardCount} shards`);
+  console.log(
+    `Emoji asset shard plan: ${plan.totalFiles.toLocaleString('en-US')} files, ${formatBytes(plan.totalBytes)}, ` +
+    `${plan.shardCount} shards (${plan.strategy}${plan.strategy === 'auto-size' ? `, target <= ${formatBytes(plan.targetBytes)}` : ''})`
+  );
   console.log('');
   console.log('Shard  Files       Size');
   console.log('-----  ----------  ----------');
@@ -184,9 +247,11 @@ async function main() {
     await writeFile(
       reportPath,
       `${JSON.stringify({
-        version: 1,
-        strategy: 'sha256-path-modulo',
+        version: 2,
+        strategy: plan.strategy,
+        assignment: 'sha256-path-modulo',
         source: plan.source,
+        targetBytes: plan.targetBytes,
         shardCount: plan.shardCount,
         totalFiles: plan.totalFiles,
         totalBytes: plan.totalBytes,
