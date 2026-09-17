@@ -21,7 +21,7 @@ test('editor uses BEUI Select instead of native select controls', () => {
   assert.match(editorClient, /from '\.\.\/motion\/select'/);
   assert.match(editorClient, /<SelectTrigger/);
   assert.match(editorClient, /<SelectContent/);
-  assert.doesNotMatch(editorClient, /<select\b/i);
+  assert.doesNotMatch(editorClient, /<select(?:\s|>)/);
 });
 
 test('animated GIF editor decodes frames, controls speed and re-encodes GIF', () => {
@@ -40,6 +40,7 @@ test('animated GIF editor decodes frames, controls speed and re-encodes GIF', ()
 test('emoji detail exposes an editor action and preserves animated source hint', () => {
   assert.match(detail, /withBase\('\/editor', base\)/);
   assert.match(detail, /Edit emoji/);
+  assert.match(detail, /Edit GIF/);
   assert.match(detail, /animated=1/);
 });
 
