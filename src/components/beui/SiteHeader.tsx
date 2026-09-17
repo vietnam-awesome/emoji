@@ -5,6 +5,7 @@ import { Button } from '../motion/button';
 import { Input } from '../motion/input';
 import { ThemeToggle } from '../motion/theme-toggle';
 import { SPRING_LAYOUT, SPRING_PANEL } from '../../lib/ease';
+import '../../styles/beui-dark-mode.css';
 
 interface SiteHeaderProps {
   homeUrl: string;
