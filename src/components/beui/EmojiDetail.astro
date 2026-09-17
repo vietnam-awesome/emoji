@@ -10,6 +10,7 @@ const imageUrl = emojiAssetUrl(emoji, base);
 const browseUrl = withBase('/emojis', base);
 const editorBaseUrl = withBase('/editor', base);
 const editorUrl = `${editorBaseUrl}?src=${encodeURIComponent(imageUrl)}&name=${encodeURIComponent(emoji.name)}${emoji.animated ? '&animated=1' : ''}`;
+const isAnimatedGif = Boolean(emoji.animated && String(emoji.format || '').toLowerCase() === 'gif');
 const category = emoji.category || String(emoji.group || '').replaceAll('-', ' ');
 const categorySlug = emojiCategorySlug(emoji);
 const categoryUrl = withBase(`/categories/${categorySlug}`, base);
@@ -69,7 +70,7 @@ const tagTargetUrl = (tag) => {
         </button>
         <a class="primary-action detail-preview-action" href={editorUrl}>
           <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M4 20h4l11-11-4-4L4 16v4Zm9-13 4 4M14 6l2-2 4 4-2 2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          {emoji.animated ? 'Edit static frame' : 'Edit emoji'}
+          {isAnimatedGif ? 'Edit GIF' : emoji.animated ? 'Edit static frame' : 'Edit emoji'}
         </a>
       </div>
     </aside>
