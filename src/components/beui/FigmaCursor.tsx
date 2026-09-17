@@ -51,6 +51,8 @@ const TYPE_SELECTOR = [
   'input[type="number"]',
 ].join(',');
 
+const TOP_LAYER_SELECTOR = 'dialog:modal, [popover]:popover-open';
+
 /**
  * Optional per-element overrides:
  * data-cursor="click|type|drag|selected|disabled|default"
@@ -86,6 +88,16 @@ function readCursorState(target: Element | null): { state: CursorState; label?: 
   if (clickTarget) return { state: 'click', label: clickTarget.dataset.cursorLabel };
 
   return { state: 'default' };
+}
+
+function hasTopLayerSurface() {
+  try {
+    return document.querySelector(TOP_LAYER_SELECTOR) !== null;
+  } catch {
+    // Older browsers might not understand :modal / :popover-open. A visible dialog
+    // still needs the native cursor because it can sit in the browser top layer.
+    return document.querySelector('dialog[open]') !== null;
+  }
 }
 
 export function FigmaCursor({
@@ -139,6 +151,7 @@ export function FigmaCursor({
     let frame = 0;
     let visible = remote;
     let pressed = false;
+    let suspended = false;
     let state: CursorState = 'default';
     let customLabel: string | undefined;
 
@@ -190,14 +203,28 @@ export function FigmaCursor({
       applyState();
     };
 
+    const syncTopLayerMode = () => {
+      if (remote) return;
+      const nextSuspended = hasTopLayerSurface();
+      if (nextSuspended === suspended) return;
+
+      suspended = nextSuspended;
+      if (suspended) {
+        delete document.documentElement.dataset.figmaCursor;
+        node.style.opacity = '0';
+        return;
+      }
+
+      document.documentElement.dataset.figmaCursor = 'on';
+      node.style.opacity = visible ? '1' : '0';
+    };
+
     const move = (event: PointerEvent) => {
       mx = event.clientX;
       my = event.clientY;
       updateTargetState(event.target);
-      if (!visible) {
-        visible = true;
-        node.style.opacity = '1';
-      }
+      if (!visible) visible = true;
+      if (!suspended) node.style.opacity = '1';
     };
 
     const down = (event: PointerEvent) => {
@@ -218,11 +245,25 @@ export function FigmaCursor({
       node.style.opacity = '0';
     };
 
+    let topLayerObserver: MutationObserver | undefined;
+    const onTopLayerToggle = () => window.requestAnimationFrame(syncTopLayerMode);
+
     if (!remote) {
       window.addEventListener('pointermove', move, { passive: true });
       window.addEventListener('pointerdown', down, { passive: true });
       window.addEventListener('pointerup', up, { passive: true });
       document.documentElement.addEventListener('mouseleave', leave);
+      document.addEventListener('toggle', onTopLayerToggle, true);
+      document.addEventListener('close', onTopLayerToggle, true);
+      document.addEventListener('cancel', onTopLayerToggle, true);
+
+      topLayerObserver = new MutationObserver(syncTopLayerMode);
+      topLayerObserver.observe(document.body, {
+        subtree: true,
+        attributes: true,
+        attributeFilter: ['open'],
+      });
+      syncTopLayerMode();
     } else {
       node.style.opacity = '1';
     }
@@ -248,6 +289,10 @@ export function FigmaCursor({
         window.removeEventListener('pointerdown', down);
         window.removeEventListener('pointerup', up);
         document.documentElement.removeEventListener('mouseleave', leave);
+        document.removeEventListener('toggle', onTopLayerToggle, true);
+        document.removeEventListener('close', onTopLayerToggle, true);
+        document.removeEventListener('cancel', onTopLayerToggle, true);
+        topLayerObserver?.disconnect();
         delete document.documentElement.dataset.figmaCursor;
         style.remove();
       }
