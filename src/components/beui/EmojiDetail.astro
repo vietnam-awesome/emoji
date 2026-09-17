@@ -83,7 +83,7 @@ const tagTargetUrl = (tag) => {
         ))}
       </div>
 
-      <div class="detail-actions">
+      <div class="detail-actions detail-actions-editor">
         <a class="primary-action" href={editorUrl}>
           <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M4 20h4l11-11-4-4L4 16v4Zm9-13 4 4M14 6l2-2 4 4-2 2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
           {emoji.animated ? 'Edit static frame' : 'Edit emoji'}
@@ -212,3 +212,49 @@ const tagTargetUrl = (tag) => {
     if (event.target === lightbox && lightbox instanceof HTMLDialogElement) lightbox.close();
   });
 </script>
+
+<style is:global>
+  .detail-actions-editor {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .detail-actions-editor > .primary-action,
+  .detail-actions-editor > .secondary-action,
+  .detail-actions-editor .emoji-share-trigger {
+    width: 100%;
+    min-width: 0;
+    min-height: 40px;
+    justify-content: center;
+    gap: 7px;
+    padding-inline: 10px;
+    white-space: nowrap;
+  }
+
+  .detail-actions-editor .emoji-share-control {
+    display: flex;
+    width: 100%;
+    min-width: 0;
+  }
+
+  @media (max-width: 520px) {
+    .detail-actions-editor {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .detail-actions-editor > .primary-action {
+      grid-column: 1 / -1;
+    }
+  }
+
+  @media (max-width: 360px) {
+    .detail-actions-editor > .primary-action,
+    .detail-actions-editor > .secondary-action,
+    .detail-actions-editor .emoji-share-trigger {
+      padding-inline: 8px;
+      font-size: .72rem;
+    }
+  }
+</style>
