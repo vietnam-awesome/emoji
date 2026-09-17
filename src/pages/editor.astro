@@ -1,0 +1,23 @@
+---
+import Layout from '../layouts/Layout.astro';
+import EmojiEditor from '../components/editor/EmojiEditor';
+import { withBase } from '../lib/url';
+import '../styles/editor.css';
+
+const base = import.meta.env.BASE_URL;
+const homeUrl = withBase('/', base);
+const browseUrl = withBase('/emojis', base);
+---
+<Layout
+  title="Emoji editor — Crop, resize and export emoji"
+  description="Edit emoji directly in your browser. Crop, resize, rotate, flip, add padding or a background, then export PNG or WebP without uploading the image to a server."
+  keywords={['emoji editor', 'emoji crop', 'emoji resize', 'emoji maker', 'PNG emoji', 'WebP emoji']}
+  breadcrumbs={[
+    { name: 'Home', href: homeUrl },
+    { name: 'Emoji editor' }
+  ]}
+>
+  <section class="shell">
+    <EmojiEditor browseUrl={browseUrl} client:only="react" />
+  </section>
+</Layout>
