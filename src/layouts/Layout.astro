@@ -33,6 +33,8 @@ const defaultKeywords = [
 ];
 const publisherName = 'ePlus.DEV';
 const publisherUrl = 'https://eplus.dev/';
+const defaultSocialImageWidth = 1731;
+const defaultSocialImageHeight = 909;
 
 const {
   title = 'ePlus Emoji',
@@ -151,8 +153,8 @@ const schemaGraph = [
     primaryImageOfPage: {
       '@type': 'ImageObject',
       url: absoluteSocialImageUrl,
-      width: 1200,
-      height: 630
+      width: defaultSocialImageWidth,
+      height: defaultSocialImageHeight
     },
     ...(isBrowseIndex ? {
       about: { '@type': 'Thing', name: 'Custom emoji' },
@@ -221,8 +223,8 @@ const schemaJson = JSON.stringify({
     <meta property="og:image" content={absoluteSocialImageUrl} />
     <meta property="og:image:secure_url" content={absoluteSocialImageUrl} />
     <meta property="og:image:type" content="image/png" />
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="630" />
+    <meta property="og:image:width" content={String(defaultSocialImageWidth)} />
+    <meta property="og:image:height" content={String(defaultSocialImageHeight)} />
     <meta property="og:image:alt" content={socialImageAlt} />
 
     <meta name="twitter:card" content="summary_large_image" />
