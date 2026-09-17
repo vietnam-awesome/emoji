@@ -4,6 +4,7 @@ import test from 'node:test';
 
 const editorPage = await readFile(new URL('../src/pages/editor.astro', import.meta.url), 'utf8');
 const editorClient = await readFile(new URL('../src/components/editor/EmojiEditor.tsx', import.meta.url), 'utf8');
+const frameTimeline = await readFile(new URL('../src/components/editor/GifFrameTimeline.tsx', import.meta.url), 'utf8');
 const detail = await readFile(new URL('../src/components/beui/EmojiDetail.astro', import.meta.url), 'utf8');
 const sitemap = await readFile(new URL('../src/pages/sitemap-static.xml.js', import.meta.url), 'utf8');
 const packageJson = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
@@ -34,7 +35,29 @@ test('animated GIF editor decodes frames, controls speed and re-encodes GIF', ()
   assert.match(editorClient, /import\('gifenc'\)/);
   assert.match(editorClient, /GIFEncoder/);
   assert.match(editorClient, /writeFrame/);
+  assert.match(editorClient, /filter\(\(frame\) => frame\.enabled\)/);
   assert.match(editorClient, /GIF · animated/);
+});
+
+test('GIF timeline supports include, duplicate, delete and per-frame delay editing', () => {
+  assert.match(editorClient, /toggleFrame/);
+  assert.match(editorClient, /duplicateFrame/);
+  assert.match(editorClient, /deleteFrame/);
+  assert.match(editorClient, /changeFrameDelay/);
+  assert.match(frameTimeline, /from '\.\.\/motion\/checkbox'/);
+  assert.match(frameTimeline, /from '\.\.\/motion\/range-slider'/);
+  assert.match(frameTimeline, /from '\.\.\/motion\/bottom-sheet'/);
+  assert.match(frameTimeline, /Include in GIF/);
+  assert.match(frameTimeline, /Duplicate/);
+  assert.match(frameTimeline, /Delete/);
+  assert.match(frameTimeline, /Frame delay/);
+});
+
+test('GIF frame operations participate in editor undo and redo history', () => {
+  assert.match(editorClient, /type HistorySnapshot/);
+  assert.match(editorClient, /frames: GifTimelineFrame\[\]/);
+  assert.match(editorClient, /pushHistory\(\)/);
+  assert.match(editorClient, /applySnapshot/);
 });
 
 test('emoji detail exposes an editor action and preserves animated source hint', () => {
