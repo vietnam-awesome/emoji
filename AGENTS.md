@@ -51,6 +51,16 @@ A merge into `main` can trigger an expensive GitHub Pages build/deploy. Merging 
 - CI/preview on feature PRs is useful, but the combined release PR must also pass because integrations can introduce new failures.
 - Production GitHub Pages should ideally run once for a batch, after the final release PR enters `main`.
 
+## Public discovery documentation rules
+
+Public routes and tools must stay synchronized across the site's discovery surfaces.
+
+- When adding, renaming, or removing a public human-readable route, review `src/pages/sitemap-static.xml.js`, `public/agents.md`, and `public/llms.txt` in the same change.
+- If the route should be discoverable by search engines or AI agents, update all applicable discovery files instead of changing only navigation/UI.
+- Verify every endpoint documented in `public/agents.md` and `public/llms.txt` actually exists in the current static deployment. Do not keep references to removed legacy `/api/*` endpoints.
+- The public emoji editor at `/editor` is a discoverable site tool and must remain represented in the static sitemap, `public/agents.md`, and `public/llms.txt` while the route exists.
+- Keep agent-facing capability descriptions aligned with implemented behavior. Do not advertise deferred editor features such as APNG frame-by-frame editing, interpolation, or AI-generated in-between frames unless they are actually implemented.
+
 ## Data branch rules
 
 Import/sync workflows write catalog changes to `data`, not `main`.
