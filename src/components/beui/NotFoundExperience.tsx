@@ -17,9 +17,19 @@ type Props = {
   homeHref: string;
   browseHref: string;
   items: NotFoundEmoji[];
+  visibleCount?: number;
 };
 
 const GLYPHS = "ABCDEFGHJKLMNPQRSTUVWXYZ0123456789#%&@$?/\\";
+
+function shuffledCopy<T>(items: T[]) {
+  const copy = [...items];
+  for (let index = copy.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [copy[index], copy[swapIndex]] = [copy[swapIndex], copy[index]];
+  }
+  return copy;
+}
 
 function Scramble({ text }: { text: string }) {
   const reduceMotion = useReducedMotion();
@@ -87,11 +97,18 @@ function EmojiTile({ item }: { item: NotFoundEmoji }) {
   );
 }
 
-export default function NotFoundExperience({ homeHref, browseHref, items }: Props) {
+export default function NotFoundExperience({ homeHref, browseHref, items, visibleCount = 48 }: Props) {
+  const cappedCount = Math.max(0, Math.min(visibleCount, items.length));
+  const [visibleItems, setVisibleItems] = useState(() => items.slice(0, cappedCount));
+
+  useEffect(() => {
+    setVisibleItems(shuffledCopy(items).slice(0, cappedCount));
+  }, [items, cappedCount]);
+
   const rows = useMemo(() => {
-    const midpoint = Math.max(1, Math.ceil(items.length / 2));
-    return [items.slice(0, midpoint), items.slice(midpoint)];
-  }, [items]);
+    const midpoint = Math.max(1, Math.ceil(visibleItems.length / 2));
+    return [visibleItems.slice(0, midpoint), visibleItems.slice(midpoint)];
+  }, [visibleItems]);
 
   return (
     <section className="overflow-hidden py-10 sm:py-14 lg:py-16">
@@ -135,7 +152,7 @@ export default function NotFoundExperience({ homeHref, browseHref, items }: Prop
         </div>
       </div>
 
-      {items.length > 0 ? (
+      {visibleItems.length > 0 ? (
         <div className="mt-3 grid gap-3 border-y border-border bg-card/35 py-5 sm:mt-6 sm:py-6">
           <Marquee speed={34} gap="0.75rem" className="w-full">
             {rows[0].map((item) => <EmojiTile key={item.href} item={item} />)}
