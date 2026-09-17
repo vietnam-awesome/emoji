@@ -101,7 +101,7 @@ const sections = [
         </div>
         <div class="hero-library-grid" id="hero-random-grid">
           {showcase.map((emoji) => (
-            <a href={withBase(`/emoji/${emoji.slug}`, base)} title={emoji.name}>
+            <a href={withBase(`/emoji/${emoji.slug}`, base)} data-beui-tooltip={emoji.name} aria-label={`Open ${emoji.name}`}>
               <img class="!size-16 !max-h-16 !max-w-16 object-contain" src={emoji.image} alt={emoji.name} loading="eager" width="64" height="64" />
               {emoji.animated && <span>GIF</span>}
             </a>
