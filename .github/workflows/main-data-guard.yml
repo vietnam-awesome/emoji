@@ -1,0 +1,35 @@
+name: Main data guard
+
+on:
+  pull_request:
+    paths:
+      - 'src/data/**'
+      - 'public/emojis/**'
+      - '.github/workflows/main-data-guard.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    if: github.event_name != 'pull_request' || github.base_ref == 'main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source tree
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+          filter: blob:none
+
+      - name: Ensure main stays code-only
+        shell: bash
+        run: |
+          set -euo pipefail
+          forbidden="$(git ls-tree -r --name-only HEAD -- src/data public/emojis | head -n 1 || true)"
+          if [ -n "$forbidden" ]; then
+            echo "Tracked emoji data must live on the data branch, not main." >&2
+            echo "Found: $forbidden" >&2
+            exit 1
+          fi
+          echo "OK: src/data and public/emojis are not tracked in this main-targeting change."
