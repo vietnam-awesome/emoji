@@ -19,7 +19,7 @@ on:
         default: "1"
         type: string
       max_pages:
-        description: "Number of batches to scan starting at Start batch. Example: start 101 + 100 scans batches 101-200."
+        description: "Number of batches to scan starting at Start batch."
         required: true
         default: "25"
         type: string
@@ -29,15 +29,14 @@ on:
         default: "4"
         type: string
   schedule:
-    # Weekly import window: Sunday 00:30 UTC = 07:30 Asia/Ho_Chi_Minh
     - cron: "30 0 * * 0"
 
 permissions:
   contents: write
+  actions: write
 
 concurrency:
   group: emoji-data-write
-  queue: max
   cancel-in-progress: false
 
 jobs:
@@ -52,39 +51,52 @@ jobs:
       IMPORT_CONCURRENCY: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.concurrency || '4' }}
 
     steps:
-      - name: Checkout latest main
+      - name: Checkout application code
         uses: actions/checkout@v7
         with:
           ref: main
-          fetch-depth: 0
+          path: app
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: |
+            /*
+            !/public/emojis/
+            !/src/data/
+          sparse-checkout-cone-mode: false
 
-      - name: Sync latest main
-        run: |
-          git fetch origin main
-          git checkout main
-          git reset --hard origin/main
+      - name: Checkout writable data branch
+        uses: actions/checkout@v7
+        with:
+          ref: data
+          path: data
+          fetch-depth: 0
+          filter: blob:none
+          sparse-checkout: |
+            /src/data/
+            /public/emojis/community/discords/
+          sparse-checkout-cone-mode: false
 
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:
           node-version: 22
 
-      - name: Install dependencies and hydrate emoji index
-        run: npm install --no-audit --no-fund
+      - name: Install application dependencies
+        working-directory: app
+        run: npm install --ignore-scripts --no-audit --no-fund
 
       - name: Install Chromium
+        working-directory: app
         run: npx playwright install --with-deps chromium
 
-      - name: Import Discords.com emoji categories
-        run: |
-          echo "Category: $IMPORT_TAG"
-          echo "Download limit: $IMPORT_LIMIT"
-          echo "Start batch: $IMPORT_START_BATCH"
-          echo "Batches to scan: $IMPORT_MAX_PAGES"
-          echo "Concurrency: $IMPORT_CONCURRENCY"
-          echo "18+ filter: enabled"
+      - name: Hydrate data-branch catalog
+        working-directory: data
+        run: node ../app/scripts/emoji-store.mjs hydrate
 
-          node scripts/import-discords.mjs \
+      - name: Import Discords.com emoji categories
+        working-directory: data
+        run: |
+          node ../app/scripts/import-discords.mjs \
             --tag="$IMPORT_TAG" \
             --limit="$IMPORT_LIMIT" \
             --start-batch="$IMPORT_START_BATCH" \
@@ -93,70 +105,41 @@ jobs:
             --delay-ms=350
 
       - name: Verify emoji index
-        run: npm run check:data
-
-      - name: Show import summary
-        run: |
-          node --input-type=module <<'NODE'
-          import { readFile } from 'node:fs/promises';
-          const emojis = JSON.parse(await readFile('src/data/emojis.json', 'utf8'));
-          const state = JSON.parse(await readFile('src/data/community-sync-state.json', 'utf8'));
-          const discords = emojis.filter((item) => item.source === 'discords');
-          const categories = Object.keys(state.discords?.categories || {});
-          console.log(`Discords.com categories scanned: ${categories.length}`);
-          console.log(`Batch range: ${state.discords?.startBatch || 1}-${state.discords?.endBatch || '?'}`);
-          console.log(`Discords.com discovered this run: ${state.discords?.discovered || 0}`);
-          console.log(`18+ emoji filtered this run: ${state.discords?.adultFilteredThisRun || 0}`);
-          console.log(`Existing 18+ records purged: ${state.discords?.purgedAdultRecords || 0}`);
-          console.log(`Discords.com indexed: ${discords.length}`);
-          console.log(`All emoji indexed: ${emojis.length}`);
-          NODE
+        working-directory: data
+        run: node ../app/scripts/verify-data.mjs
 
       - name: Shard emoji index for Git
-        run: npm run emoji-store:shard
+        working-directory: data
+        run: node ../app/scripts/emoji-store.mjs shard
 
-      - name: Commit imported assets and indexes
+      - name: Commit imported data
         id: import_commit
+        working-directory: data
+        shell: bash
         run: |
+          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
-          git add -A src/data/emojis src/data/community-sync-state.json
-          if [ -d public/emojis/community/discords ]; then
-            git add public/emojis/community/discords
-          fi
-
+          git add -A src/data public/emojis/community/discords
           if git diff --cached --quiet; then
             echo "No Discords.com updates found."
             echo "created=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-
-          git commit -m "chore: import Discords.com emojis"
+          git commit -m "chore(data): import Discords.com emojis"
           echo "created=true" >> "$GITHUB_OUTPUT"
 
-      - name: Push imported commit safely
+      - name: Push data branch
         if: steps.import_commit.outputs.created == 'true'
+        working-directory: data
         run: |
-          set -e
-          for attempt in 1 2 3; do
-            echo "Push attempt $attempt/3"
-            git fetch origin main
+          set -euo pipefail
+          git pull --rebase origin data
+          git push origin HEAD:data
 
-            if ! git rebase origin/main; then
-              git rebase --abort || true
-              echo "Could not rebase import commit onto latest main." >&2
-              exit 1
-            fi
-
-            if git push origin HEAD:main; then
-              echo "Import pushed successfully."
-              exit 0
-            fi
-
-            echo "main changed while pushing; retrying..."
-            sleep $((attempt * 5))
-          done
-
-          echo "Push failed after 3 attempts." >&2
-          exit 1
+      - name: Rebuild UI from updated catalog
+        if: steps.import_commit.outputs.created == 'true'
+        working-directory: app
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run deploy-pages.yml --ref main

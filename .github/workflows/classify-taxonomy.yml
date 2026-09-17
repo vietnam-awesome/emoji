@@ -11,10 +11,10 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 concurrency:
   group: emoji-data-write
-  queue: max
   cancel-in-progress: false
 
 jobs:
@@ -22,11 +22,29 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - name: Checkout latest main
+      - name: Checkout application code
         uses: actions/checkout@v7
         with:
           ref: main
+          path: app
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: |
+            /*
+            !/public/emojis/
+            !/src/data/
+          sparse-checkout-cone-mode: false
+
+      - name: Checkout writable data branch
+        uses: actions/checkout@v7
+        with:
+          ref: data
+          path: data
           fetch-depth: 0
+          filter: blob:none
+          sparse-checkout: |
+            /src/data/
+          sparse-checkout-cone-mode: false
 
       - name: Setup Node.js
         uses: actions/setup-node@v7
@@ -35,28 +53,41 @@ jobs:
 
       - name: Generate taxonomy report
         if: inputs.apply != true
-        run: npm run taxonomy:report
+        working-directory: data
+        run: node ../app/scripts/classify-emojis.mjs
 
       - name: Apply taxonomy to shards
         if: inputs.apply == true
-        run: npm run taxonomy:apply
+        working-directory: data
+        run: node ../app/scripts/classify-emojis.mjs --write
 
       - name: Run taxonomy tests
+        working-directory: app
         run: node --test tests/emoji-taxonomy.test.mjs tests/turso-record.test.mjs
 
       - name: Commit taxonomy backfill
         if: inputs.apply == true
+        id: taxonomy_commit
+        working-directory: data
         shell: bash
         run: |
           set -euo pipefail
-          if git diff --quiet -- src/data/emojis src/data/categories.json; then
+          if git diff --quiet -- src/data; then
             echo 'Taxonomy already up to date; nothing to commit.'
+            echo 'created=false' >> "$GITHUB_OUTPUT"
             exit 0
           fi
-
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add src/data/emojis src/data/categories.json
+          git add -A src/data
           git commit -m 'data: backfill canonical emoji taxonomy'
-          git pull --rebase origin main
-          git push origin HEAD:main
+          git pull --rebase origin data
+          git push origin HEAD:data
+          echo 'created=true' >> "$GITHUB_OUTPUT"
+
+      - name: Rebuild UI from updated taxonomy
+        if: steps.taxonomy_commit.outputs.created == 'true'
+        working-directory: app
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run deploy-pages.yml --ref main

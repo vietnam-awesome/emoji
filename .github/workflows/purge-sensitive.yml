@@ -5,6 +5,7 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 concurrency:
   group: emoji-data-write
@@ -16,64 +17,82 @@ jobs:
     timeout-minutes: 60
 
     steps:
-      - name: Checkout latest main
+      - name: Checkout application code
         uses: actions/checkout@v7
         with:
           ref: main
+          path: app
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: |
+            /*
+            !/public/emojis/
+            !/src/data/
+          sparse-checkout-cone-mode: false
+
+      - name: Checkout writable data branch
+        uses: actions/checkout@v7
+        with:
+          ref: data
+          path: data
           fetch-depth: 0
+          filter: blob:none
+          sparse-checkout: |
+            /src/data/
+            /public/emojis/community/
+          sparse-checkout-cone-mode: false
 
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:
           node-version: 22
 
-      - name: Install dependencies and sanitize hydrated catalog
-        run: npm install --no-audit --no-fund
+      - name: Install dependencies
+        working-directory: app
+        run: npm install --ignore-scripts --no-audit --no-fund
+
+      - name: Hydrate and sanitize data-branch catalog
+        working-directory: data
+        run: node ../app/scripts/emoji-store.mjs hydrate
 
       - name: Persist sanitized shards
-        run: npm run emoji-store:shard
+        working-directory: data
+        run: node ../app/scripts/emoji-store.mjs shard
 
       - name: Commit purged records and assets
         id: cleanup
+        working-directory: data
         shell: bash
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
-          git add -A src/data/emojis public/emojis/community
+          git add -A src/data public/emojis/community
           if git diff --cached --quiet; then
             echo "No sensitive catalog records remain to purge."
             echo "changed=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-
-          git commit -m "chore: purge sensitive emoji records"
+          git commit -m "chore(data): purge sensitive emoji records"
           echo "changed=true" >> "$GITHUB_OUTPUT"
 
-      - name: Push cleanup safely
+      - name: Push cleanup to data branch
         if: steps.cleanup.outputs.changed == 'true'
-        shell: bash
+        working-directory: data
         run: |
           set -euo pipefail
-          for attempt in 1 2 3; do
-            git fetch origin main
-            if ! git rebase origin/main; then
-              git rebase --abort || true
-              echo "Could not rebase cleanup onto latest main." >&2
-              exit 1
-            fi
-            if git push origin HEAD:main; then
-              echo "Sensitive catalog cleanup pushed successfully."
-              exit 0
-            fi
-            sleep $((attempt * 5))
-          done
-          echo "Cleanup push failed after 3 attempts." >&2
-          exit 1
+          git pull --rebase origin data
+          git push origin HEAD:data
+
+      - name: Rebuild UI from sanitized catalog
+        if: steps.cleanup.outputs.changed == 'true'
+        working-directory: app
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run deploy-pages.yml --ref main
 
       - name: Note Turso sync policy
         run: |
-          echo "Catalog cleanup is persisted in Git."
+          echo "Catalog cleanup is persisted on the data branch."
           echo "Turso is intentionally not synced here to protect the Free-plan write quota."
           echo "The next scheduled sync runs on the 1st or 15th, or use the Sync Turso Catalog workflow manually."
