@@ -4,10 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "postinstall": "node scripts/emoji-store.mjs hydrate",
     "emoji-store:hydrate": "node scripts/emoji-store.mjs hydrate",
     "emoji-store:shard": "node scripts/emoji-store.mjs shard",
-    "assets:shards": "node scripts/asset-shards.mjs",
     "taxonomy:report": "node scripts/classify-emojis.mjs",
     "taxonomy:apply": "node scripts/classify-emojis.mjs --write",
     "dev": "astro dev",
