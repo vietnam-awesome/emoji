@@ -1,0 +1,76 @@
+/* GIF + BEUI controls layered on top of the base emoji editor styles. */
+
+.editor-controls {
+  z-index: 4;
+  overflow: visible;
+}
+
+.editor-beui-select {
+  width: 100%;
+  min-width: 0;
+}
+
+.editor-beui-select-trigger {
+  min-height: 38px;
+  padding: 0 10px;
+  border-radius: 10px;
+  font-size: .7rem;
+  box-shadow: none;
+}
+
+.editor-beui-select-trigger > span:first-child,
+.editor-beui-select-trigger > span:first-child > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.editor-beui-select-content > div {
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.editor-format > .editor-beui-select {
+  min-width: 0;
+}
+
+.editor-animation-group {
+  position: relative;
+  z-index: 6;
+  background: var(--background);
+}
+
+.editor-animation-speed {
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  color: var(--muted-foreground);
+  font-size: .64rem;
+}
+
+.editor-animation-speed-full {
+  grid-template-columns: 92px minmax(0, 1fr);
+}
+
+.editor-animation-help {
+  display: block;
+  color: var(--muted-foreground);
+  font-size: .6rem;
+  line-height: 1.5;
+}
+
+@media (max-width: 920px) {
+  .editor-animation-group {
+    z-index: 8;
+  }
+}
+
+@media (max-width: 480px) {
+  .editor-animation-speed,
+  .editor-animation-speed-full {
+    grid-template-columns: 86px minmax(0, 1fr);
+  }
+}

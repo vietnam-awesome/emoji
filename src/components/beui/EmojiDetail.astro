@@ -8,6 +8,9 @@ const { emoji } = Astro.props;
 const base = import.meta.env.BASE_URL;
 const imageUrl = emojiAssetUrl(emoji, base);
 const browseUrl = withBase('/emojis', base);
+const editorBaseUrl = withBase('/editor', base);
+const editorUrl = `${editorBaseUrl}?src=${encodeURIComponent(imageUrl)}&name=${encodeURIComponent(emoji.name)}${emoji.animated ? '&animated=1' : ''}`;
+const isAnimatedGif = Boolean(emoji.animated && String(emoji.format || '').toLowerCase() === 'gif');
 const category = emoji.category || String(emoji.group || '').replaceAll('-', ' ');
 const categorySlug = emojiCategorySlug(emoji);
 const categoryUrl = withBase(`/categories/${categorySlug}`, base);
@@ -42,21 +45,34 @@ const tagTargetUrl = (tag) => {
       </div>
       <button
         class="detail-preview-image-button"
-        id="detail-preview-zoom"
         type="button"
         aria-controls="detail-lightbox"
         aria-haspopup="dialog"
         aria-label={`Zoom ${emoji.name}`}
+        data-detail-open-zoom
         data-beui-tooltip={`Zoom ${emoji.name}`}
       >
         <span class="detail-preview-canvas">
           <img id="detail-preview-image" src={imageUrl} alt={emoji.name} />
         </span>
-        <span class="detail-preview-zoom-hint" aria-hidden="true">
-          <svg viewBox="0 0 24 24"><path d="m21 21-4.3-4.3m2.3-5.7a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-11 0h6m-3-3v6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-          Open zoom preview
-        </span>
       </button>
+      <div class="detail-preview-actions" aria-label="Preview actions">
+        <button
+          class="secondary-action detail-preview-action"
+          id="detail-preview-zoom"
+          type="button"
+          aria-controls="detail-lightbox"
+          aria-haspopup="dialog"
+          data-detail-open-zoom
+        >
+          <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="m21 21-4.3-4.3m2.3-5.7a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-11 0h6m-3-3v6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          Zoom preview
+        </button>
+        <a class="primary-action detail-preview-action" href={editorUrl}>
+          <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M4 20h4l11-11-4-4L4 16v4Zm9-13 4 4M14 6l2-2 4 4-2 2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          {isAnimatedGif ? 'Edit GIF' : emoji.animated ? 'Edit static frame' : 'Edit emoji'}
+        </a>
+      </div>
     </aside>
 
     <div class="detail-content">
@@ -135,7 +151,7 @@ const tagTargetUrl = (tag) => {
     window.setTimeout(() => { label.textContent = previous; }, 900);
   });
 
-  const previewZoomButton = document.querySelector('#detail-preview-zoom');
+  const previewZoomButtons = [...document.querySelectorAll('[data-detail-open-zoom]')];
   const previewImage = document.querySelector('#detail-preview-image');
   const previewSize = document.querySelector('#detail-preview-size');
   const lightbox = document.querySelector('#detail-lightbox');
@@ -188,12 +204,14 @@ const tagTargetUrl = (tag) => {
     else lightboxImage.addEventListener('load', syncOriginalSize, { once: true });
   }
 
-  previewZoomButton?.addEventListener('click', () => {
-    if (!(lightbox instanceof HTMLDialogElement)) return;
-    syncOriginalSize();
-    setZoom('1');
-    lightbox.showModal();
-  });
+  for (const button of previewZoomButtons) {
+    button.addEventListener('click', () => {
+      if (!(lightbox instanceof HTMLDialogElement)) return;
+      syncOriginalSize();
+      setZoom('1');
+      lightbox.showModal();
+    });
+  }
   for (const button of zoomButtons) {
     button.addEventListener('click', () => {
       if (button instanceof HTMLButtonElement) setZoom(button.dataset.detailZoom || '1');
@@ -206,3 +224,28 @@ const tagTargetUrl = (tag) => {
     if (event.target === lightbox && lightbox instanceof HTMLDialogElement) lightbox.close();
   });
 </script>
+
+<style>
+  .detail-preview-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 9px;
+  }
+
+  .detail-preview-action {
+    width: 100%;
+    min-width: 0;
+    gap: 7px;
+    padding-inline: 11px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  @media (max-width: 390px) {
+    .detail-preview-action {
+      padding-inline: 9px;
+      font-size: .7rem;
+    }
+  }
+</style>

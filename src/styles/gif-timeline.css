@@ -1,0 +1,286 @@
+/* GIF frame timeline — project layout composed from beUI primitives. */
+
+.gif-timeline {
+  display: grid;
+  gap: 13px;
+  padding: 14px 15px 16px;
+  border-top: 1px solid var(--border);
+  background: var(--background);
+}
+
+.gif-timeline-header,
+.gif-timeline-header-actions,
+.gif-frame-scrubber,
+.gif-frame-action-buttons {
+  display: flex;
+  align-items: center;
+}
+
+.gif-timeline-header {
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.gif-timeline-header > div:first-child {
+  display: grid;
+  gap: 2px;
+}
+
+.gif-timeline-header strong {
+  font-size: .76rem;
+}
+
+.gif-timeline-header span {
+  color: var(--muted-foreground);
+  font-size: .62rem;
+}
+
+.gif-timeline-header-actions {
+  gap: 7px;
+}
+
+.gif-timeline-header-actions svg,
+.gif-frame-action-buttons svg,
+.gif-frame-mobile-more svg,
+.gif-frame-disabled-overlay svg {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+}
+
+.gif-frame-scrubber {
+  gap: 9px;
+  color: var(--muted-foreground);
+  font-size: .62rem;
+  font-weight: 650;
+}
+
+.gif-frame-range {
+  min-width: 0;
+  flex: 1;
+  height: 34px;
+}
+
+.gif-frame-strip {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  padding: 3px 2px 7px;
+  scroll-snap-type: x proximity;
+  scrollbar-width: thin;
+}
+
+.gif-frame-card {
+  position: relative;
+  display: grid;
+  width: 94px;
+  min-width: 94px;
+  gap: 6px;
+  padding: 7px;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  background: var(--card);
+  scroll-snap-align: start;
+  transition: border-color .16s ease, background .16s ease, opacity .16s ease, box-shadow .16s ease;
+}
+
+.gif-frame-card.is-current {
+  border-color: var(--border-strong);
+  background: var(--background);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--foreground) 12%, transparent);
+}
+
+.gif-frame-card.is-disabled {
+  opacity: .62;
+}
+
+.gif-frame-card-top,
+.gif-frame-card-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.gif-frame-card-top > span,
+.gif-frame-card-meta {
+  color: var(--muted-foreground);
+  font-size: .57rem;
+  font-weight: 650;
+}
+
+.gif-frame-card-top label {
+  gap: 0;
+}
+
+.gif-frame-card-top [role="checkbox"] {
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+}
+
+.gif-frame-preview {
+  position: relative;
+  display: grid;
+  width: 78px;
+  height: 78px;
+  place-items: center;
+  overflow: hidden;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background-color: var(--background);
+  background-image:
+    linear-gradient(45deg, color-mix(in srgb, var(--border-strong) 35%, transparent) 25%, transparent 25%),
+    linear-gradient(-45deg, color-mix(in srgb, var(--border-strong) 35%, transparent) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, color-mix(in srgb, var(--border-strong) 35%, transparent) 75%),
+    linear-gradient(-45deg, transparent 75%, color-mix(in srgb, var(--border-strong) 35%, transparent) 75%);
+  background-size: 12px 12px;
+  background-position: 0 0, 0 6px, 6px -6px, -6px 0;
+  color: var(--foreground);
+  cursor: pointer;
+}
+
+.gif-frame-preview canvas {
+  display: block;
+  width: 76px;
+  height: 76px;
+}
+
+.gif-frame-preview:focus-visible {
+  outline: 2px solid var(--foreground);
+  outline-offset: 2px;
+}
+
+.gif-frame-disabled-overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 4px;
+  background: color-mix(in oklab, var(--background) 75%, transparent);
+  color: var(--muted-foreground);
+  font-size: .54rem;
+  font-weight: 700;
+  backdrop-filter: blur(1px);
+}
+
+.gif-frame-actions-grid {
+  display: grid;
+  grid-template-columns: minmax(155px, 1fr) auto auto;
+  align-items: end;
+  gap: 10px;
+}
+
+.gif-frame-delay-control {
+  min-width: 0;
+}
+
+.gif-frame-delay-field {
+  height: 38px !important;
+  border-radius: 11px !important;
+}
+
+.gif-frame-delay-unit {
+  padding-right: 12px;
+  font-size: .64rem;
+  font-weight: 650;
+}
+
+.gif-frame-current-checkbox {
+  min-height: 38px;
+  white-space: nowrap;
+}
+
+.gif-frame-current-checkbox > span {
+  font-size: .68rem;
+}
+
+.gif-frame-action-buttons {
+  gap: 6px;
+}
+
+.gif-frame-action-buttons button {
+  white-space: nowrap;
+}
+
+.gif-frame-delete {
+  color: var(--destructive) !important;
+}
+
+.gif-frame-mobile-more {
+  display: none !important;
+  width: 100%;
+}
+
+.gif-frame-sheet-content {
+  padding-top: 8px;
+}
+
+.gif-frame-bottom-sheet .gif-frame-actions-grid {
+  grid-template-columns: minmax(0, 1fr);
+  align-items: stretch;
+}
+
+.gif-frame-bottom-sheet .gif-frame-action-buttons {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.gif-frame-bottom-sheet .gif-frame-action-buttons button {
+  width: 100%;
+}
+
+@media (max-width: 720px) {
+  .gif-timeline {
+    padding-inline: 12px;
+  }
+
+  .gif-timeline-header {
+    align-items: flex-start;
+  }
+
+  .gif-timeline-header-actions > button:first-child:not(:last-child) {
+    display: none;
+  }
+
+  .gif-frame-strip {
+    margin-inline: -12px;
+    padding-inline: 12px;
+  }
+
+  .gif-frame-card {
+    width: 88px;
+    min-width: 88px;
+  }
+
+  .gif-frame-preview {
+    width: 72px;
+    height: 72px;
+  }
+
+  .gif-frame-preview canvas {
+    width: 70px;
+    height: 70px;
+  }
+
+  .gif-frame-desktop-actions {
+    display: none;
+  }
+
+  .gif-frame-mobile-more {
+    display: inline-flex !important;
+  }
+}
+
+@media (max-width: 420px) {
+  .gif-timeline-header-actions button {
+    padding-inline: 10px;
+  }
+
+  .gif-frame-scrubber > span:first-child {
+    min-width: 46px;
+  }
+}
