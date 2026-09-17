@@ -41,43 +41,9 @@
   background: var(--background);
 }
 
-.editor-animation-row {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: end;
-  gap: 8px;
-}
-
-.editor-animation-play {
-  display: inline-flex;
-  min-height: 38px;
-  align-items: center;
-  justify-content: center;
-  gap: 7px;
-  padding: 0 12px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: var(--background);
-  color: var(--foreground);
-  font: inherit;
-  font-size: .68rem;
-  font-weight: 650;
-  cursor: pointer;
-}
-
-.editor-animation-play:hover {
-  border-color: var(--border-strong);
-  background: var(--card);
-}
-
-.editor-animation-play svg {
-  width: 15px;
-  height: 15px;
-}
-
 .editor-animation-speed {
   display: grid;
-  grid-template-columns: 42px minmax(0, 1fr);
+  grid-template-columns: 88px minmax(0, 1fr);
   align-items: center;
   gap: 8px;
   min-width: 0;
@@ -85,12 +51,15 @@
   font-size: .64rem;
 }
 
-.editor-frame-range {
-  padding-top: 1px;
+.editor-animation-speed-full {
+  grid-template-columns: 92px minmax(0, 1fr);
 }
 
-.editor-frame-range input[type="range"] {
-  cursor: ew-resize;
+.editor-animation-help {
+  display: block;
+  color: var(--muted-foreground);
+  font-size: .6rem;
+  line-height: 1.5;
 }
 
 @media (max-width: 920px) {
@@ -100,15 +69,8 @@
 }
 
 @media (max-width: 480px) {
-  .editor-animation-row {
-    grid-template-columns: 92px minmax(0, 1fr);
-  }
-
-  .editor-animation-play {
-    padding-inline: 9px;
-  }
-
-  .editor-animation-speed {
-    grid-template-columns: 36px minmax(0, 1fr);
+  .editor-animation-speed,
+  .editor-animation-speed-full {
+    grid-template-columns: 86px minmax(0, 1fr);
   }
 }
