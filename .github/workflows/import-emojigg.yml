@@ -19,15 +19,14 @@ on:
         default: "1500"
         type: string
   schedule:
-    # Weekly import window: Sunday 00:30 UTC = 07:30 Asia/Ho_Chi_Minh
     - cron: "30 0 * * 0"
 
 permissions:
   contents: write
+  actions: write
 
 concurrency:
   group: emoji-data-write
-  queue: max
   cancel-in-progress: false
 
 jobs:
@@ -40,36 +39,52 @@ jobs:
       IMPORT_MAX_PAGES_PER_CATEGORY: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.max_pages_per_category || '750' }}
 
     steps:
-      - name: Checkout latest main
+      - name: Checkout application code
         uses: actions/checkout@v7
         with:
           ref: main
-          fetch-depth: 0
+          path: app
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: |
+            /*
+            !/public/emojis/
+            !/src/data/
+          sparse-checkout-cone-mode: false
 
-      - name: Sync latest main
-        run: |
-          git fetch origin main
-          git checkout main
-          git reset --hard origin/main
+      - name: Checkout writable data branch
+        uses: actions/checkout@v7
+        with:
+          ref: data
+          path: data
+          fetch-depth: 0
+          filter: blob:none
+          sparse-checkout: |
+            /src/data/
+            /public/emojis/community/emojigg/
+          sparse-checkout-cone-mode: false
 
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:
           node-version: 22
 
-      - name: Install dependencies and hydrate emoji index
-        run: npm install --no-audit --no-fund
+      - name: Install application dependencies
+        working-directory: app
+        run: npm install --ignore-scripts --no-audit --no-fund
 
       - name: Install Chromium
+        working-directory: app
         run: npx playwright install --with-deps chromium
 
-      - name: Import Emoji.gg catalog
-        run: |
-          echo "Category: $IMPORT_CATEGORY"
-          echo "Limit/category: $IMPORT_LIMIT_PER_CATEGORY (0 = all missing)"
-          echo "Max pages/category: $IMPORT_MAX_PAGES_PER_CATEGORY"
+      - name: Hydrate data-branch catalog
+        working-directory: data
+        run: node ../app/scripts/emoji-store.mjs hydrate
 
-          node scripts/import-emojigg.mjs \
+      - name: Import Emoji.gg catalog
+        working-directory: data
+        run: |
+          node ../app/scripts/import-emojigg.mjs \
             --category="$IMPORT_CATEGORY" \
             --limit-per-category="$IMPORT_LIMIT_PER_CATEGORY" \
             --max-pages-per-category="$IMPORT_MAX_PAGES_PER_CATEGORY" \
@@ -77,97 +92,41 @@ jobs:
             --concurrency=8
 
       - name: Verify emoji index
-        run: npm run check:data
-
-      - name: Show import summary
-        run: |
-          node --input-type=module <<'NODE'
-          import { readFile } from 'node:fs/promises';
-          const emojis = JSON.parse(await readFile('src/data/emojis.json', 'utf8'));
-          const categories = JSON.parse(await readFile('src/data/categories.json', 'utf8').catch(() => '[]'));
-          const emojigg = emojis.filter((item) => item.source === 'emojigg');
-          console.log(`Emoji.gg indexed: ${emojigg.length}`);
-          console.log(`All emoji indexed: ${emojis.length}`);
-          console.log(`Emoji.gg categories: ${categories.length}`);
-          for (const category of categories) {
-            console.log(`- ${category.name}: ${category.count} (${category.animated} animated, ${category.static} static)`);
-          }
-          NODE
+        working-directory: data
+        run: node ../app/scripts/verify-data.mjs
 
       - name: Shard emoji index for Git
-        run: npm run emoji-store:shard
+        working-directory: data
+        run: node ../app/scripts/emoji-store.mjs shard
 
-      - name: Commit imported assets and indexes
+      - name: Commit imported data
         id: import_commit
+        working-directory: data
+        shell: bash
         run: |
+          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
-          git add -A src/data/emojis src/data/community-sync-state.json
-
-          if [ -f src/data/categories.json ]; then
-            git add src/data/categories.json
-          fi
-          if [ -f public/api/categories.json ]; then
-            git add public/api/categories.json
-          fi
-          if [ -d public/emojis/community/emojigg ]; then
-            git add public/emojis/community/emojigg
-          fi
-
+          git add -A src/data public/emojis/community/emojigg
           if git diff --cached --quiet; then
             echo "No Emoji.gg updates found."
             echo "created=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-
-          git commit -m "chore: import Emoji.gg catalog"
+          git commit -m "chore(data): import Emoji.gg catalog"
           echo "created=true" >> "$GITHUB_OUTPUT"
-          echo "commit=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
-      - name: Push imported commit safely
+      - name: Push data branch
         if: steps.import_commit.outputs.created == 'true'
+        working-directory: data
         run: |
-          set -e
+          set -euo pipefail
+          git pull --rebase origin data
+          git push origin HEAD:data
 
-          for attempt in 1 2 3; do
-            echo "Push attempt $attempt/3"
-            git fetch origin main
-
-            if ! git rebase origin/main; then
-              git rebase --abort || true
-              echo "Could not rebase the import commit onto the latest main. Keeping the local import commit for rescue." >&2
-              exit 1
-            fi
-
-            if git push origin HEAD:main; then
-              echo "Import pushed successfully."
-              exit 0
-            fi
-
-            echo "main changed again while pushing; retrying..."
-            sleep $((attempt * 5))
-          done
-
-          echo "Push failed after 3 attempts. The rescue artifact step will preserve this import." >&2
-          exit 1
-
-      - name: Create rescue archive after push failure
-        if: failure() && steps.import_commit.outputs.created == 'true'
-        run: |
-          git rebase --abort 2>/dev/null || true
-          RESCUE="/tmp/emojigg-import-${GITHUB_RUN_ID}.tar"
-          git diff-tree --no-commit-id --name-only -r -z HEAD > /tmp/emojigg-import-files.zlist
-          tar --null -T /tmp/emojigg-import-files.zlist -cf "$RESCUE"
-          echo "Rescue archive: $RESCUE"
-          echo "RESCUE_ARCHIVE=$RESCUE" >> "$GITHUB_ENV"
-
-      - name: Upload rescue artifact
-        if: failure() && steps.import_commit.outputs.created == 'true'
-        uses: actions/upload-artifact@v7
-        with:
-          name: emojigg-import-rescue-${{ github.run_id }}
-          path: ${{ env.RESCUE_ARCHIVE }}
-          if-no-files-found: error
-          retention-days: 7
-          compression-level: 0
+      - name: Rebuild UI from updated catalog
+        if: steps.import_commit.outputs.created == 'true'
+        working-directory: app
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run deploy-pages.yml --ref main
