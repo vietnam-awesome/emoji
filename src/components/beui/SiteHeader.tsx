@@ -5,6 +5,7 @@ import { Button } from '../motion/button';
 import { Input } from '../motion/input';
 import { ThemeToggle } from '../motion/theme-toggle';
 import { SPRING_LAYOUT, SPRING_PANEL } from '../../lib/ease';
+import TooltipLayer from './TooltipLayer';
 import '../../styles/beui-dark-mode.css';
 
 interface SiteHeaderProps {
@@ -79,6 +80,7 @@ export default function SiteHeader({ homeUrl, emojisUrl, categoriesUrl, routePat
       ref={rootRef}
       className="sticky top-0 z-50 border-b border-border bg-background/90 backdrop-blur-xl supports-[backdrop-filter]:bg-background/80"
     >
+      <TooltipLayer />
       <div className="shell relative flex min-h-16 items-center gap-3">
         <motion.a
           href={homeUrl}
