@@ -18,7 +18,13 @@ type Props = {
   browseHref: string;
   items: NotFoundEmoji[];
   visibleCount?: number;
+  searchManifestHref: string;
+  searchChunksHref: string;
+  detailBaseHref: string;
 };
+
+type SearchManifest = { chunkCount?: number };
+type CompactEmoji = { s?: string; n?: string; i?: string; a?: boolean };
 
 const GLYPHS = "ABCDEFGHJKLMNPQRSTUVWXYZ0123456789#%&@$?/\\";
 
@@ -97,13 +103,61 @@ function EmojiTile({ item }: { item: NotFoundEmoji }) {
   );
 }
 
-export default function NotFoundExperience({ homeHref, browseHref, items, visibleCount = 48 }: Props) {
-  const cappedCount = Math.max(0, Math.min(visibleCount, items.length));
-  const [visibleItems, setVisibleItems] = useState(() => items.slice(0, cappedCount));
+export default function NotFoundExperience({
+  homeHref,
+  browseHref,
+  items,
+  visibleCount = 48,
+  searchManifestHref,
+  searchChunksHref,
+  detailBaseHref,
+}: Props) {
+  const targetCount = Math.max(0, visibleCount);
+  const fallbackCount = Math.min(targetCount, items.length);
+  const [visibleItems, setVisibleItems] = useState(() => items.slice(0, fallbackCount));
 
   useEffect(() => {
-    setVisibleItems(shuffledCopy(items).slice(0, cappedCount));
-  }, [items, cappedCount]);
+    let cancelled = false;
+    setVisibleItems(shuffledCopy(items).slice(0, fallbackCount));
+
+    const loadRandomChunk = async () => {
+      try {
+        const manifestResponse = await fetch(searchManifestHref, { cache: "no-store" });
+        if (!manifestResponse.ok) return;
+        const manifest = (await manifestResponse.json()) as SearchManifest;
+        const chunkCount = Math.floor(Number(manifest.chunkCount || 0));
+        if (chunkCount < 1) return;
+
+        const chunkIndex = Math.floor(Math.random() * chunkCount);
+        const chunkFile = `${String(chunkIndex).padStart(4, "0")}.json`;
+        const chunkUrl = `${searchChunksHref.replace(/\/$/, "")}/${chunkFile}`;
+        const chunkResponse = await fetch(chunkUrl, { cache: "no-store" });
+        if (!chunkResponse.ok) return;
+        const rows = (await chunkResponse.json()) as CompactEmoji[];
+        if (!Array.isArray(rows)) return;
+
+        const detailBase = detailBaseHref.replace(/\/$/, "");
+        const candidates = rows
+          .filter((row) => row?.s && row?.i)
+          .map((row) => ({
+            name: String(row.n || row.s),
+            image: String(row.i),
+            href: `${detailBase}/${encodeURIComponent(String(row.s))}`,
+            animated: Boolean(row.a),
+          }));
+
+        const next = shuffledCopy(candidates).slice(0, targetCount);
+        if (!cancelled && next.length > 0) setVisibleItems(next);
+      } catch {
+        // Keep the build-time fallback when search assets are unavailable.
+      }
+    };
+
+    void loadRandomChunk();
+    return () => {
+      cancelled = true;
+    };
+  }, [detailBaseHref, fallbackCount, items, searchChunksHref, searchManifestHref, targetCount]);
 
   const rows = useMemo(() => {
     const midpoint = Math.max(1, Math.ceil(visibleItems.length / 2));
