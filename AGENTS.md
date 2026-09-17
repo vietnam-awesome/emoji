@@ -59,7 +59,10 @@ Public routes and tools must stay synchronized across the site's discovery surfa
 - If the route should be discoverable by search engines or AI agents, update all applicable discovery files instead of changing only navigation/UI.
 - Verify every endpoint documented in `public/agents.md` and `public/llms.txt` actually exists in the current static deployment. Do not keep references to removed legacy `/api/*` endpoints.
 - The public emoji editor at `/editor` is a discoverable site tool and must remain represented in the static sitemap, `public/agents.md`, and `public/llms.txt` while the route exists.
+- The public Emoji Cook tool at `/cook` is also discoverable and must remain represented in the static sitemap, `public/agents.md`, and `public/llms.txt` while the route exists.
 - Keep agent-facing capability descriptions aligned with implemented behavior. Do not advertise deferred editor features such as APNG frame-by-frame editing, interpolation, or AI-generated in-between frames unless they are actually implemented.
+- Emoji Cook currently combines a curated set of standard Unicode emoji using local Canvas composition and the user's browser/device emoji font. Do not describe it as Google Emoji Kitchen, do not scrape or republish Emoji Kitchen artwork, and do not imply that third-party catalog artwork is remixed by `/cook` unless a future implementation adds an explicitly licensed source.
+- When extending Emoji Cook, prefer the existing local BeUI motion primitives in `src/components/motion/**` for controls before adding another UI library or creating duplicate primitives.
 
 ## Data branch rules
 
