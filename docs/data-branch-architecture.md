@@ -28,15 +28,17 @@ Import/sync workflows execute the current scripts from `main` while their workin
 
 ## Asset URLs
 
-Emoji binaries are served directly from the data branch through jsDelivr:
+The current POC serves binary files directly from the GitHub `data` branch:
 
 ```text
-https://cdn.jsdelivr.net/gh/vietnam-awesome/emoji@data/public/emojis/<path>
+https://raw.githubusercontent.com/vietnam-awesome/emoji/data/public/emojis/<path>
 ```
 
-The UI keeps storing normal `/emojis/...` asset paths in catalog records. `src/lib/emojiAsset.ts` applies the CDN origin when rendering the final URL.
+The UI keeps storing normal `/emojis/...` asset paths in catalog records. `src/lib/emojiAsset.ts` applies the asset origin when rendering the final URL.
 
-An alternate origin can be supplied with `EMOJI_ASSET_ORIGIN`. PR Preview uses `PR_PREVIEW_ASSET_ORIGIN`.
+An alternate origin can be supplied with `EMOJI_ASSET_ORIGIN`. This intentionally makes it possible to put a CDN/proxy in front later without migrating catalog records.
+
+jsDelivr was evaluated but is not used for this catalog: its GitHub package limits are far below the current multi-gigabyte repository size, and its documented soft file-count guidance is also below this catalog.
 
 ## UI deployment
 
@@ -87,6 +89,6 @@ The current `main` history still contains the old data objects, because Git hist
 1. UI/code changes go to `main`.
 2. Emoji imports and catalog mutations go to `data` only.
 3. UI deploys read metadata from `data`, never binary assets.
-4. Binary URLs use jsDelivr `@data`.
+4. Binary URLs currently use the raw GitHub `data` branch; `EMOJI_ASSET_ORIGIN` allows a future CDN/proxy.
 5. Data changes may dispatch a new UI build so new `/emoji/<slug>` static pages appear, but they do not create a commit on `main`.
 6. Do not merge `data` back into `main`.
