@@ -82,7 +82,7 @@ jobs:
         env:
           FAST_BUILD: '1'
           FAST_BUILD_DETAIL_LIMIT: '300'
-          EMOJI_ASSET_ORIGIN: https://cdn.jsdelivr.net/gh/vietnam-awesome/emoji@data/public
+          EMOJI_ASSET_ORIGIN: https://raw.githubusercontent.com/vietnam-awesome/emoji/data/public
         run: npx astro build
 
       - name: Verify representative built links
