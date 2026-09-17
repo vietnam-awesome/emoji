@@ -6,7 +6,7 @@ export interface EmojiAssetRef {
   hexcode: string;
 }
 
-const DEFAULT_ASSET_ORIGIN = 'https://cdn.jsdelivr.net/gh/vietnam-awesome/emoji@data/public';
+const DEFAULT_ASSET_ORIGIN = 'https://raw.githubusercontent.com/vietnam-awesome/emoji/data/public';
 
 function twemojiFilename(hexcode: string) {
   return `${hexcode
