@@ -15,12 +15,33 @@ interface BreadcrumbItem {
 interface Props {
   title?: string;
   description?: string;
+  keywords?: string[] | string;
+  socialImage?: string;
+  socialImageAlt?: string;
   breadcrumbs?: BreadcrumbItem[];
 }
+
+const defaultKeywords = [
+  'emoji',
+  'custom emoji',
+  'animated emoji',
+  'GIF emoji',
+  'reaction emoji',
+  'Slack emoji',
+  'Discord emoji',
+  'emoji download'
+];
+const publisherName = 'ePlus.DEV';
+const publisherUrl = 'https://eplus.dev/';
+const defaultSocialImageWidth = 1731;
+const defaultSocialImageHeight = 909;
 
 const {
   title = 'ePlus Emoji',
   description = 'An open custom emoji directory for developers and communities.',
+  keywords = defaultKeywords,
+  socialImage,
+  socialImageAlt = 'ePlus Emoji — Open emoji directory',
   breadcrumbs
 } = Astro.props;
 
@@ -29,8 +50,14 @@ const origin = Astro.site ?? Astro.url.origin;
 const homeUrl = withBase('/', base);
 const emojisUrl = withBase('/emojis', base);
 const categoriesUrl = withBase('/categories', base);
-const faviconUrl = withBase('/favicon.svg', base);
+const faviconIcoUrl = withBase('/favicon.ico', base);
+const faviconPngUrl = withBase('/favicon-48x48.png', base);
+const appleTouchIconUrl = withBase('/apple-touch-icon.png', base);
+const manifestUrl = withBase('/site.webmanifest', base);
+const defaultSocialImageUrl = withBase('/og-default.png', base);
 const canonical = new URL(Astro.url.pathname, origin);
+const absoluteSocialImageUrl = new URL(socialImage || defaultSocialImageUrl, origin).toString();
+const keywordsText = Array.isArray(keywords) ? keywords.join(', ') : String(keywords || '');
 const pathname = Astro.url.pathname;
 const normalizedPath = pathname.replace(/\/+$/, '') || '/';
 const normalizedBase = base === '/' ? '' : base.replace(/\/+$/, '');
@@ -60,8 +87,10 @@ const pageKind = isHome
 const absoluteHomeUrl = new URL(homeUrl, origin).toString();
 const absoluteBrowseUrl = new URL(emojisUrl, origin).toString();
 const absoluteCategoriesUrl = new URL(categoriesUrl, origin).toString();
+const publisherId = `${absoluteHomeUrl}#publisher`;
 const websiteId = `${absoluteHomeUrl}#website`;
 const webpageId = `${canonical.toString()}#webpage`;
+const publisherLogoUrl = new URL(withBase('/android-chrome-512x512.png', base), origin).toString();
 
 const defaultBreadcrumbs: BreadcrumbItem[] = [];
 if (isBrowse) {
@@ -86,11 +115,24 @@ const breadcrumbItems: BreadcrumbItem[] = breadcrumbs?.length ? breadcrumbs : de
 
 const schemaGraph = [
   {
+    '@type': 'Organization',
+    '@id': publisherId,
+    name: publisherName,
+    url: publisherUrl,
+    logo: {
+      '@type': 'ImageObject',
+      url: publisherLogoUrl,
+      width: 512,
+      height: 512
+    }
+  },
+  {
     '@type': 'WebSite',
     '@id': websiteId,
     url: absoluteHomeUrl,
     name: 'ePlus Emoji',
     description: 'An open custom emoji directory for developers and communities.',
+    publisher: { '@id': publisherId },
     potentialAction: {
       '@type': 'SearchAction',
       target: {
@@ -107,6 +149,13 @@ const schemaGraph = [
     name: title,
     description,
     isPartOf: { '@id': websiteId },
+    publisher: { '@id': publisherId },
+    primaryImageOfPage: {
+      '@type': 'ImageObject',
+      url: absoluteSocialImageUrl,
+      width: defaultSocialImageWidth,
+      height: defaultSocialImageHeight
+    },
     ...(isBrowseIndex ? {
       about: { '@type': 'Thing', name: 'Custom emoji' },
       mainEntity: {
@@ -160,12 +209,35 @@ const schemaJson = JSON.stringify({
       })();
     </script>
     <meta name="description" content={description} />
+    <meta name="keywords" content={keywordsText} />
+    <meta name="author" content={publisherName} />
+    <meta name="publisher" content={publisherName} />
     <meta name="theme-color" content="#ffffff" />
+
     <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="ePlus Emoji" />
+    <meta property="og:locale" content="en_US" />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
-    <link rel="icon" type="image/svg+xml" href={faviconUrl} />
+    <meta property="og:image" content={absoluteSocialImageUrl} />
+    <meta property="og:image:secure_url" content={absoluteSocialImageUrl} />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content={String(defaultSocialImageWidth)} />
+    <meta property="og:image:height" content={String(defaultSocialImageHeight)} />
+    <meta property="og:image:alt" content={socialImageAlt} />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:url" content={canonical} />
+    <meta name="twitter:image" content={absoluteSocialImageUrl} />
+    <meta name="twitter:image:alt" content={socialImageAlt} />
+
+    <link rel="icon" href={faviconIcoUrl} sizes="any" />
+    <link rel="icon" type="image/png" sizes="48x48" href={faviconPngUrl} />
+    <link rel="apple-touch-icon" sizes="180x180" href={appleTouchIconUrl} />
+    <link rel="manifest" href={manifestUrl} />
     <link rel="canonical" href={canonical} />
     <script type="application/ld+json" set:html={schemaJson}></script>
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-Z8VQQ5NSBH"></script>

@@ -1,4 +1,9 @@
+# Public pages, emoji detail pages, categories, and discovery files are crawlable.
 User-agent: *
 Allow: /
 
+# Internal static-search JSON shards are runtime assets, not indexable documents.
+Disallow: /search/
+
+# Sitemap index covers static pages, categories, and sharded emoji detail sitemaps.
 Sitemap: https://emoji.eplus.dev/sitemap.xml

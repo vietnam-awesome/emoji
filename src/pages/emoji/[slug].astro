@@ -61,7 +61,16 @@ const title = `${emoji.name} — ${emoji.sourceLabel} | ePlus Emoji`;
 const description = hasDistinctShortcode
   ? `Download ${emoji.name} from ${emoji.sourceLabel}, copy :${emoji.shortcode}: and view source, format and license metadata.`
   : `Download ${emoji.name} from ${emoji.sourceLabel} and view source, format and license metadata.`;
+const keywords = [
+  emoji.name,
+  emoji.shortcode,
+  categoryName,
+  emoji.sourceLabel,
+  ...(emoji.tags || []).slice(0, 8),
+  'custom emoji',
+  'emoji download'
+].filter(Boolean);
 ---
-<Layout title={title} description={description} breadcrumbs={breadcrumbs}>
+<Layout title={title} description={description} keywords={keywords} breadcrumbs={breadcrumbs}>
   <EmojiDetail emoji={emoji} />
 </Layout>
