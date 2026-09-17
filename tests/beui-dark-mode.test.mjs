@@ -28,3 +28,11 @@ test('BEUI search inputs preserve theme colors including autofill', () => {
   assert.match(css, /-webkit-text-fill-color:\s*var\(--foreground\)/);
   assert.match(css, /color-scheme:\s*dark/);
 });
+
+test('detail zoom lightbox separates dialog, hover, and active surfaces', () => {
+  assert.match(css, /\.detail-lightbox\s*\{/);
+  assert.match(css, /\.detail-lightbox-zoom-levels\s*\{/);
+  assert.match(css, /\.detail-lightbox-zoom-levels button\.is-active/);
+  assert.match(css, /background:\s*var\(--beui-muted\)\s*!important/);
+  assert.match(css, /\.detail-lightbox-stage/);
+});
