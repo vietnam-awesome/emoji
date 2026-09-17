@@ -18,6 +18,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      EMOJI_ASSET_ORIGIN: https://raw.githubusercontent.com/vietnam-awesome/emoji/data/public
+      VERIFY_ASSET_ORIGIN: https://raw.githubusercontent.com/vietnam-awesome/emoji/data/public
     steps:
       - name: Checkout source without production emoji data
         uses: actions/checkout@v7
@@ -78,14 +81,13 @@ jobs:
       - name: Validate static search generator
         run: node --check scripts/build-static-search.mjs
 
-      - name: Build representative static site
+      - name: Build representative static site including static search
         env:
           FAST_BUILD: '1'
           FAST_BUILD_DETAIL_LIMIT: '300'
-          EMOJI_ASSET_ORIGIN: https://raw.githubusercontent.com/vietnam-awesome/emoji/data/public
-        run: npx astro build
+        run: npm run build
 
-      - name: Verify representative built links
+      - name: Verify representative build and data-branch asset URLs
         env:
           VERIFY_FAST: '1'
           VERIFY_DETAIL_LIMIT: '300'
