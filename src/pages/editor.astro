@@ -30,14 +30,14 @@ const browseUrl = withBase('/emojis', base);
         url.searchParams.set('src', source);
         url.searchParams.set('name', name);
         history.replaceState({}, '', url);
-        sessionStorage.removeItem('eplus-emoji-editor-handoff');
-        sessionStorage.removeItem('eplus-emoji-editor-handoff-name');
         window.setTimeout(() => {
           const cleanUrl = new URL(window.location.href);
           cleanUrl.searchParams.delete('src');
           cleanUrl.searchParams.delete('handoff');
           history.replaceState({}, '', cleanUrl);
-        }, 1500);
+          sessionStorage.removeItem('eplus-emoji-editor-handoff');
+          sessionStorage.removeItem('eplus-emoji-editor-handoff-name');
+        }, 10000);
       } catch {
         // The editor remains usable even when browser storage is restricted.
       }
