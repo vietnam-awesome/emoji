@@ -11,6 +11,7 @@ on:
       - '!public/api/**'
       - 'scripts/build-static-search.mjs'
       - 'scripts/emoji-store.mjs'
+      - 'scripts/verify-build.mjs'
       - 'astro.config.mjs'
       - 'package.json'
       - '.github/workflows/deploy-pages.yml'
@@ -29,6 +30,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    env:
+      EMOJI_ASSET_ORIGIN: https://raw.githubusercontent.com/vietnam-awesome/emoji/data/public
+      VERIFY_ASSET_ORIGIN: https://raw.githubusercontent.com/vietnam-awesome/emoji/data/public
     steps:
       - name: Checkout UI source without emoji data
         uses: actions/checkout@v7
@@ -86,7 +90,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: public/search
-          key: static-search-v4-data-${{ hashFiles('src/data/emojis/*.json', 'scripts/build-static-search.mjs') }}
+          key: static-search-v5-data-${{ hashFiles('src/data/emojis/*.json', 'scripts/build-static-search.mjs', '.github/workflows/deploy-pages.yml') }}
 
       - name: Build static search shards from data branch metadata
         if: steps.search-cache.outputs.cache-hit != 'true'
@@ -99,12 +103,16 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: public/search
-          key: static-search-v4-data-${{ hashFiles('src/data/emojis/*.json', 'scripts/build-static-search.mjs') }}
+          key: static-search-v5-data-${{ hashFiles('src/data/emojis/*.json', 'scripts/build-static-search.mjs', '.github/workflows/deploy-pages.yml') }}
 
       - name: Build static Astro site
-        env:
-          EMOJI_ASSET_ORIGIN: https://raw.githubusercontent.com/vietnam-awesome/emoji/data/public
         run: npx astro build
+
+      - name: Verify built links and data-branch asset URLs
+        env:
+          VERIFY_FAST: '1'
+          VERIFY_DETAIL_LIMIT: '300'
+        run: npm run check:build
 
       - name: Verify emoji binaries are absent from Pages artifact
         shell: bash
