@@ -6,6 +6,7 @@ const cookPage = await readFile(new URL('../src/pages/cook.astro', import.meta.u
 const cookClient = await readFile(new URL('../src/components/cook/EmojiCook.tsx', import.meta.url), 'utf8');
 const cookCss = await readFile(new URL('../src/styles/cook.css', import.meta.url), 'utf8');
 const editorPage = await readFile(new URL('../src/pages/editor.astro', import.meta.url), 'utf8');
+const siteHeader = await readFile(new URL('../src/components/beui/SiteHeader.tsx', import.meta.url), 'utf8');
 
 test('Emoji Cook is a client-only public tool using local BeUI primitives', () => {
   assert.match(cookPage, /<EmojiCook editorUrl=\{editorUrl\} client:only="react"/);
@@ -34,6 +35,13 @@ test('Cook result can be handed off to the existing editor without a server uplo
   assert.match(cookClient, /handoff=cook/);
   assert.match(editorPage, /sessionStorage\.getItem\('eplus-emoji-editor-handoff'\)/);
   assert.match(editorPage, /url\.searchParams\.set\('src', source\)/);
+  assert.match(editorPage, /10000/);
+});
+
+test('Cook is discoverable from the BeUI primary navigation', () => {
+  assert.match(siteHeader, /label: 'Cook'/);
+  assert.match(siteHeader, /routePath === '\/cook'/);
+  assert.match(siteHeader, /const cookUrl/);
 });
 
 test('Cook UI is responsive and keeps the preview usable on mobile', () => {
