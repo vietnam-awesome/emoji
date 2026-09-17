@@ -8,38 +8,32 @@ on:
         required: true
         default: all
         type: choice
-        options:
-          - all
-          - slackmojis
-          - discadia
+        options: [all, slackmojis, discadia]
       limit:
         description: Maximum emoji to import per selected source. Slackmojis accepts 0 for all missing records.
         required: true
         default: '200'
         type: string
       slackmojis_mode:
-        description: Slackmojis catalog mode. recent sorts newest first; all keeps full catalog order.
+        description: Slackmojis catalog mode
         required: true
         default: recent
         type: choice
-        options:
-          - recent
-          - all
+        options: [recent, all]
       slackmojis_concurrency:
         description: Parallel Slackmojis image downloads (1-12)
         required: true
         default: '6'
         type: string
   schedule:
-    # Weekly import window: Sunday 00:30 UTC = 07:30 Asia/Ho_Chi_Minh
     - cron: '30 0 * * 0'
 
 permissions:
   contents: write
+  actions: write
 
 concurrency:
   group: emoji-data-write
-  queue: max
   cancel-in-progress: false
 
 jobs:
@@ -53,160 +47,98 @@ jobs:
       SLACKMOJIS_CONCURRENCY: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.slackmojis_concurrency || '6' }}
 
     steps:
-      - name: Checkout latest main
+      - name: Checkout application code
         uses: actions/checkout@v7
         with:
           ref: main
-          fetch-depth: 0
+          path: app
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: |
+            /*
+            !/public/emojis/
+            !/src/data/
+          sparse-checkout-cone-mode: false
 
-      - name: Sync latest main
-        run: |
-          git fetch origin main
-          git checkout main
-          git reset --hard origin/main
+      - name: Checkout writable data branch
+        uses: actions/checkout@v7
+        with:
+          ref: data
+          path: data
+          fetch-depth: 0
+          filter: blob:none
+          sparse-checkout: |
+            /src/data/
+            /public/emojis/community/slackmojis/
+            /public/emojis/community/discadia/
+          sparse-checkout-cone-mode: false
 
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:
           node-version: 22
 
-      - name: Install dependencies and hydrate emoji index
-        run: npm install --no-audit --no-fund
+      - name: Install application dependencies
+        working-directory: app
+        run: npm install --ignore-scripts --no-audit --no-fund
 
       - name: Install Chromium for Discadia
         if: env.IMPORT_SOURCE == 'all' || env.IMPORT_SOURCE == 'discadia'
+        working-directory: app
         run: npx playwright install --with-deps chromium
 
+      - name: Hydrate data-branch catalog
+        working-directory: data
+        run: node ../app/scripts/emoji-store.mjs hydrate
+
       - name: Import selected community sources
+        working-directory: data
+        shell: bash
         run: |
           set -euo pipefail
-
           if [ "$IMPORT_SOURCE" = "all" ] || [ "$IMPORT_SOURCE" = "slackmojis" ]; then
-            echo "Importing Slackmojis (mode=$SLACKMOJIS_MODE, concurrency=$SLACKMOJIS_CONCURRENCY)..."
-            node scripts/import-slackmojis.mjs \
-              --mode="$SLACKMOJIS_MODE" \
-              --limit="$IMPORT_LIMIT" \
-              --concurrency="$SLACKMOJIS_CONCURRENCY"
+            node ../app/scripts/import-slackmojis.mjs --mode="$SLACKMOJIS_MODE" --limit="$IMPORT_LIMIT" --concurrency="$SLACKMOJIS_CONCURRENCY"
           fi
-
           if [ "$IMPORT_SOURCE" = "all" ] || [ "$IMPORT_SOURCE" = "discadia" ]; then
-            echo "Importing Discadia..."
-            node scripts/import-community.mjs \
-              --source=discadia \
-              --limit="$IMPORT_LIMIT" \
-              --concurrency=4
+            node ../app/scripts/import-community.mjs --source=discadia --limit="$IMPORT_LIMIT" --concurrency=4
           fi
 
       - name: Verify emoji index
-        run: npm run check:data
-
-      - name: Show import summary
-        run: |
-          node --input-type=module <<'NODE'
-          import { readFile } from 'node:fs/promises';
-          const emojis = JSON.parse(await readFile('src/data/emojis.json', 'utf8'));
-          const slackmojis = emojis.filter((item) => item.source === 'slackmojis');
-          const discadia = emojis.filter((item) => item.source === 'discadia');
-          console.log(`Slackmojis indexed: ${slackmojis.length}`);
-          console.log(`Discadia indexed: ${discadia.length}`);
-          console.log(`All emoji indexed: ${emojis.length}`);
-          NODE
+        working-directory: data
+        run: node ../app/scripts/verify-data.mjs
 
       - name: Shard emoji index for Git
-        run: npm run emoji-store:shard
+        working-directory: data
+        run: node ../app/scripts/emoji-store.mjs shard
 
-      - name: Commit imported assets and indexes
+      - name: Commit imported data
         id: import_commit
+        working-directory: data
+        shell: bash
         run: |
           set -euo pipefail
-
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
-          git add -A src/data/emojis src/data/community-sync-state.json
-          if [ -d public/emojis/community/slackmojis ]; then
-            git add public/emojis/community/slackmojis
-          fi
-          if [ -d public/emojis/community/discadia ]; then
-            git add public/emojis/community/discadia
-          fi
-
+          git add -A src/data public/emojis/community/slackmojis public/emojis/community/discadia
           if git diff --cached --quiet; then
             echo "No community emoji updates found."
             echo "created=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-
-          git commit -m "chore: import community emoji"
+          git commit -m "chore(data): import community emoji"
           echo "created=true" >> "$GITHUB_OUTPUT"
 
-      - name: Push imported commit safely
+      - name: Push data branch
         if: steps.import_commit.outputs.created == 'true'
+        working-directory: data
         run: |
           set -euo pipefail
+          git pull --rebase origin data
+          git push origin HEAD:data
 
-          rebuild_on_latest_main() {
-            echo "main changed during import; rebuilding selected sources on latest main..."
-            git reset --hard origin/main
-            git clean -fd -- public/emojis/community/slackmojis public/emojis/community/discadia
-            rm -f src/data/emojis.json public/api/emojis.json
-            npm run emoji-store:hydrate
-
-            if [ "$IMPORT_SOURCE" = "all" ] || [ "$IMPORT_SOURCE" = "slackmojis" ]; then
-              node scripts/import-slackmojis.mjs \
-                --mode="$SLACKMOJIS_MODE" \
-                --limit="$IMPORT_LIMIT" \
-                --concurrency="$SLACKMOJIS_CONCURRENCY"
-            fi
-
-            if [ "$IMPORT_SOURCE" = "all" ] || [ "$IMPORT_SOURCE" = "discadia" ]; then
-              node scripts/import-community.mjs \
-                --source=discadia \
-                --limit="$IMPORT_LIMIT" \
-                --concurrency=4
-            fi
-
-            npm run check:data
-            npm run emoji-store:shard
-
-            git add -A src/data/emojis src/data/community-sync-state.json
-            if [ -d public/emojis/community/slackmojis ]; then
-              git add public/emojis/community/slackmojis
-            fi
-            if [ -d public/emojis/community/discadia ]; then
-              git add public/emojis/community/discadia
-            fi
-
-            if git diff --cached --quiet; then
-              echo "Latest main already contains the requested community updates."
-              return 1
-            fi
-
-            git commit -m "chore: import community emoji"
-            return 0
-          }
-
-          for attempt in 1 2 3; do
-            echo "Push attempt $attempt/3"
-            git fetch origin main
-
-            remote_sha="$(git rev-parse origin/main)"
-            parent_sha="$(git rev-parse HEAD^)"
-
-            if [ "$parent_sha" != "$remote_sha" ]; then
-              if ! rebuild_on_latest_main; then
-                exit 0
-              fi
-            fi
-
-            if git push origin HEAD:main; then
-              echo "Community import pushed successfully."
-              exit 0
-            fi
-
-            echo "main changed while pushing; rebuilding and retrying..."
-            sleep $((attempt * 5))
-          done
-
-          echo "Push failed after 3 attempts." >&2
-          exit 1
+      - name: Rebuild UI from updated catalog
+        if: steps.import_commit.outputs.created == 'true'
+        working-directory: app
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run deploy-pages.yml --ref main
