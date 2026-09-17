@@ -8,9 +8,14 @@ import emojis from '../data/emojis.json';
 const base = import.meta.env.BASE_URL;
 const homeHref = withBase('/', base);
 const browseHref = withBase('/emojis', base);
-const sampleSize = Math.min(24, emojis.length);
-const step = Math.max(1, Math.floor(emojis.length / Math.max(sampleSize, 1)));
-const sampled = Array.from({ length: sampleSize }, (_, index) => emojis[Math.min(index * step, emojis.length - 1)])
+const searchManifestHref = withBase('/search/manifest.json', base);
+const searchChunksHref = withBase('/search/chunks', base);
+const detailBaseHref = withBase('/emoji', base);
+
+const visibleCount = Math.min(48, emojis.length);
+const fallbackPoolSize = Math.min(Math.max(visibleCount * 2, visibleCount), emojis.length);
+const step = Math.max(1, Math.floor(emojis.length / Math.max(fallbackPoolSize, 1)));
+const sampled = Array.from({ length: fallbackPoolSize }, (_, index) => emojis[Math.min(index * step, emojis.length - 1)])
   .filter(Boolean)
   .map((emoji) => ({
     name: emoji.name,
@@ -27,6 +32,10 @@ const sampled = Array.from({ length: sampleSize }, (_, index) => emojis[Math.min
     homeHref={homeHref}
     browseHref={browseHref}
     items={sampled}
+    visibleCount={visibleCount}
+    searchManifestHref={searchManifestHref}
+    searchChunksHref={searchChunksHref}
+    detailBaseHref={detailBaseHref}
     client:load
   />
 </Layout>
