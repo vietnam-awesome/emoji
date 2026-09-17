@@ -1,4 +1,0 @@
-User-agent: *
-Allow: /
-
-Sitemap: https://emoji.eplus.dev/sitemap.xml
