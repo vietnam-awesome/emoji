@@ -39,11 +39,11 @@ jobs:
       PR_PREVIEW_BASE: /${{ github.repository }}/pr-preview-${{ github.event.pull_request.number }}-${{ github.event.pull_request.head.sha }}/
       PR_PREVIEW_SITE: https://raw.githack.com/${{ github.repository }}/pr-preview-${{ github.event.pull_request.number }}-${{ github.event.pull_request.head.sha }}/
       PREVIEW_URL: https://raw.githack.com/${{ github.repository }}/pr-preview-${{ github.event.pull_request.number }}-${{ github.event.pull_request.head.sha }}/index.html
-      PR_PREVIEW_ASSET_ORIGIN: https://emoji.eplus.dev
+      PR_PREVIEW_ASSET_ORIGIN: https://cdn.jsdelivr.net/gh/vietnam-awesome/emoji@data/public
       PREVIEW_EMOJI_LIMIT: '600'
 
     steps:
-      - name: Checkout representative preview source
+      - name: Checkout preview source without emoji data
         uses: actions/checkout@v7
         with:
           ref: ${{ github.event.pull_request.head.sha }}
@@ -51,15 +51,27 @@ jobs:
           filter: blob:none
           sparse-checkout: |
             /*
-            !/public/emojis/*
-            !/src/data/emojis/*
-            /src/data/emojis/chunk-0001.json
-            /src/data/emojis/chunk-0020.json
-            /src/data/emojis/chunk-0040.json
-            /src/data/emojis/chunk-0060.json
-            /src/data/emojis/chunk-0070.json
-            /src/data/emojis/chunk-0079.json
+            !/public/emojis/
+            !/src/data/
           sparse-checkout-cone-mode: false
+
+      - name: Checkout catalog metadata from data branch
+        uses: actions/checkout@v7
+        with:
+          ref: data
+          path: .emoji-data
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: |
+            /src/data/
+          sparse-checkout-cone-mode: false
+
+      - name: Overlay catalog metadata
+        run: |
+          rm -rf src/data
+          mkdir -p src
+          cp -a .emoji-data/src/data src/data
+          rm -rf .emoji-data
 
       - name: Setup Node.js
         uses: actions/setup-node@v7
@@ -156,7 +168,7 @@ jobs:
             echo
             echo "[Open the cache-safe live site]($PREVIEW_URL)"
             echo
-            echo 'The preview URL is versioned by commit so stale CDN/404 caches cannot leak between revisions. Every preview emoji has a matching detail page.'
+            echo 'Preview metadata comes from the data branch; emoji binaries load from jsDelivr @data.'
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Post or update live preview link on PR
@@ -167,7 +179,7 @@ jobs:
           script: |
             const marker = '<!-- emoji-live-pr-preview -->';
             const shortSha = context.payload.pull_request.head.sha.slice(0, 7);
-            const body = `${marker}\n## 🌐 Live Preview\n\n**[Open cache-safe PR preview →](${process.env.PREVIEW_URL})**\n\nBuilt from commit \`${shortSha}\`. The preview URL is unique to this commit, so it does not reuse an older RawGitHack 404 cache. About 600 representative emoji records are included and every one has a generated detail page.\n\n> Use this versioned URL rather than the old \`pr-preview-${context.issue.number}\` URL.`;
+            const body = `${marker}\n## 🌐 Live Preview\n\n**[Open cache-safe PR preview →](${process.env.PREVIEW_URL})**\n\nBuilt from commit \`${shortSha}\`. Catalog metadata is read from the \`data\` branch and assets are served from its CDN URL.`;
 
             const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner,
