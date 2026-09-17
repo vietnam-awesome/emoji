@@ -8,26 +8,21 @@ on:
         required: true
         default: all
         type: choice
-        options:
-          - all
-          - openmoji
-          - twemoji
-          - noto
+        options: [all, openmoji, twemoji, noto]
       limit:
         description: Maximum new assets per source. Use 0 for all remaining assets.
         required: true
         default: '250'
         type: string
   schedule:
-    # Weekly import window: Sunday 00:30 UTC = 07:30 Asia/Ho_Chi_Minh
     - cron: '30 0 * * 0'
 
 permissions:
   contents: write
+  actions: write
 
 concurrency:
   group: emoji-data-write
-  queue: max
   cancel-in-progress: false
 
 jobs:
@@ -37,35 +32,88 @@ jobs:
       SYNC_SOURCE: ${{ github.event.inputs.source || 'all' }}
       SYNC_LIMIT: ${{ github.event.inputs.limit || '250' }}
     steps:
-      - name: Checkout
+      - name: Checkout application code
         uses: actions/checkout@v7
         with:
+          ref: main
+          path: app
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: |
+            /*
+            !/public/emojis/
+            !/src/data/
+          sparse-checkout-cone-mode: false
+
+      - name: Checkout writable data branch
+        uses: actions/checkout@v7
+        with:
+          ref: data
+          path: data
           fetch-depth: 0
+          filter: blob:none
+          sparse-checkout: |
+            /src/data/
+            /public/emojis/openmoji/
+            /public/emojis/twemoji/
+            /public/emojis/noto/
+          sparse-checkout-cone-mode: false
+
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:
           node-version: 22
-      - name: Hydrate emoji index
-        run: node scripts/emoji-store.mjs hydrate
+
+      - name: Install application dependencies
+        working-directory: app
+        run: npm install --ignore-scripts --no-audit --no-fund
+
+      - name: Hydrate data-branch catalog
+        working-directory: data
+        run: node ../app/scripts/emoji-store.mjs hydrate
+
       - name: Sync licensed emoji assets
+        working-directory: data
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: node scripts/sync.mjs --source="$SYNC_SOURCE" --limit="$SYNC_LIMIT"
+        run: node ../app/scripts/sync.mjs --source="$SYNC_SOURCE" --limit="$SYNC_LIMIT"
+
       - name: Verify index
-        run: node scripts/verify-data.mjs
+        working-directory: data
+        run: node ../app/scripts/verify-data.mjs
+
       - name: Shard emoji index for Git
-        run: node scripts/emoji-store.mjs shard
-      - name: Commit changes
+        working-directory: data
+        run: node ../app/scripts/emoji-store.mjs shard
+
+      - name: Commit data changes
+        id: sync_commit
+        working-directory: data
+        shell: bash
         run: |
-          if git diff --quiet && [ -z "$(git status --porcelain)" ]; then
-            echo "No emoji updates found."
-            exit 0
-          fi
+          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add public/emojis
-          git add -A src/data/emojis
-          git commit -m "chore: sync emoji sources"
-          git fetch origin main
-          git rebase origin/main
-          git push origin HEAD:main
+          git add -A src/data public/emojis/openmoji public/emojis/twemoji public/emojis/noto
+          if git diff --cached --quiet; then
+            echo "No emoji updates found."
+            echo "created=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git commit -m "chore(data): sync emoji sources"
+          echo "created=true" >> "$GITHUB_OUTPUT"
+
+      - name: Push data branch
+        if: steps.sync_commit.outputs.created == 'true'
+        working-directory: data
+        run: |
+          set -euo pipefail
+          git pull --rebase origin data
+          git push origin HEAD:data
+
+      - name: Rebuild UI from updated catalog
+        if: steps.sync_commit.outputs.created == 'true'
+        working-directory: app
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run deploy-pages.yml --ref main
