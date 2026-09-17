@@ -18,6 +18,7 @@ An open, searchable emoji directory for developers and communities, inspired by 
 
 | Source | Artwork license | Sync support |
 | --- | --- | --- |
+| ePlus Originals | ePlus original artwork | Yes |
 | OpenMoji | CC BY-SA 4.0 | Yes |
 | Twemoji | CC BY 4.0 | Yes |
 | Noto Emoji | OFL 1.1 | Yes |
@@ -106,6 +107,36 @@ npm run import:discords -- --tag=Pepe --limit=500 --max-pages=10
 ```
 
 `--tag=all` first discovers public tag links from the emoji-list page and then scans them within the configured page and item limits.
+
+## Import ePlus Originals
+
+Original artwork lives on the protected `data` branch under `public/emojis/eplus/`. Add PNG, GIF, WebP, JPG or JPEG files there, then run the **Import ePlus Originals** workflow. The importer validates the image bytes, derives IDs/names/shortcodes from filenames, computes SHA-256 hashes, applies the canonical taxonomy, rewrites the ePlus portion of the catalog, and triggers the production rebuild and Turso sync when changes are committed.
+
+For example, `ship-it.png` becomes `eplus-ship-it` with shortcode `:eplus_ship_it:`.
+
+Optional per-file metadata can be supplied in `public/emojis/eplus/metadata.json` using either the filename or filename slug as the key:
+
+```json
+{
+  "ship-it.png": {
+    "name": "Ship It",
+    "categorySlug": "objects",
+    "tags": ["deploy", "shipping", "developer"]
+  },
+  "coffee-break": {
+    "categorySlug": "food-drink"
+  }
+}
+```
+
+Run the importer locally after hydrating the data catalog:
+
+```bash
+npm run emoji-store:hydrate
+npm run import:eplus
+npm run check:data
+npm run emoji-store:shard
+```
 
 ## Data schema
 
