@@ -152,3 +152,74 @@
 :root.dark [data-ui="beui"] [role="listbox"] > div {
   scrollbar-color: var(--border-strong) transparent;
 }
+
+/* Emoji detail zoom lightbox. The base stylesheet used --background for both
+   hover and active zoom buttons, which turns the selected item into an almost
+   black pill in dark mode. Keep dialog, control, hover, and selected surfaces
+   distinct and animate the state change consistently with the rest of BEUI. */
+[data-ui="beui"] .detail-lightbox {
+  background: var(--popover) !important;
+  color: var(--popover-foreground);
+  border-color: var(--border-strong) !important;
+}
+
+[data-ui="beui"] .detail-lightbox::backdrop {
+  background: var(--beui-overlay) !important;
+  backdrop-filter: blur(5px);
+}
+
+[data-ui="beui"] .detail-lightbox-toolbar {
+  background: var(--popover) !important;
+  border-color: var(--border-strong) !important;
+}
+
+[data-ui="beui"] .detail-lightbox-zoom-levels {
+  background: var(--beui-control-bg) !important;
+  border-color: var(--border-strong) !important;
+}
+
+[data-ui="beui"] .detail-lightbox-zoom-levels button,
+[data-ui="beui"] .detail-lightbox-close {
+  color: var(--muted-foreground) !important;
+  box-shadow: none !important;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+[data-ui="beui"] .detail-lightbox-zoom-levels button:hover,
+[data-ui="beui"] .detail-lightbox-zoom-levels button:focus-visible,
+[data-ui="beui"] .detail-lightbox-close:hover,
+[data-ui="beui"] .detail-lightbox-close:focus-visible {
+  background: var(--beui-control-hover) !important;
+  color: var(--foreground) !important;
+  outline: none;
+}
+
+[data-ui="beui"] .detail-lightbox-zoom-levels button:focus-visible,
+[data-ui="beui"] .detail-lightbox-close:focus-visible {
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--foreground) 14%, transparent) !important;
+}
+
+[data-ui="beui"] .detail-lightbox-zoom-levels button.is-active,
+[data-ui="beui"] .detail-lightbox-zoom-levels button[aria-pressed="true"] {
+  background: var(--beui-muted) !important;
+  color: var(--foreground) !important;
+  box-shadow:
+    inset 0 0 0 1px var(--border-strong),
+    0 1px 2px rgb(0 0 0 / 0.16) !important;
+  transform: scale(1.03);
+}
+
+[data-ui="beui"] .detail-lightbox-stage {
+  background: var(--card) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-ui="beui"] .detail-lightbox-zoom-levels button,
+  [data-ui="beui"] .detail-lightbox-close {
+    transition: none;
+  }
+}
