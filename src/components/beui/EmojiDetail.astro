@@ -46,7 +46,8 @@ const tagTargetUrl = (tag) => {
         type="button"
         aria-controls="detail-lightbox"
         aria-haspopup="dialog"
-        title={`Zoom ${emoji.name}`}
+        aria-label={`Zoom ${emoji.name}`}
+        data-beui-tooltip={`Zoom ${emoji.name}`}
       >
         <span class="detail-preview-canvas">
           <img id="detail-preview-image" src={imageUrl} alt={emoji.name} />
@@ -76,7 +77,7 @@ const tagTargetUrl = (tag) => {
 
       <div class:list={['tag-list', { 'without-shortcode': !hasDistinctShortcode }]} aria-label="Related emoji tags">
         {(emoji.tags || []).slice(0, 12).map((tag) => (
-          <a href={tagTargetUrl(tag)} title={`Browse emoji related to ${tag}`}>{tag}</a>
+          <a href={tagTargetUrl(tag)} data-beui-tooltip={`Browse emoji related to ${tag}`}>{tag}</a>
         ))}
       </div>
 
