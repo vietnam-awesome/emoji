@@ -5,6 +5,15 @@ import { createPortal } from "react-dom";
 import { useEffect, useRef, useState } from "react";
 
 const TOOLTIP_SELECTOR = "[data-beui-tooltip]";
+const NATIVE_TITLE_SELECTOR = [
+  "a[title]",
+  "button[title]",
+  "label[title]",
+  "input[title]",
+  "select[title]",
+  "textarea[title]",
+  "[role][title]",
+].join(",");
 const HOVER_DELAY_MS = 260;
 
 type TooltipState = {
@@ -13,6 +22,18 @@ type TooltipState = {
   y: number;
   side: "top" | "bottom";
 };
+
+function adoptNativeTitle(element: Element) {
+  if (!(element instanceof HTMLElement) || !element.matches(NATIVE_TITLE_SELECTOR)) return;
+  const title = element.getAttribute("title")?.trim();
+  if (title && !element.dataset.beuiTooltip) element.dataset.beuiTooltip = title;
+  element.removeAttribute("title");
+}
+
+function normalizeNativeTitles(root: ParentNode | Element) {
+  if (root instanceof Element) adoptNativeTitle(root);
+  root.querySelectorAll?.(NATIVE_TITLE_SELECTOR).forEach(adoptNativeTitle);
+}
 
 function readTooltipTrigger(target: EventTarget | null) {
   if (!(target instanceof Element)) return null;
@@ -47,6 +68,25 @@ export default function TooltipLayer() {
 
   useEffect(() => {
     setMounted(true);
+    normalizeNativeTitles(document);
+
+    const titleObserver = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        if (mutation.type === "attributes" && mutation.target instanceof Element) {
+          adoptNativeTitle(mutation.target);
+          continue;
+        }
+        for (const node of mutation.addedNodes) {
+          if (node instanceof Element) normalizeNativeTitles(node);
+        }
+      }
+    });
+    titleObserver.observe(document.body, {
+      subtree: true,
+      childList: true,
+      attributes: true,
+      attributeFilter: ["title"],
+    });
 
     const clearTimer = () => {
       if (timer.current !== null) window.clearTimeout(timer.current);
@@ -117,6 +157,7 @@ export default function TooltipLayer() {
 
     return () => {
       clearTimer();
+      titleObserver.disconnect();
       document.removeEventListener("pointerover", onPointerOver, true);
       document.removeEventListener("pointerout", onPointerOut, true);
       document.removeEventListener("focusin", onFocusIn, true);
