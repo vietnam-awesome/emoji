@@ -8,6 +8,8 @@ const { emoji } = Astro.props;
 const base = import.meta.env.BASE_URL;
 const imageUrl = emojiAssetUrl(emoji, base);
 const browseUrl = withBase('/emojis', base);
+const editorBaseUrl = withBase('/editor', base);
+const editorUrl = `${editorBaseUrl}?src=${encodeURIComponent(imageUrl)}&name=${encodeURIComponent(emoji.name)}${emoji.animated ? '&animated=1' : ''}`;
 const category = emoji.category || String(emoji.group || '').replaceAll('-', ' ');
 const categorySlug = emojiCategorySlug(emoji);
 const categoryUrl = withBase(`/categories/${categorySlug}`, base);
@@ -82,7 +84,11 @@ const tagTargetUrl = (tag) => {
       </div>
 
       <div class="detail-actions">
-        <a class="primary-action" href={imageUrl} download>
+        <a class="primary-action" href={editorUrl}>
+          <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M4 20h4l11-11-4-4L4 16v4Zm9-13 4 4M14 6l2-2 4 4-2 2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          {emoji.animated ? 'Edit static frame' : 'Edit emoji'}
+        </a>
+        <a class="secondary-action" href={imageUrl} download>
           <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M12 4v10m0 0 4-4m-4 4-4-4M5 19h14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
           Download {String(emoji.format || '').toUpperCase()}
         </a>
