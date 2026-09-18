@@ -20,6 +20,55 @@ const browseUrl = withBase('/emojis', base);
   ]}
 >
   <section class="shell">
-    <EmojiEditor browseUrl={browseUrl} client:only="react" />
+    <EmojiEditor browseUrl={browseUrl} client:only="react">
+      <div class="emoji-editor editor-page-skeleton" slot="fallback" aria-hidden="true">
+        <div class="editor-topbar">
+          <div class="editor-skeleton-heading">
+            <span class="editor-skeleton-line editor-skeleton-line--eyebrow"></span>
+            <span class="editor-skeleton-line editor-skeleton-line--title"></span>
+            <span class="editor-skeleton-line editor-skeleton-line--lead"></span>
+          </div>
+          <div class="editor-skeleton-actions">
+            <span></span><span></span><span></span>
+          </div>
+        </div>
+
+        <div class="editor-workspace">
+          <section class="editor-canvas-column">
+            <div class="editor-canvas-toolbar editor-skeleton-toolbar">
+              <div>
+                <span class="editor-skeleton-line editor-skeleton-line--toolbar-title"></span>
+                <span class="editor-skeleton-line editor-skeleton-line--toolbar-meta"></span>
+              </div>
+              <span class="editor-skeleton-pill"></span>
+            </div>
+
+            <div class="editor-stage">
+              <div class="editor-stage-skeleton">
+                <span class="editor-stage-skeleton-canvas"></span>
+                <span class="editor-skeleton-line editor-skeleton-line--stage"></span>
+              </div>
+            </div>
+
+            <div class="editor-canvas-meta editor-skeleton-meta">
+              <span></span><span></span><span></span>
+            </div>
+          </section>
+
+          <aside class="editor-controls editor-controls-skeleton">
+            {Array.from({ length: 5 }).map((_, index) => (
+              <section class="editor-control-group" data-skeleton-group={index}>
+                <div class="editor-control-heading">
+                  <span class="editor-skeleton-line editor-skeleton-line--control-title"></span>
+                  <span class="editor-skeleton-line editor-skeleton-line--control-meta"></span>
+                </div>
+                <span class="editor-skeleton-control"></span>
+                <span class="editor-skeleton-control editor-skeleton-control--short"></span>
+              </section>
+            ))}
+          </aside>
+        </div>
+      </div>
+    </EmojiEditor>
   </section>
 </Layout>
