@@ -762,7 +762,7 @@ export default function EmojiEditor({ browseUrl }: Props) {
                   <span className="editor-stage-skeleton-canvas"></span>
                   <span className="editor-skeleton-line editor-skeleton-line--stage"></span>
                 </div>
-                <span className="sr-only">Loading image…</span>
+                <span className="editor-visually-hidden">Loading image…</span>
               </div>
             )}
             {!source && !loading && (
