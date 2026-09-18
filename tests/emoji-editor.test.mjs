@@ -6,6 +6,7 @@ const editorPage = await readFile(new URL('../src/pages/editor.astro', import.me
 const editorClient = await readFile(new URL('../src/components/editor/EmojiEditor.tsx', import.meta.url), 'utf8');
 const editorCss = await readFile(new URL('../src/styles/editor.css', import.meta.url), 'utf8');
 const frameTimeline = await readFile(new URL('../src/components/editor/GifFrameTimeline.tsx', import.meta.url), 'utf8');
+const timelineCss = await readFile(new URL('../src/styles/gif-timeline.css', import.meta.url), 'utf8');
 const detail = await readFile(new URL('../src/components/beui/EmojiDetail.astro', import.meta.url), 'utf8');
 const sitemap = await readFile(new URL('../src/pages/sitemap-static.xml.js', import.meta.url), 'utf8');
 const packageJson = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
@@ -52,6 +53,15 @@ test('GIF timeline supports include, duplicate, delete and per-frame delay editi
   assert.match(frameTimeline, /Duplicate/);
   assert.match(frameTimeline, /Delete/);
   assert.match(frameTimeline, /Frame delay/);
+});
+
+test('GIF timeline checkbox contrast is explicit on desktop and mobile', () => {
+  assert.match(timelineCss, /\.gif-frame-card-top \[role="checkbox"\]\[data-state="checked"\]/);
+  assert.match(timelineCss, /\.gif-frame-current-checkbox \[role="checkbox"\]\[data-state="checked"\]/);
+  assert.match(timelineCss, /background: var\(--primary\) !important/);
+  assert.match(timelineCss, /color: var\(--primary-foreground\) !important/);
+  assert.match(timelineCss, /stroke: currentColor !important/);
+  assert.match(timelineCss, /@media \(max-width: 720px\)/);
 });
 
 test('GIF frame operations participate in editor undo and redo history', () => {
