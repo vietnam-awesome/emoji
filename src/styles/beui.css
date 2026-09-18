@@ -240,10 +240,15 @@
   .emoji-card[data-emoji-card] .emoji-meta { display: flex; justify-content: space-between; gap: 8px; margin-top: 7px; color: var(--muted-foreground); font-size: .53rem; }
   .emoji-card[data-emoji-card] .emoji-meta span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .emoji-card[data-emoji-card] .emoji-select-control,
-  .emoji-card[data-emoji-card] .emoji-card-download { position: absolute; z-index: 4; top: 8px; display: grid; width: 30px; height: 30px; place-items: center; border: 1px solid var(--border-strong); border-radius: 10px; background: color-mix(in oklab,var(--background) 92%,transparent); color: var(--foreground); box-shadow: 0 4px 14px rgb(0 0 0 / .08); backdrop-filter: blur(8px); }
+  .emoji-card[data-emoji-card] .emoji-card-download,
+  .emoji-card[data-emoji-card] .emoji-card-favorite { position: absolute; z-index: 4; top: 8px; display: grid; width: 30px; height: 30px; place-items: center; border: 1px solid var(--border-strong); border-radius: 10px; background: color-mix(in oklab,var(--background) 92%,transparent); color: var(--foreground); box-shadow: 0 4px 14px rgb(0 0 0 / .08); backdrop-filter: blur(8px); }
   .emoji-card[data-emoji-card] .emoji-select-control { left: 8px; cursor: pointer; }
   .emoji-card[data-emoji-card] .emoji-card-download { right: 8px; text-decoration: none; }
-  .emoji-card[data-emoji-card] .emoji-card-download svg { width: 15px; height: 15px; }
+  .emoji-card[data-emoji-card] .emoji-card-favorite { right: 46px; padding: 0; cursor: pointer; }
+  .emoji-card[data-emoji-card] .emoji-card-download svg,
+  .emoji-card[data-emoji-card] .emoji-card-favorite svg { width: 15px; height: 15px; }
+  .emoji-card[data-emoji-card] .emoji-card-favorite.is-favorite { border-color: var(--primary); background: var(--primary); color: var(--primary-foreground); }
+  .emoji-card[data-emoji-card] .emoji-card-favorite.is-favorite path { fill: currentColor; }
   .emoji-card[data-emoji-card] .emoji-select-control input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
   .emoji-card[data-emoji-card] .emoji-select-control span { display: grid; width: 16px; height: 16px; place-items: center; border: 1px solid var(--border-strong); border-radius: 5px; color: transparent; font-size: .65rem; font-weight: 800; }
   .emoji-card[data-emoji-card] .emoji-select-control input:checked + span,
@@ -376,6 +381,32 @@
   .detail-lightbox-close { font-size: 1.2rem; }
   .detail-lightbox-stage { position: relative; display: grid; min-width: 0; min-height: 0; place-items: center; overflow: auto; padding: 32px; background: var(--card); }
   .detail-lightbox-stage img { position: relative; z-index: 2; width: auto; max-width: none; height: auto; max-height: none; object-fit: contain; opacity: 1; transition: opacity .16s ease; }
+  .detail-favorite-action { flex: 0 0 40px !important; width: 40px; min-width: 40px; max-width: 40px; min-height: 40px; padding: 0; cursor: pointer; }
+  .detail-favorite-action svg { width: 16px; height: 16px; }
+  .detail-favorite-action.is-favorite { border-color: var(--primary); background: var(--primary); color: var(--primary-foreground); }
+  .detail-favorite-action.is-favorite path { fill: currentColor; }
+  .detail-similar, .detail-random { width: min(100%,1080px); margin: 48px auto 0; padding-top: 30px; border-top: 1px solid var(--border); }
+  .detail-similar-grid, .detail-random-grid, .favorites-grid { display: grid; grid-template-columns: repeat(6,minmax(0,1fr)); gap: 12px; }
+  .detail-random-item { min-width: 0; }
+  .detail-random-shuffle { display: grid; width: 38px; height: 38px; place-items: center; padding: 0; border: 1px solid var(--border); border-radius: 999px; background: var(--background); color: var(--muted-foreground); cursor: pointer; transition: transform .16s ease, border-color .16s ease, color .16s ease, background-color .16s ease; }
+  .detail-random-shuffle:hover, .detail-random-shuffle:focus-visible { border-color: var(--border-strong); background: var(--card); color: var(--foreground); outline: none; transform: rotate(12deg); }
+  .detail-random-shuffle svg { width: 16px; height: 16px; }
+
+  /* Favorites */
+  .favorites-page { padding: 40px 0 82px; }
+  .favorites-header { display: flex; align-items: end; justify-content: space-between; gap: 28px; margin-bottom: 26px; }
+  .favorites-header > div { max-width: 760px; }
+  .favorites-header h1 { margin: 0; font-size: clamp(2.1rem,4vw,3.15rem); line-height: 1.02; letter-spacing: -.045em; }
+  .favorites-header p:last-child { margin: 10px 0 0; color: var(--muted-foreground); font-size: .88rem; line-height: 1.55; }
+  .favorites-toolbar { display: flex; min-height: 42px; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 12px; border-bottom: 1px solid var(--border); }
+  .favorites-toolbar p { margin: 0; color: var(--muted-foreground); font-size: .76rem; }
+  .favorites-clear { min-height: 32px; padding: 0 10px; border: 0; border-radius: 999px; background: transparent; color: var(--muted-foreground); font-size: .72rem; font-weight: 650; cursor: pointer; }
+  .favorites-clear:hover { background: var(--card); color: var(--foreground); }
+  .favorites-empty { padding: 70px 20px; text-align: center; }
+  .favorites-empty > div { font-size: 3rem; line-height: 1; }
+  .favorites-empty h2 { margin: 16px 0 0; font-size: 1.45rem; letter-spacing: -.035em; }
+  .favorites-empty p { margin: 8px auto 18px; color: var(--muted-foreground); font-size: .82rem; }
+  .favorites-empty .primary-action { text-decoration: none; }
 
   .not-found-image-skeleton { position: absolute; z-index: 1; width: 56px; height: 56px; border-radius: 14px; background: linear-gradient(100deg, color-mix(in oklab,var(--card) 88%,var(--background)) 20%, color-mix(in oklab,var(--foreground) 9%,var(--card)) 42%, color-mix(in oklab,var(--card) 88%,var(--background)) 64%); background-size: 220% 100%; animation: beui-skeleton-shimmer 1.15s ease-in-out infinite; }
 
@@ -415,13 +446,16 @@
 }
 
 @media (hover:hover) and (pointer:fine) {
-  .emoji-card[data-emoji-card] .emoji-card-download { opacity: 0; transform: translateY(-4px) scale(.96); pointer-events: none; transition: opacity .14s ease, transform .14s ease; }
+  .emoji-card[data-emoji-card] .emoji-card-download,
+  .emoji-card[data-emoji-card] .emoji-card-favorite:not(.is-favorite) { opacity: 0; transform: translateY(-4px) scale(.96); pointer-events: none; transition: opacity .14s ease, transform .14s ease; }
   .emoji-card[data-emoji-card]:hover .emoji-card-download,
-  .emoji-card[data-emoji-card]:focus-within .emoji-card-download { opacity: 1; transform: none; pointer-events: auto; }
+  .emoji-card[data-emoji-card]:focus-within .emoji-card-download,
+  .emoji-card[data-emoji-card]:hover .emoji-card-favorite,
+  .emoji-card[data-emoji-card]:focus-within .emoji-card-favorite { opacity: 1; transform: none; pointer-events: auto; }
 }
 
 @media (max-width:1120px) {
-  .catalog-page .emoji-grid, .category-detail-page .emoji-grid, .catalog-skeleton-grid { grid-template-columns: repeat(5,minmax(0,1fr)); }
+  .catalog-page .emoji-grid, .category-detail-page .emoji-grid, .catalog-skeleton-grid, .detail-similar-grid, .detail-random-grid, .favorites-grid { grid-template-columns: repeat(5,minmax(0,1fr)); }
 }
 
 @media (max-width:1040px) {
@@ -432,7 +466,7 @@
 }
 
 @media (max-width:920px) {
-  .catalog-page .emoji-grid, .category-detail-page .emoji-grid, .catalog-skeleton-grid { grid-template-columns: repeat(4,minmax(0,1fr)); }
+  .catalog-page .emoji-grid, .category-detail-page .emoji-grid, .catalog-skeleton-grid, .detail-similar-grid, .detail-random-grid, .favorites-grid { grid-template-columns: repeat(4,minmax(0,1fr)); }
   .category-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
 }
 
@@ -456,12 +490,12 @@
   .developer-actions a { flex: 1; }
   .home-search-meta { display: none; }
   .home-search-item { grid-template-columns: 48px minmax(0,1fr); }
-  .catalog-page, .categories-page, .category-detail-page { padding-top: 28px; }
+  .catalog-page, .categories-page, .category-detail-page, .favorites-page { padding-top: 28px; }
   .catalog-controls { position: relative; top: auto; padding: 0; border: 0; background: transparent; box-shadow: none; backdrop-filter: none; }
   .beui-filter-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
-  .catalog-page .emoji-grid, .category-detail-page .emoji-grid, .catalog-skeleton-grid { grid-template-columns: repeat(3,minmax(0,1fr)); gap: 8px; }
+  .catalog-page .emoji-grid, .category-detail-page .emoji-grid, .catalog-skeleton-grid, .detail-similar-grid, .detail-random-grid, .favorites-grid { grid-template-columns: repeat(3,minmax(0,1fr)); gap: 8px; }
   .categories-summary, .category-stats { grid-template-columns: 1fr; }
-  .category-preview-heading, .category-results-toolbar { align-items: flex-start; flex-direction: column; }
+  .category-preview-heading, .category-results-toolbar, .favorites-header { align-items: flex-start; flex-direction: column; }
   .footer-grid, .footer-bottom { flex-direction: column; align-items: stretch; }
   .footer-links { justify-content: flex-start; }
   .footer-bottom { gap: 5px; padding: 16px 0; }
@@ -470,6 +504,7 @@
 
 @media (max-width:680px) {
   .emoji-card[data-emoji-card] .emoji-preview { padding: 12px; }
+  .emoji-card[data-emoji-card] .card-motion-badge { top: auto; right: 8px; bottom: 8px; z-index: 3; padding: 2px 5px; }
   .emoji-card[data-emoji-card] .emoji-preview img { width: 65px; height: 65px; }
   .emoji-card[data-emoji-card] .emoji-card-body { padding: 8px; }
   .emoji-card[data-emoji-card] .emoji-name { font-size: .69rem; }
@@ -482,6 +517,7 @@
   .detail-preview-canvas img { max-height: 190px; }
   .detail-title-row h1 { font-size: clamp(2rem,11vw,2.7rem); }
   .detail-actions > a { flex: 1 1 180px; }
+  .detail-actions > .detail-favorite-action { flex: 0 0 40px !important; }
   .metadata-list > div { min-height: 48px; grid-template-columns: 104px minmax(0,1fr); gap: 14px; padding: 12px 14px; }
   .detail-lightbox { width: 96vw; height: 88vh; }
   .detail-lightbox-toolbar { grid-template-columns: 1fr auto; gap: 8px; }
@@ -506,6 +542,7 @@
 
 @media (max-width:430px) {
   .catalog-page .emoji-grid, .category-detail-page .emoji-grid, .catalog-skeleton-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .detail-similar-grid, .detail-random-grid, .favorites-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
 }
 
 @media (prefers-reduced-motion:reduce) {

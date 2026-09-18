@@ -1,10 +1,11 @@
 ---
 import EmojiShareDialog from './EmojiShareDialog.astro';
+import EmojiCard from '../EmojiCard.astro';
 import { emojiAssetUrl } from '../../lib/emojiAsset';
 import { emojiCategorySlug } from '../../lib/category';
 import { withBase } from '../../lib/url';
 
-const { emoji } = Astro.props;
+const { emoji, similarEmojis = [], randomEmojis = [] } = Astro.props;
 const base = import.meta.env.BASE_URL;
 const imageUrl = emojiAssetUrl(emoji, base);
 const browseUrl = withBase('/emojis', base);
@@ -102,6 +103,27 @@ const tagTargetUrl = (tag) => {
           <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M12 4v10m0 0 4-4m-4 4-4-4M5 19h14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
           Download {String(emoji.format || '').toUpperCase()}
         </a>
+        <button
+          class="secondary-action detail-favorite-action"
+          type="button"
+          data-favorite-action
+          data-beui-tooltip={`Save ${emoji.name} to My Emoji`}
+          aria-label={`Save ${emoji.name} to My Emoji`}
+          data-favorite-key={emoji.slug}
+          data-favorite-name={emoji.name}
+          data-favorite-image={imageUrl}
+          data-favorite-category={category}
+          data-favorite-category-slug={categorySlug}
+          data-favorite-source={emoji.sourceLabel}
+          data-favorite-format={emoji.format || ''}
+          data-favorite-animated={emoji.animated ? 'yes' : 'no'}
+          data-favorite-emoji={emoji.emoji || ''}
+          data-favorite-shortcode={emoji.shortcode || ''}
+          aria-pressed="false"
+        >
+          <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span class="sr-only" data-favorite-label>Save to My Emoji</span>
+        </button>
         <EmojiShareDialog emoji={emoji} imageUrl={imageUrl} />
       </div>
 
@@ -118,6 +140,44 @@ const tagTargetUrl = (tag) => {
       </dl>
     </div>
   </div>
+
+  {similarEmojis.length > 0 && (
+    <section class="detail-similar" aria-labelledby="similar-emoji-title">
+      <div class="section-heading-modern">
+        <div>
+          <p class="section-kicker">Discovery</p>
+          <h2 id="similar-emoji-title">Similar emoji</h2>
+          <p>Related by Unicode identity, category, tags, collection and style.</p>
+        </div>
+        <a href={categoryUrl}>More in {category} <span>→</span></a>
+      </div>
+      <div class="detail-similar-grid">
+        {similarEmojis.map((item) => <EmojiCard emoji={item} />)}
+      </div>
+    </section>
+  )}
+
+  {randomEmojis.length > 0 && (
+    <section class="detail-random" aria-labelledby="random-emoji-title">
+      <div class="section-heading-modern">
+        <div>
+          <p class="section-kicker">Explore</p>
+          <h2 id="random-emoji-title">Random emoji</h2>
+          <p>A fresh mix from across the library.</p>
+        </div>
+        <button class="detail-random-shuffle" type="button" data-random-shuffle data-beui-tooltip="Shuffle random emoji" aria-label="Shuffle random emoji">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 3h5v5M4 20l6.5-6.5M21 16v5h-5M14.5 10.5 21 4M4 4l16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+      <div class="detail-random-grid" data-random-grid>
+        {randomEmojis.map((item, index) => (
+          <div class="detail-random-item" data-random-item hidden={index >= 6}>
+            <EmojiCard emoji={item} />
+          </div>
+        ))}
+      </div>
+    </section>
+  )}
 </section>
 
 <dialog class="detail-lightbox" id="detail-lightbox" aria-label={`Preview ${emoji.name}`}>
@@ -238,6 +298,31 @@ const tagTargetUrl = (tag) => {
   lightbox?.addEventListener('click', (event) => {
     if (event.target === lightbox && lightbox instanceof HTMLDialogElement) lightbox.close();
   });
+
+  const randomGrid = document.querySelector('[data-random-grid]');
+  const randomShuffle = document.querySelector('[data-random-shuffle]');
+  const randomItems = randomGrid ? [...randomGrid.querySelectorAll('[data-random-item]')] : [];
+
+  const shuffleRandomEmoji = () => {
+    if (!randomItems.length) return;
+    const shuffled = [...randomItems];
+    for (let index = shuffled.length - 1; index > 0; index -= 1) {
+      const swapIndex = Math.floor(Math.random() * (index + 1));
+      [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]];
+    }
+    const visible = new Set(shuffled.slice(0, Math.min(6, shuffled.length)));
+    for (const item of randomItems) {
+      if (item instanceof HTMLElement) item.hidden = !visible.has(item);
+    }
+    if (randomGrid) {
+      for (const item of shuffled) randomGrid.append(item);
+    }
+  };
+
+  if (randomItems.length) {
+    shuffleRandomEmoji();
+    randomShuffle?.addEventListener('click', shuffleRandomEmoji);
+  }
 </script>
 
 <style>

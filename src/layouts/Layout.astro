@@ -20,6 +20,7 @@ interface Props {
   socialImage?: string;
   socialImageAlt?: string;
   breadcrumbs?: BreadcrumbItem[];
+  robots?: string;
 }
 
 const defaultKeywords = [
@@ -43,7 +44,8 @@ const {
   keywords = defaultKeywords,
   socialImage,
   socialImageAlt = 'ePlus Emoji — Open emoji directory',
-  breadcrumbs
+  breadcrumbs,
+  robots = 'index, follow'
 } = Astro.props;
 
 const base = import.meta.env.BASE_URL;
@@ -51,6 +53,7 @@ const origin = Astro.site ?? Astro.url.origin;
 const homeUrl = withBase('/', base);
 const emojisUrl = withBase('/emojis', base);
 const categoriesUrl = withBase('/categories', base);
+const favoritesUrl = withBase('/favorites', base);
 const animatedEmojisUrl = `${emojisUrl}?motion=yes`;
 const staticEmojisUrl = `${emojisUrl}?motion=no`;
 const faviconIcoUrl = withBase('/favicon.ico', base);
@@ -74,6 +77,7 @@ const isBrowse = isBrowseIndex || isEmojiDetail;
 const isCategoriesIndex = routePath === '/categories';
 const isCategoryDetail = routePath.startsWith('/categories/');
 const isCategories = isCategoriesIndex || isCategoryDetail;
+const isFavorites = routePath === '/favorites';
 const isCollectionPage = isBrowseIndex || isCategoriesIndex || isCategoryDetail;
 const pageKind = isHome
   ? 'home'
@@ -85,7 +89,9 @@ const pageKind = isHome
         ? 'categories'
         : isCategoryDetail
           ? 'category-detail'
-          : 'page';
+          : isFavorites
+            ? 'favorites'
+            : 'page';
 
 const absoluteHomeUrl = new URL(homeUrl, origin).toString();
 const absoluteBrowseUrl = new URL(emojisUrl, origin).toString();
@@ -104,6 +110,12 @@ if (isBrowse) {
   if (isEmojiDetail) {
     defaultBreadcrumbs.push({ name: title.split('—')[0].trim() });
   }
+}
+if (isFavorites) {
+  defaultBreadcrumbs.push(
+    { name: 'Home', href: homeUrl },
+    { name: 'My Emoji' }
+  );
 }
 if (isCategories) {
   defaultBreadcrumbs.push(
@@ -212,6 +224,7 @@ const schemaJson = JSON.stringify({
       })();
     </script>
     <meta name="description" content={description} />
+    <meta name="robots" content={robots} />
     <meta name="keywords" content={keywordsText} />
     <meta name="author" content={publisherName} />
     <meta name="publisher" content={publisherName} />
@@ -281,6 +294,7 @@ const schemaJson = JSON.stringify({
         <div class="footer-links">
           <a href={emojisUrl}>Browse all</a>
           <a href={categoriesUrl}>Categories</a>
+          <a href={favoritesUrl}>My Emoji</a>
           <a href={animatedEmojisUrl}>Animated</a>
           <a href={staticEmojisUrl}>Static</a>
         </div>
@@ -292,6 +306,10 @@ const schemaJson = JSON.stringify({
     </footer>
 
     <BackToTop client:load />
+
+    <script>
+      import '../scripts/favorites.js';
+    </script>
 
     <script is:inline>
       (() => {
