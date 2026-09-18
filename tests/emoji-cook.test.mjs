@@ -5,7 +5,7 @@ import test from 'node:test';
 const cookPage = await readFile(new URL('../src/pages/cook.astro', import.meta.url), 'utf8');
 const cookClient = await readFile(new URL('../src/components/cook/EmojiCook.tsx', import.meta.url), 'utf8');
 const cookCss = await readFile(new URL('../src/styles/cook.css', import.meta.url), 'utf8');
-const editorPage = await readFile(new URL('../src/pages/editor.astro', import.meta.url), 'utf8');
+const editorClient = await readFile(new URL('../src/components/editor/EmojiEditor.tsx', import.meta.url), 'utf8');
 const siteHeader = await readFile(new URL('../src/components/beui/SiteHeader.tsx', import.meta.url), 'utf8');
 
 test('Emoji Cook is a client-only public tool using local BeUI primitives', () => {
@@ -27,14 +27,19 @@ test('Emoji Cook supports ingredient search, recipes, randomization and local ex
   assert.match(cookClient, /image\/webp/);
   assert.match(cookClient, /ClipboardItem/);
   assert.match(cookClient, /history\.replaceState/);
+  assert.match(cookClient, /const \[category, setCategory\]/);
+  assert.match(cookClient, /RecipePreview/);
+  assert.match(cookClient, /See the result before choosing/);
+  assert.match(cookClient, /setActiveSlot\('second'\)/);
 });
 
 test('Cook result can be handed off to the existing editor without a server upload', () => {
   assert.match(cookClient, /eplus-emoji-editor-handoff/);
   assert.match(cookClient, /sessionStorage\.setItem/);
   assert.match(cookClient, /handoff=cook/);
-  assert.match(editorPage, /sessionStorage\.getItem\('eplus-emoji-editor-handoff'\)/);
-  assert.match(editorPage, /url\.searchParams\.set\('src', source\)/);
+  assert.match(editorClient, /sessionStorage\.getItem\(EDITOR_HANDOFF_KEY\)/);
+  assert.match(editorClient, /await fetch\(dataUrl\)/);
+  assert.match(editorClient, /cleanUrl\.searchParams\.delete\('handoff'\)/);
   assert.match(editorPage, /10000/);
 });
 
@@ -50,4 +55,7 @@ test('Cook UI is responsive and keeps the preview usable on mobile', () => {
   assert.match(cookCss, /@media \(max-width: 520px\)/);
   assert.match(cookCss, /\.cook-picker-grid/);
   assert.match(cookCss, /\.cook-result-actions/);
+  assert.match(cookCss, /\.cook-equation/);
+  assert.match(cookCss, /\.cook-category-list/);
+  assert.match(cookCss, /\.cook-style-previews/);
 });
