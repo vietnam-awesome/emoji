@@ -77,56 +77,12 @@ const schemaJson = JSON.stringify({
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={description} />
-    <meta name="robots" content="index, follow" />
-    <meta name="theme-color" content="#ffffff" />
-    <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="ePlus Emoji" />
-    <meta property="og:title" content={title} />
-    <meta property="og:description" content={description} />
-    <meta property="og:url" content={canonical} />
+    <meta name="robots" content="index,follow" />
     <meta property="og:image" content={imageUrl} />
-    <meta name="twitter:card" content="summary" />
-    <meta name="twitter:title" content={title} />
-    <meta name="twitter:description" content={description} />
-    <meta name="twitter:image" content={imageUrl} />
     <link rel="canonical" href={canonical} />
-    <link rel="icon" href="/favicon.ico" sizes="any" />
-    <script type="application/ld+json" set:html={schemaJson}></script>
-    <script is:inline>
-      (() => {
-        try {
-          const saved = localStorage.getItem('eplus-emoji-theme');
-          const theme = saved === 'dark' || saved === 'light'
-            ? saved
-            : (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-          document.documentElement.classList.toggle('dark', theme === 'dark');
-          document.documentElement.style.colorScheme = theme;
-          document.documentElement.dataset.theme = theme;
-        } catch {}
-      })();
-    </script>
     <title>{title}</title>
   </head>
   <body data-ui="beui" data-page="emoji-detail">
     <EmojiDetailClient recordId={recordId} slug={emoji.slug} client:only="react" />
-
-    <noscript>
-      <main class="shell detail-page">
-        <div class="detail-grid">
-          <aside class="detail-preview">
-            <div class="detail-preview-canvas">
-              <img src={imageUrl} alt={emoji.name} width="128" height="128" />
-            </div>
-          </aside>
-          <div class="detail-content">
-            <p class="eyebrow">{emoji.sourceLabel}</p>
-            <h1>{emoji.name}</h1>
-            <p>{description}</p>
-            <p><a class="primary-action" href={imageUrl}>Download {String(emoji.format || '').toUpperCase()}</a></p>
-            <p>Category: {category}</p>
-          </div>
-        </div>
-      </main>
-    </noscript>
   </body>
 </html>
