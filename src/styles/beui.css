@@ -504,6 +504,7 @@
 
 @media (max-width:680px) {
   .emoji-card[data-emoji-card] .emoji-preview { padding: 12px; }
+  .emoji-card[data-emoji-card] .card-motion-badge { top: auto; right: 8px; bottom: 8px; z-index: 3; padding: 2px 5px; }
   .emoji-card[data-emoji-card] .emoji-preview img { width: 65px; height: 65px; }
   .emoji-card[data-emoji-card] .emoji-card-body { padding: 8px; }
   .emoji-card[data-emoji-card] .emoji-name { font-size: .69rem; }
