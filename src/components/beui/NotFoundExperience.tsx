@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowLeft, Search } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useReducedMotion } from "motion/react";
 import { ButtonLink } from "../motion/button";
 import { Marquee } from "../motion/marquee";
@@ -80,7 +80,12 @@ function Scramble({ text }: { text: string }) {
 }
 
 function EmojiTile({ item }: { item: NotFoundEmoji }) {
+  const imageRef = useRef<HTMLImageElement>(null);
   const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    if (imageRef.current?.complete) setLoaded(true);
+  }, [item.image]);
 
   return (
     <a
@@ -90,6 +95,7 @@ function EmojiTile({ item }: { item: NotFoundEmoji }) {
     >
       {!loaded ? <span className="not-found-image-skeleton" aria-hidden="true" /> : null}
       <img
+        ref={imageRef}
         src={item.image}
         alt=""
         width={64}
