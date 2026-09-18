@@ -4,6 +4,9 @@ import EmojiDetail from '../../components/beui/EmojiDetail.astro';
 import emojis from '../../data/emojis.json';
 import { emojiCategorySlug } from '../../lib/category';
 import { withBase } from '../../lib/url';
+import { createSimilarEmojiResolver } from '../../lib/similarEmoji.mjs';
+
+const resolveSimilarEmoji = createSimilarEmojiResolver(emojis);
 
 export function getStaticPaths() {
   const fastBuild = process.env.FAST_BUILD === '1';
@@ -46,6 +49,7 @@ const normalizeIdentity = (value) => String(value || '')
   .replace(/[^a-z0-9]+/g, '');
 
 const { emoji } = Astro.props;
+const similarEmojis = resolveSimilarEmoji(emoji, 12);
 const base = import.meta.env.BASE_URL;
 const categoryName = emoji.category || String(emoji.group || '').replaceAll('-', ' ') || 'Other';
 const categoryUrl = withBase(`/categories/${emojiCategorySlug(emoji)}`, base);
@@ -72,5 +76,5 @@ const keywords = [
 ].filter(Boolean);
 ---
 <Layout title={title} description={description} keywords={keywords} breadcrumbs={breadcrumbs}>
-  <EmojiDetail emoji={emoji} />
+  <EmojiDetail emoji={emoji} similarEmojis={similarEmojis} />
 </Layout>
