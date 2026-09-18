@@ -298,6 +298,35 @@ const description = `Browse ${category.count.toLocaleString('en-US')} ${category
         return article;
       }
 
+      function createGridSkeleton(count) {
+        const fragment = document.createDocumentFragment();
+        for (let index = 0; index < count; index += 1) {
+          const card = document.createElement('div');
+          card.className = 'catalog-skeleton-card';
+          card.dataset.gridSkeleton = '';
+          card.setAttribute('aria-hidden', 'true');
+      
+          const media = document.createElement('div');
+          media.className = 'catalog-skeleton-media';
+          const body = document.createElement('div');
+          body.className = 'catalog-skeleton-body';
+      
+          for (const className of ['catalog-skeleton-line catalog-skeleton-line--title', 'catalog-skeleton-line', 'catalog-skeleton-line catalog-skeleton-line--meta']) {
+            const line = document.createElement('span');
+            line.className = className;
+            body.append(line);
+          }
+      
+          card.append(media, body);
+          fragment.append(card);
+        }
+        return fragment;
+      }
+      
+      function clearGridSkeletons() {
+        grid?.querySelectorAll('[data-grid-skeleton]').forEach((node) => node.remove());
+      }
+
       function syncUrl() {
         const url = new URL(window.location.href);
         if (mode === 'pagination') {
@@ -372,9 +401,11 @@ const description = `Browse ${category.count.toLocaleString('en-US')} ${category
         if (infiniteStatus) infiniteStatus.textContent = 'Loading more emoji…';
         const start = visibleCount;
         const end = Math.min(start + PAGE_SIZE, resultTotal);
+        grid.append(createGridSkeleton(Math.max(1, end - start)));
         try {
           const ids = await getCategoryIds();
           const records = await recordsForIds(ids.slice(start, end));
+          clearGridSkeletons();
           const fragment = document.createDocumentFragment();
           for (const record of records) fragment.append(createEmojiCard(record));
           grid.append(fragment);
@@ -385,6 +416,7 @@ const description = `Browse ${category.count.toLocaleString('en-US')} ${category
           console.error('Could not load more category emoji', error);
           if (infiniteStatus) infiniteStatus.textContent = 'Could not load more. Try again.';
         } finally {
+          clearGridSkeletons();
           busy = false;
           infiniteSpinner?.classList.remove('is-loading');
           if (loadMoreButton) loadMoreButton.disabled = false;
@@ -398,9 +430,12 @@ const description = `Browse ${category.count.toLocaleString('en-US')} ${category
         currentPage = Math.max(1, Math.min(page, totalPages));
         const start = (currentPage - 1) * PAGE_SIZE;
         const end = Math.min(start + PAGE_SIZE, resultTotal);
+        grid.replaceChildren(createGridSkeleton(Math.max(1, end - start)));
+        explorer.setAttribute('aria-busy', 'true');
         try {
           const ids = await getCategoryIds();
           const records = await recordsForIds(ids.slice(start, end));
+          clearGridSkeletons();
           const fragment = document.createDocumentFragment();
           for (const record of records) fragment.append(createEmojiCard(record));
           grid.replaceChildren(fragment);
@@ -415,6 +450,8 @@ const description = `Browse ${category.count.toLocaleString('en-US')} ${category
           console.error('Could not load category page', error);
           rangeCount.textContent = 'Could not load this page. Please retry.';
         } finally {
+          clearGridSkeletons();
+          explorer.removeAttribute('aria-busy');
           busy = false;
         }
       }
@@ -422,10 +459,13 @@ const description = `Browse ${category.count.toLocaleString('en-US')} ${category
       async function renderScrollStart() {
         if (busy) return;
         busy = true;
+        grid.replaceChildren(createGridSkeleton(Math.max(1, Math.min(PAGE_SIZE, resultTotal))));
+        explorer.setAttribute('aria-busy', 'true');
         try {
           const ids = await getCategoryIds();
           const end = Math.min(PAGE_SIZE, resultTotal);
           const records = await recordsForIds(ids.slice(0, end));
+          clearGridSkeletons();
           const fragment = document.createDocumentFragment();
           for (const record of records) fragment.append(createEmojiCard(record));
           grid.replaceChildren(fragment);
@@ -436,6 +476,8 @@ const description = `Browse ${category.count.toLocaleString('en-US')} ${category
         } catch (error) {
           console.error('Could not restore category scroll view', error);
         } finally {
+          clearGridSkeletons();
+          explorer.removeAttribute('aria-busy');
           busy = false;
         }
       }
