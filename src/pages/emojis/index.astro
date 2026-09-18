@@ -430,6 +430,35 @@ const browseSelects = [
       return article;
     }
 
+    function createGridSkeleton(count) {
+      const fragment = document.createDocumentFragment();
+      for (let index = 0; index < count; index += 1) {
+        const card = document.createElement('div');
+        card.className = 'catalog-skeleton-card';
+        card.dataset.gridSkeleton = '';
+        card.setAttribute('aria-hidden', 'true');
+    
+        const media = document.createElement('div');
+        media.className = 'catalog-skeleton-media';
+        const body = document.createElement('div');
+        body.className = 'catalog-skeleton-body';
+    
+        for (const className of ['catalog-skeleton-line catalog-skeleton-line--title', 'catalog-skeleton-line', 'catalog-skeleton-line catalog-skeleton-line--meta']) {
+          const line = document.createElement('span');
+          line.className = className;
+          body.append(line);
+        }
+    
+        card.append(media, body);
+        fragment.append(card);
+      }
+      return fragment;
+    }
+    
+    function clearGridSkeletons() {
+      grid?.querySelectorAll('[data-grid-skeleton]').forEach((node) => node.remove());
+    }
+
     function setLoading(title, detail) {
       busy = true;
       explorer?.classList.add('is-query-loading');
@@ -519,6 +548,7 @@ const browseSelects = [
       const effectiveStart = append ? start : (mode === 'scroll' ? 0 : start);
       const ids = idsForRange(effectiveStart, end);
       const records = await recordsForIds(ids);
+      clearGridSkeletons();
       const fragment = document.createDocumentFragment();
       for (const record of records) fragment.append(createEmojiCard(record));
       if (append) grid?.append(fragment); else grid?.replaceChildren(fragment);
@@ -571,10 +601,13 @@ const browseSelects = [
       infiniteSpinner?.classList.add('is-loading');
       if (loadMoreButton) loadMoreButton.disabled = true;
       if (infiniteStatus) infiniteStatus.textContent = 'Loading more emoji…';
+      const previousVisibleCount = visibleCount;
       visibleCount = Math.min(visibleCount + PAGE_SIZE, resultTotal);
+      grid?.append(createGridSkeleton(Math.max(1, visibleCount - previousVisibleCount)));
       try {
         await renderCurrent({ append: true });
       } finally {
+        clearGridSkeletons();
         busy = false;
         infiniteSpinner?.classList.remove('is-loading');
         if (loadMoreButton) loadMoreButton.disabled = false;
