@@ -359,6 +359,18 @@
   backdrop-filter: blur(6px);
 }
 
+.editor-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
 .editor-page-skeleton {
   pointer-events: none;
   user-select: none;
