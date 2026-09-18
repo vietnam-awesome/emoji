@@ -1,76 +1,132 @@
 ---
-import Layout from '../../layouts/Layout.astro';
-import EmojiDetail from '../../components/beui/EmojiDetail.astro';
+import EmojiDetailClient from '../../components/beui/EmojiDetailClient';
+import '../../styles/beui.css';
+import '../../styles/catalog-pages.css';
+import '../../styles/beui-dark-mode.css';
 import emojis from '../../data/emojis.json';
-import { emojiCategorySlug } from '../../lib/category';
-import { withBase } from '../../lib/url';
 
 export function getStaticPaths() {
   const fastBuild = process.env.FAST_BUILD === '1';
   const requestedLimit = Number.parseInt(process.env.FAST_BUILD_DETAIL_LIMIT || '300', 10);
-  let detailRecords = emojis;
+  let indexedRecords = emojis.map((emoji, recordId) => ({ emoji, recordId }));
 
-  if (fastBuild && Number.isFinite(requestedLimit) && requestedLimit > 0 && emojis.length > requestedLimit) {
+  if (fastBuild && Number.isFinite(requestedLimit) && requestedLimit > 0 && indexedRecords.length > requestedLimit) {
     if (requestedLimit === 1) {
-      detailRecords = [emojis[0]];
+      indexedRecords = [indexedRecords[0]];
     } else {
       const sampled = [];
       const seen = new Set();
       for (let index = 0; index < requestedLimit; index += 1) {
-        const recordIndex = Math.round((index * (emojis.length - 1)) / (requestedLimit - 1));
+        const recordIndex = Math.round((index * (indexedRecords.length - 1)) / (requestedLimit - 1));
         if (seen.has(recordIndex)) continue;
         seen.add(recordIndex);
-        sampled.push(emojis[recordIndex]);
+        sampled.push(indexedRecords[recordIndex]);
       }
-      detailRecords = sampled;
+      indexedRecords = sampled;
     }
   }
 
   if (fastBuild) {
     console.log(
-      `[fast-build] rendering ${detailRecords.length.toLocaleString('en-US')} / ` +
-      `${emojis.length.toLocaleString('en-US')} emoji detail pages`
+      `[fast-build] rendering ${indexedRecords.length.toLocaleString('en-US')} / ` +
+      `${emojis.length.toLocaleString('en-US')} thin emoji detail shells`
     );
   }
 
-  return detailRecords.map((emoji) => ({
+  return indexedRecords.map(({ emoji, recordId }) => ({
     params: { slug: emoji.slug },
-    props: { emoji }
+    props: { emoji, recordId }
   }));
 }
 
+const { emoji, recordId } = Astro.props;
+const origin = Astro.site ?? new URL('https://emoji.eplus.dev');
+const canonical = new URL(Astro.url.pathname, origin).toString();
+const assetOrigin = String(process.env.EMOJI_ASSET_ORIGIN || 'https://raw.githubusercontent.com/vietnam-awesome/emoji/data/public')
+  .replace(/\/+$/, '');
+const imageUrl = String(emoji.image || '').startsWith('/emojis/')
+  ? `${assetOrigin}${emoji.image}`
+  : String(emoji.image || '');
+const category = emoji.category || String(emoji.group || '').replaceAll('-', ' ') || 'Other';
 const normalizeIdentity = (value) => String(value || '')
   .toLowerCase()
   .normalize('NFKD')
   .replace(/[\u0300-\u036f]/g, '')
   .replace(/[^a-z0-9]+/g, '');
-
-const { emoji } = Astro.props;
-const base = import.meta.env.BASE_URL;
-const categoryName = emoji.category || String(emoji.group || '').replaceAll('-', ' ') || 'Other';
-const categoryUrl = withBase(`/categories/${emojiCategorySlug(emoji)}`, base);
-const breadcrumbs = [
-  { name: 'Home', href: withBase('/', base) },
-  { name: categoryName, href: categoryUrl },
-  { name: emoji.name }
-];
 const hasDistinctShortcode = Boolean(
   emoji.shortcode && normalizeIdentity(emoji.shortcode) !== normalizeIdentity(emoji.name)
 );
 const title = `${emoji.name} — ${emoji.sourceLabel} | ePlus Emoji`;
 const description = hasDistinctShortcode
-  ? `Download ${emoji.name} from ${emoji.sourceLabel}, copy :${emoji.shortcode}: and view source, format and license metadata.`
-  : `Download ${emoji.name} from ${emoji.sourceLabel} and view source, format and license metadata.`;
-const keywords = [
-  emoji.name,
-  emoji.shortcode,
-  categoryName,
-  emoji.sourceLabel,
-  ...(emoji.tags || []).slice(0, 8),
-  'custom emoji',
-  'emoji download'
-].filter(Boolean);
+  ? `Download ${emoji.name} from ${emoji.sourceLabel}, copy :${emoji.shortcode}: and view format and license metadata.`
+  : `Download ${emoji.name} from ${emoji.sourceLabel} and view format and license metadata.`;
+const schemaJson = JSON.stringify({
+  '@context': 'https://schema.org',
+  '@type': 'ImageObject',
+  name: emoji.name,
+  description,
+  contentUrl: imageUrl,
+  url: canonical,
+  encodingFormat: emoji.format || undefined,
+  creditText: emoji.attribution || emoji.sourceLabel || undefined
+}).replace(/</g, '\\u003c');
 ---
-<Layout title={title} description={description} keywords={keywords} breadcrumbs={breadcrumbs}>
-  <EmojiDetail emoji={emoji} />
-</Layout>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#ffffff" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="ePlus Emoji" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={imageUrl} />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={imageUrl} />
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <script type="application/ld+json" set:html={schemaJson}></script>
+    <script is:inline>
+      (() => {
+        try {
+          const saved = localStorage.getItem('eplus-emoji-theme');
+          const theme = saved === 'dark' || saved === 'light'
+            ? saved
+            : (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+          document.documentElement.classList.toggle('dark', theme === 'dark');
+          document.documentElement.style.colorScheme = theme;
+          document.documentElement.dataset.theme = theme;
+        } catch {}
+      })();
+    </script>
+    <title>{title}</title>
+  </head>
+  <body data-ui="beui" data-page="emoji-detail">
+    <EmojiDetailClient recordId={recordId} slug={emoji.slug} client:only="react" />
+
+    <noscript>
+      <main class="shell detail-page">
+        <div class="detail-grid">
+          <aside class="detail-preview">
+            <div class="detail-preview-canvas">
+              <img src={imageUrl} alt={emoji.name} width="128" height="128" />
+            </div>
+          </aside>
+          <div class="detail-content">
+            <p class="eyebrow">{emoji.sourceLabel}</p>
+            <h1>{emoji.name}</h1>
+            <p>{description}</p>
+            <p><a class="primary-action" href={imageUrl}>Download {String(emoji.format || '').toUpperCase()}</a></p>
+            <p>Category: {category}</p>
+          </div>
+        </div>
+      </main>
+    </noscript>
+  </body>
+</html>
