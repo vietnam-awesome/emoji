@@ -53,6 +53,9 @@ test('favorites UI is wired through cards, detail, layout, header and My Emoji p
   assert.match(card, /data-favorite-action/);
   assert.match(detail, /data-favorite-action/);
   assert.match(detail, /Similar emoji/);
+  assert.match(detail, /Random emoji/);
+  assert.match(detail, /data-random-shuffle/);
+  assert.match(detail, /class="sr-only" data-favorite-label/);
   assert.match(layout, /favorites\.js/);
   assert.match(header, /My Emoji/);
   assert.match(favoritesPage, /eplus-emoji-favorites-v1/);
