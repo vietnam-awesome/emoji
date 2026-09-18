@@ -16,6 +16,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { ActionSwapIcon } from '../motion/action-swap';
 import { Button } from '../motion/button';
 import { Input } from '../motion/input';
+import { PressableCard } from '../motion/pressable-card';
 import {
   Select,
   SelectContent,
@@ -24,6 +25,7 @@ import {
   SelectValue,
 } from '../motion/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../motion/tabs';
+import TooltipLayer from '../beui/TooltipLayer';
 
 type CookEmoji = {
   emoji: string;
@@ -556,10 +558,11 @@ export default function EmojiCook({ editorUrl }: Props) {
       </header>
 
       <section className="cook-equation" aria-label="Current emoji combination">
-        <button
-          type="button"
+        <PressableCard
+          selected={activeSlot === 'first'}
           className={`cook-equation-slot${activeSlot === 'first' ? ' is-active' : ''}`}
           aria-pressed={activeSlot === 'first'}
+          data-beui-tooltip="Choose ingredient A"
           onClick={() => {
             setActiveSlot('first');
             setTab('pick');
@@ -568,12 +571,13 @@ export default function EmojiCook({ editorUrl }: Props) {
           <span>Emoji A</span>
           <strong aria-hidden="true">{first.emoji}</strong>
           <small>{first.label}</small>
-        </button>
+        </PressableCard>
         <span className="cook-equation-operator" aria-hidden="true">+</span>
-        <button
-          type="button"
+        <PressableCard
+          selected={activeSlot === 'second'}
           className={`cook-equation-slot${activeSlot === 'second' ? ' is-active' : ''}`}
           aria-pressed={activeSlot === 'second'}
+          data-beui-tooltip="Choose ingredient B"
           onClick={() => {
             setActiveSlot('second');
             setTab('pick');
@@ -582,17 +586,17 @@ export default function EmojiCook({ editorUrl }: Props) {
           <span>Emoji B</span>
           <strong aria-hidden="true">{second.emoji}</strong>
           <small>{second.label}</small>
-        </button>
+        </PressableCard>
         <span className="cook-equation-operator cook-equation-equals" aria-hidden="true">=</span>
-        <button
-          type="button"
+        <PressableCard
           className="cook-equation-result"
+          data-beui-tooltip="Jump to cooked result"
           onClick={() => document.querySelector('.cook-result')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
           aria-label="Jump to cooked result"
         >
           <RecipePreview first={first} second={second} strategy={strategy} background={background} />
           <span>Result</span>
-        </button>
+        </PressableCard>
         <Button
           variant="secondary"
           size="icon"
@@ -652,18 +656,18 @@ export default function EmojiCook({ editorUrl }: Props) {
                 {filteredEmoji.map((item) => {
                   const selected = activeSlot === 'first' ? item.emoji === first.emoji : item.emoji === second.emoji;
                   return (
-                    <button
+                    <PressableCard
                       key={`${item.emoji}-${item.label}`}
-                      type="button"
+                      selected={selected}
                       role="listitem"
                       className={`cook-picker-item${selected ? ' is-selected' : ''}`}
                       onClick={() => chooseIngredient(item)}
-                      title={`${item.label} · ${item.category}`}
+                      data-beui-tooltip={`${item.label} · ${item.category}`}
                       aria-label={`Use ${item.label} as ${activeSlot === 'first' ? 'ingredient A' : 'ingredient B'}`}
                     >
                       <span aria-hidden="true">{item.emoji}</span>
                       <small>{item.label}</small>
-                    </button>
+                    </PressableCard>
                   );
                 })}
               </div>
@@ -680,11 +684,11 @@ export default function EmojiCook({ editorUrl }: Props) {
               </div>
               <div className="cook-recipe-grid">
                 {exploreEmoji.map((item) => (
-                  <button
+                  <PressableCard
                     key={`recipe-${item.emoji}-${item.label}`}
-                    type="button"
                     className="cook-recipe-card"
                     onClick={() => applyExplore(item)}
+                    data-beui-tooltip={`Cook ${first.label} with ${item.label}`}
                     aria-label={`Cook ${first.label} with ${item.label}`}
                   >
                     <span className="cook-combo-preview">
@@ -693,7 +697,7 @@ export default function EmojiCook({ editorUrl }: Props) {
                     <span className="cook-recipe-pair" aria-hidden="true">{first.emoji} + {item.emoji}</span>
                     <strong>{item.label}</strong>
                     <small>{resolveStrategy('auto', first.emoji, item.emoji)}</small>
-                  </button>
+                  </PressableCard>
                 ))}
               </div>
             </TabsContent>
@@ -733,17 +737,18 @@ export default function EmojiCook({ editorUrl }: Props) {
             {VISUAL_STRATEGIES.map((item) => {
               const active = strategy === item.value || (strategy === 'auto' && resolvedStrategy === item.value);
               return (
-                <button
+                <PressableCard
                   key={item.value}
-                  type="button"
+                  selected={active}
                   className={`cook-style-preview${active ? ' is-active' : ''}`}
                   onClick={() => setStrategy(item.value)}
+                  data-beui-tooltip={item.label}
                   aria-pressed={active}
                 >
                   <RecipePreview first={first} second={second} strategy={item.value} background={background} />
                   <span>{item.label}</span>
                   {active ? <Check className="size-3" aria-hidden="true" /> : null}
-                </button>
+                </PressableCard>
               );
             })}
           </div>
@@ -802,6 +807,7 @@ export default function EmojiCook({ editorUrl }: Props) {
           </p>
         </aside>
       </div>
+      <TooltipLayer />
     </div>
   );
 }
