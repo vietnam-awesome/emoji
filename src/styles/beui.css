@@ -209,6 +209,14 @@
   .home-search-copy span { color: var(--muted-foreground); font-family: ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace; font-size: .61rem; }
   .home-search-meta { max-width: 125px; overflow: hidden; color: var(--muted-foreground); font-size: .6rem; text-overflow: ellipsis; white-space: nowrap; }
   .home-search-empty { padding: 24px 14px; color: var(--muted-foreground); font-size: .74rem; line-height: 1.5; text-align: center; }
+  .home-search-skeleton { display: grid; grid-template-columns: 48px minmax(0,1fr) auto; align-items: center; gap: 10px; min-height: 62px; padding: 7px 12px; border-bottom: 1px solid var(--border); }
+  .home-search-skeleton-thumb { width: 44px; height: 44px; border-radius: 10px; }
+  .home-search-skeleton-copy { display: grid; gap: 7px; }
+  .home-search-skeleton-line { display: block; height: 8px; border-radius: 999px; }
+  .home-search-skeleton-line--title { width: min(72%,220px); }
+  .home-search-skeleton-line--meta { width: min(48%,150px); }
+  .home-search-skeleton-tail { width: 64px; height: 8px; border-radius: 999px; }
+  .home-search-skeleton-thumb, .home-search-skeleton-line, .home-search-skeleton-tail { background: linear-gradient(100deg, color-mix(in oklab,var(--card) 88%,var(--background)) 20%, color-mix(in oklab,var(--foreground) 9%,var(--card)) 42%, color-mix(in oklab,var(--card) 88%,var(--background)) 64%); background-size: 220% 100%; animation: beui-skeleton-shimmer 1.15s ease-in-out infinite; }
 
   /* Shared emoji card */
   .emoji-card[data-emoji-card] { position: relative; min-width: 0; overflow: hidden; border: 1px solid var(--border); border-radius: 14px; background: var(--background); box-shadow: 0 1px 2px rgb(0 0 0 / .035); transition: transform .18s var(--ease-out), border-color .15s ease, box-shadow .18s ease; }
