@@ -58,9 +58,9 @@ test('GIF timeline supports include, duplicate, delete and per-frame delay editi
 test('GIF timeline checkbox contrast is explicit on desktop and mobile', () => {
   assert.match(timelineCss, /\.gif-frame-card-top \[role="checkbox"\]\[data-state="checked"\]/);
   assert.match(timelineCss, /\.gif-frame-current-checkbox \[role="checkbox"\]\[data-state="checked"\]/);
-  assert.match(timelineCss, /background: var\(--beui-accent\) !important/);
-  assert.match(timelineCss, /color: var\(--accent-foreground\) !important/);
-  assert.match(timelineCss, /stroke: currentColor !important/);
+  assert.match(timelineCss, /background: #fff !important/);
+  assert.match(timelineCss, /color: #111 !important/);
+  assert.match(timelineCss, /stroke: #111 !important/);
   assert.match(timelineCss, /width: 20px/);
   assert.match(timelineCss, /border-color: var\(--border-strong\) !important/);
   assert.match(timelineCss, /@media \(max-width: 720px\)/);
