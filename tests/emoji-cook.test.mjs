@@ -5,6 +5,7 @@ import test from 'node:test';
 const cookPage = await readFile(new URL('../src/pages/cook.astro', import.meta.url), 'utf8');
 const cookClient = await readFile(new URL('../src/components/cook/EmojiCook.tsx', import.meta.url), 'utf8');
 const cookCss = await readFile(new URL('../src/styles/cook.css', import.meta.url), 'utf8');
+const pressableCard = await readFile(new URL('../src/components/motion/pressable-card.tsx', import.meta.url), 'utf8');
 const editorClient = await readFile(new URL('../src/components/editor/EmojiEditor.tsx', import.meta.url), 'utf8');
 const siteHeader = await readFile(new URL('../src/components/beui/SiteHeader.tsx', import.meta.url), 'utf8');
 
@@ -15,6 +16,12 @@ test('Emoji Cook is a client-only public tool using local BeUI primitives', () =
   assert.match(cookClient, /from '\.\.\/motion\/select'/);
   assert.match(cookClient, /from '\.\.\/motion\/tabs'/);
   assert.match(cookClient, /ActionSwapIcon/);
+  assert.match(cookClient, /from '\.\.\/motion\/pressable-card'/);
+  assert.match(cookClient, /TooltipLayer/);
+  assert.match(cookClient, /data-beui-tooltip/);
+  assert.match(pressableCard, /data-beui-pressable-card/);
+  assert.match(pressableCard, /SPRING_PRESS/);
+  assert.match(pressableCard, /useHoverCapable/);
   assert.doesNotMatch(cookClient, /fetch\(/);
 });
 
@@ -64,4 +71,14 @@ test('Cook UI is responsive and keeps the preview usable on mobile', () => {
   assert.match(cookCss, /\.cook-equation/);
   assert.match(cookCss, /\.cook-category-list/);
   assert.match(cookCss, /\.cook-style-previews/);
+});
+
+
+test('Cook card-sized interactions use the shared BEUI pressable surface', () => {
+  assert.match(cookClient, /<PressableCard[\s\S]+cook-equation-slot/);
+  assert.match(cookClient, /<PressableCard[\s\S]+cook-equation-result/);
+  assert.match(cookClient, /<PressableCard[\s\S]+cook-picker-item/);
+  assert.match(cookClient, /<PressableCard[\s\S]+cook-recipe-card/);
+  assert.match(cookClient, /<PressableCard[\s\S]+cook-style-preview/);
+  assert.match(cookCss, /\[data-beui-pressable-card\]/);
 });
