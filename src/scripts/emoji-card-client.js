@@ -48,6 +48,23 @@ function ensureDownloadAction(card) {
   card.dataset.downloadFilename ||= filename;
 }
 
+function setupImageSkeleton(card) {
+  const preview = card.querySelector('.emoji-preview');
+  const image = preview?.querySelector('img');
+  if (!(preview instanceof Element) || !(image instanceof HTMLImageElement)) return;
+
+  preview.classList.add('is-image-loading');
+
+  const settle = () => preview.classList.remove('is-image-loading');
+  if (image.complete) {
+    queueMicrotask(settle);
+    return;
+  }
+
+  image.addEventListener('load', settle, { once: true });
+  image.addEventListener('error', settle, { once: true });
+}
+
 function upgradeCard(card) {
   if (!(card instanceof Element) || !card.matches('.emoji-card[data-emoji-card]')) return;
 
@@ -70,6 +87,7 @@ function upgradeCard(card) {
     if (categoryNode && !card.dataset.sourceLabel) categoryNode.remove();
   }
 
+  setupImageSkeleton(card);
   ensureDownloadAction(card);
 }
 
