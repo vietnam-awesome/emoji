@@ -1,6 +1,6 @@
 # ePlus Emoji
 
-> Open, searchable emoji directory for developers, communities, and AI agents.
+> Open, searchable emoji directory and browser-based emoji editor for developers, communities, and AI agents.
 
 Canonical site: https://emoji.eplus.dev
 Repository: https://github.com/vietnam-awesome/emoji
@@ -11,25 +11,33 @@ Repository: https://github.com/vietnam-awesome/emoji
 - Browse all emoji: https://emoji.eplus.dev/emojis
 - Browse categories: https://emoji.eplus.dev/categories
 - Category landing page pattern: https://emoji.eplus.dev/categories/{category-slug}
-- Full emoji catalog JSON: https://emoji.eplus.dev/api/emojis.json
-- Emoji category index JSON: https://emoji.eplus.dev/api/categories.json
+- Emoji detail page pattern: https://emoji.eplus.dev/emoji/{slug}
+- Emoji editor: https://emoji.eplus.dev/editor
+- Static search manifest: https://emoji.eplus.dev/search/manifest.json
 - Sitemap: https://emoji.eplus.dev/sitemap.xml
+- Static routes sitemap: https://emoji.eplus.dev/sitemap-static.xml
 - Agent guide: https://emoji.eplus.dev/agents.md
 
-## Emoji records
+The removed legacy `/api/emojis.json` and `/api/categories.json` endpoints are not public discovery APIs and should not be used.
 
-The JSON catalog contains fields such as id, slug, name, shortcode, tags, source, sourceUrl, image, format, animated, license, attribution, addedAt, syncedAt, and SHA-256 asset metadata when available.
+## Emoji editor
 
-Detail pages use this pattern:
-https://emoji.eplus.dev/emoji/{slug}
+The `/editor` route is a client-side emoji/image editor. It can open catalog emoji or user-provided PNG, WebP, JPG, GIF, and SVG files.
 
-Category landing pages use this pattern:
-https://emoji.eplus.dev/categories/{category-slug}
+Supported editing includes crop/fit/fill, repositioning, square resize presets, rotation, flipping, padding, background changes, PNG/WebP export, and animated GIF editing. Animated GIF tools include play/pause, frame scrubbing, include/exclude, duplicate/delete, per-frame delay, global speed adjustment, and browser-side GIF re-encoding.
 
-Image paths are provided by each record's `image` field and are hosted on the same site.
+Source images are processed locally in the browser rather than uploaded to a server for editing.
 
-## Usage guidance
+Deferred capabilities such as APNG frame-by-frame editing, interpolation, AI-generated in-between frames, onion skin, and arbitrary non-square output should not be assumed.
 
-Prefer `/api/emojis.json` for programmatic discovery and filtering. Use `/api/categories.json` for structured category discovery, `/categories` for human-readable category browsing, and `/categories/{category-slug}` for a category overview with links into the filtered catalog. Use the detail page for human-readable emoji metadata and the record's `image` URL for the asset itself.
+## Discovery guidance
 
-Do not infer redistribution rights from the directory alone. Respect each record's `license`, `attribution`, and `sourceUrl` metadata.
+Use `/emojis` for human-readable search/filtering, `/categories` for category discovery, `/categories/{category-slug}` for category overviews, and `/emoji/{slug}` for individual emoji details and hosted assets.
+
+For the build-generated search index, start from `/search/manifest.json` and follow the current manifest/shard references instead of hard-coding generated shard filenames.
+
+Use `/editor` when the task involves transforming an emoji or editing an animated GIF rather than only browsing or downloading it.
+
+## Rights and attribution
+
+Artwork can come from multiple upstream sources and may have different licensing terms. Do not infer redistribution rights from the directory alone. Check the relevant emoji detail/source metadata before reuse or redistribution.
