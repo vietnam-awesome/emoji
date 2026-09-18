@@ -2,6 +2,16 @@ const poolNode = document.querySelector('#hero-random-pool');
 const randomGrid = document.querySelector('#hero-random-grid');
 const shuffleButton = document.querySelector('#hero-shuffle');
 
+const trackHeroImage = (link, image) => {
+  link.classList.add('is-image-loading');
+  const settle = () => link.classList.remove('is-image-loading');
+  if (image.complete) queueMicrotask(settle);
+  else {
+    image.addEventListener('load', settle, { once: true });
+    image.addEventListener('error', settle, { once: true });
+  }
+};
+
 if (poolNode && randomGrid) {
   try {
     const pool = JSON.parse(poolNode.textContent || '[]');
@@ -24,6 +34,7 @@ if (poolNode && randomGrid) {
         image.width = 64;
         image.height = 64;
         image.className = '!size-16 !max-h-16 !max-w-16 object-contain';
+        trackHeroImage(link, image);
         link.append(image);
 
         if (emoji.animated) {
@@ -43,6 +54,12 @@ if (poolNode && randomGrid) {
     console.error('Could not shuffle hero emoji', error);
   }
 }
+
+randomGrid?.querySelectorAll('a > img').forEach((image) => {
+  if (!(image instanceof HTMLImageElement)) return;
+  const link = image.closest('a');
+  if (link instanceof HTMLAnchorElement) trackHeroImage(link, image);
+});
 
 const homeSearchShell = document.querySelector('#home-search-shell');
 const homeSearchInput = document.querySelector('#home-emoji-search');
@@ -210,6 +227,32 @@ if (homeSearchShell && homeSearchInput && homeSearchPanel && homeSearchList && h
     return link;
   };
 
+  const showSuggestionSkeletons = () => {
+    const fragment = document.createDocumentFragment();
+    for (let index = 0; index < 4; index += 1) {
+      const row = document.createElement('div');
+      row.className = 'home-search-skeleton';
+      row.setAttribute('aria-hidden', 'true');
+
+      const thumb = document.createElement('span');
+      thumb.className = 'home-search-skeleton-thumb';
+
+      const copy = document.createElement('span');
+      copy.className = 'home-search-skeleton-copy';
+      const title = document.createElement('span');
+      title.className = 'home-search-skeleton-line home-search-skeleton-line--title';
+      const meta = document.createElement('span');
+      meta.className = 'home-search-skeleton-line home-search-skeleton-line--meta';
+      copy.append(title, meta);
+
+      const tail = document.createElement('span');
+      tail.className = 'home-search-skeleton-tail';
+      row.append(thumb, copy, tail);
+      fragment.append(row);
+    }
+    homeSearchList.replaceChildren(fragment);
+  };
+
   const runSuggestions = async () => {
     const rawQuery = homeSearchInput.value.trim();
     const query = normalizeSearch(rawQuery);
@@ -220,7 +263,7 @@ if (homeSearchShell && homeSearchInput && homeSearchPanel && homeSearchList && h
     }
 
     const version = ++requestVersion;
-    homeSearchList.replaceChildren();
+    showSuggestionSkeletons();
     homeSearchSummary.textContent = 'Searching…';
     homeSearchAll.href = `${browseRoot}?q=${encodeURIComponent(rawQuery)}`;
     openSuggestions();

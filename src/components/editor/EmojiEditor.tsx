@@ -756,7 +756,15 @@ export default function EmojiEditor({ browseUrl }: Props) {
           </div>
 
           <div className="editor-stage" ref={stageRef}>
-            {loading && <div className="editor-stage-loading">Loading image…</div>}
+            {loading && (
+              <div className="editor-stage-loading" role="status" aria-live="polite" aria-label="Loading image">
+                <div className="editor-stage-skeleton" aria-hidden="true">
+                  <span className="editor-stage-skeleton-canvas"></span>
+                  <span className="editor-skeleton-line editor-skeleton-line--stage"></span>
+                </div>
+                <span className="editor-visually-hidden">Loading image…</span>
+              </div>
+            )}
             {!source && !loading && (
               <label className="editor-empty-state">
                 <ImagePlus />
