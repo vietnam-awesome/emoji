@@ -72,12 +72,18 @@ test('editor is discoverable to crawlers', () => {
   assert.match(sitemap, /\$\{SITE\}\/editor/);
 });
 
-test('editor preview stays at native output size instead of being stretched to the stage', () => {
-  assert.match(editorClient, /--editor-preview-size/);
-  assert.match(editorClient, /window\.devicePixelRatio/);
-  assert.match(editorClient, /settings\.size \* pixelRatio/);
-  assert.match(editorClient, /Preview <strong>1:1 max<\/strong>/);
+test('editor separates view zoom from export canvas size', () => {
+  assert.match(editorClient, /type ViewMode = 'fit' \| 'actual'/);
+  assert.match(editorClient, /const \[viewMode, setViewMode\]/);
+  assert.match(editorClient, /ResizeObserver/);
+  assert.match(editorClient, /previewCssSize \* pixelRatio/);
+  assert.match(editorClient, /viewMode === 'actual'/);
+  assert.match(editorClient, />Fit<\/button>/);
+  assert.match(editorClient, />100%<\/button>/);
+  assert.match(editorClient, /Canvas <strong>\{settings\.size\}×\{settings\.size\}px<\/strong>/);
+  assert.match(editorClient, /Image scale <strong>/);
+  assert.match(editorClient, /Export uses the full square canvas/);
+  assert.match(editorCss, /\.editor-view-controls/);
+  assert.match(editorCss, /\.editor-view-segmented/);
   assert.match(editorCss, /width: min\(100%, var\(--editor-preview-size, 128px\)\)/);
-  assert.match(editorCss, /width: var\(--editor-preview-size, 128px\)/);
-  assert.doesNotMatch(editorCss, /\.editor-checkerboard \{\s*width: 100%;/);
 });
