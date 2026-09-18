@@ -18,6 +18,10 @@ permissions:
   contents: write
   actions: write
 
+env:
+  APP_BRANCH: main
+  DATA_BRANCH: data
+
 concurrency:
   group: emoji-data-write
   cancel-in-progress: false
@@ -28,10 +32,11 @@ jobs:
     timeout-minutes: 30
 
     steps:
-      - name: Checkout application code
+      - name: Checkout importer runtime from main (read-only)
         uses: actions/checkout@v7
         with:
-          ref: main
+          ref: ${{ env.APP_BRANCH }}
+          persist-credentials: false
           path: app
           fetch-depth: 1
           filter: blob:none
@@ -41,10 +46,11 @@ jobs:
             !/src/data/
           sparse-checkout-cone-mode: false
 
-      - name: Checkout writable data branch
+      - name: Checkout writable emoji data branch
         uses: actions/checkout@v7
         with:
-          ref: data
+          ref: ${{ env.DATA_BRANCH }}
+          persist-credentials: true
           path: data
           fetch-depth: 0
           filter: blob:none
@@ -52,6 +58,18 @@ jobs:
             /src/data/
             /public/emojis/eplus/
           sparse-checkout-cone-mode: false
+
+      - name: Verify writable checkout targets data branch
+        working-directory: data
+        shell: bash
+        run: |
+          set -euo pipefail
+          branch="$(git branch --show-current)"
+          if [ "$branch" != "$DATA_BRANCH" ]; then
+            echo "Refusing to write emoji data: checked out '$branch', expected '$DATA_BRANCH'." >&2
+            exit 1
+          fi
+          echo "Writable emoji data branch: $branch"
 
       - name: Setup Node.js
         uses: actions/setup-node@v7
@@ -98,19 +116,19 @@ jobs:
         working-directory: data
         run: |
           set -euo pipefail
-          git pull --rebase origin data
-          git push origin HEAD:data
+          git pull --rebase origin "$DATA_BRANCH"
+          git push origin "HEAD:$DATA_BRANCH"
 
       - name: Rebuild production site
         if: steps.import_commit.outputs.created == 'true' && inputs.deploy_pages == true
         working-directory: app
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh workflow run deploy-pages.yml --ref main
+        run: gh workflow run deploy-pages.yml --ref "$APP_BRANCH"
 
       - name: Sync Turso catalog
         if: steps.import_commit.outputs.created == 'true' && inputs.sync_turso == true
         working-directory: app
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh workflow run sync-turso.yml --ref main -f dry_run=false -f force=false -f optimize_fts=false
+        run: gh workflow run sync-turso.yml --ref "$APP_BRANCH" -f dry_run=false -f force=false -f optimize_fts=false
