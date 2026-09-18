@@ -40,7 +40,8 @@
   }
 
   .cook-hero-meta span,
-  .cook-strategy-badge {
+  .cook-strategy-badge,
+  .cook-result-meta span {
     display: inline-flex;
     min-height: 28px;
     align-items: center;
@@ -53,6 +54,17 @@
     font-size: .64rem;
     font-weight: 700;
     letter-spacing: .02em;
+    box-shadow: 0 1px 2px rgb(0 0 0 / .035);
+  }
+
+  .cook-page [data-beui-pressable-card] {
+    font: inherit;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .cook-page [data-beui-pressable-card][data-selected="true"] {
+    border-color: var(--border-strong);
+    background: var(--card);
   }
 
   .cook-workspace {
@@ -202,7 +214,6 @@
   }
 
   .cook-picker-item:hover {
-    transform: translateY(-1px);
     border-color: var(--border-strong);
     background: var(--card);
   }
@@ -280,7 +291,6 @@
   }
 
   .cook-recipe-card:hover {
-    transform: translateY(-1px);
     border-color: var(--border-strong);
     background: var(--card);
   }
@@ -599,8 +609,8 @@
   }
 
   .cook-equation-slot:hover {
-    transform: translateY(-1px);
     border-color: var(--border-strong);
+    background: var(--card);
   }
 
   .cook-equation-slot.is-active {
@@ -807,14 +817,8 @@
 
   .cook-result-meta span {
     min-height: 24px;
-    display: inline-flex;
-    align-items: center;
-    padding: 0 8px;
-    border: 1px solid var(--border);
-    border-radius: 999px;
-    color: var(--muted-foreground);
+    padding-inline: 8px;
     font-size: .58rem;
-    font-weight: 700;
     text-transform: capitalize;
   }
 
