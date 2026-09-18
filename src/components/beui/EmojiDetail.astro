@@ -436,12 +436,19 @@ const tagTargetUrl = (tag) => {
     preview.setAttribute('aria-label', `Open ${emoji.name}`);
 
     const image = document.createElement('img');
-    image.src = emoji.image;
     image.alt = emoji.name;
     image.loading = 'lazy';
     image.width = 128;
     image.height = 128;
+
+    // Client-rendered cards settle their own image skeleton so a cached image
+    // cannot finish before the shared MutationObserver attaches its listeners.
+    const settlePreview = () => preview.classList.remove('is-image-loading');
+    image.addEventListener('load', settlePreview, { once: true });
+    image.addEventListener('error', settlePreview, { once: true });
+    image.src = emoji.image;
     preview.append(image);
+    if (image.complete) queueMicrotask(settlePreview);
 
     if (emoji.animated) {
       const badge = document.createElement('span');
