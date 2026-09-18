@@ -1,11 +1,10 @@
 ---
 import EmojiShareDialog from './EmojiShareDialog.astro';
-import EmojiCard from '../EmojiCard.astro';
 import { emojiAssetUrl } from '../../lib/emojiAsset';
 import { emojiCategorySlug } from '../../lib/category';
 import { withBase } from '../../lib/url';
 
-const { emoji, randomEmojis = [] } = Astro.props;
+const { emoji } = Astro.props;
 const base = import.meta.env.BASE_URL;
 const imageUrl = emojiAssetUrl(emoji, base);
 const browseUrl = withBase('/emojis', base);
@@ -172,27 +171,26 @@ const tagTargetUrl = (tag) => {
     <div class="detail-similar-grid" data-similar-grid></div>
   </section>
 
-  {randomEmojis.length > 0 && (
-    <section class="detail-random" aria-labelledby="random-emoji-title">
-      <div class="section-heading-modern">
-        <div>
-          <p class="section-kicker">Explore</p>
-          <h2 id="random-emoji-title">Random emoji</h2>
-          <p>A fresh mix from across the library.</p>
-        </div>
-        <button class="detail-random-shuffle" type="button" data-random-shuffle data-beui-tooltip="Shuffle random emoji" aria-label="Shuffle random emoji">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 3h5v5M4 20l6.5-6.5M21 16v5h-5M14.5 10.5 21 4M4 4l16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </button>
+  <section
+    class="detail-random"
+    aria-labelledby="random-emoji-title"
+    data-random-section
+    data-current-slug={emoji.slug}
+    data-search-root={withBase('/search', base).replace(/\/$/, '')}
+    hidden
+  >
+    <div class="section-heading-modern">
+      <div>
+        <p class="section-kicker">Explore</p>
+        <h2 id="random-emoji-title">Random emoji</h2>
+        <p>A fresh mix from across the library.</p>
       </div>
-      <div class="detail-random-grid" data-random-grid>
-        {randomEmojis.map((item, index) => (
-          <div class="detail-random-item" data-random-item hidden={index >= 6}>
-            <EmojiCard emoji={item} />
-          </div>
-        ))}
-      </div>
-    </section>
-  )}
+      <button class="detail-random-shuffle" type="button" data-random-shuffle data-beui-tooltip="Shuffle random emoji" aria-label="Shuffle random emoji">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 3h5v5M4 20l6.5-6.5M21 16v5h-5M14.5 10.5 21 4M4 4l16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+    <div class="detail-random-grid" data-random-grid></div>
+  </section>
 </section>
 
 <dialog class="detail-lightbox" id="detail-lightbox" aria-label={`Preview ${emoji.name}`}>
@@ -549,12 +547,13 @@ const tagTargetUrl = (tag) => {
 
   loadSimilarEmoji();
 
+  const randomSection = document.querySelector('[data-random-section]');
   const randomGrid = document.querySelector('[data-random-grid]');
   const randomShuffle = document.querySelector('[data-random-shuffle]');
-  const randomItems = randomGrid ? [...randomGrid.querySelectorAll('[data-random-item]')] : [];
+  let randomItems = [];
 
   const shuffleRandomEmoji = () => {
-    if (!randomItems.length) return;
+    if (!randomItems.length || !randomGrid) return;
     const shuffled = [...randomItems];
     for (let index = shuffled.length - 1; index > 0; index -= 1) {
       const swapIndex = Math.floor(Math.random() * (index + 1));
@@ -564,15 +563,74 @@ const tagTargetUrl = (tag) => {
     for (const item of randomItems) {
       if (item instanceof HTMLElement) item.hidden = !visible.has(item);
     }
-    if (randomGrid) {
-      for (const item of shuffled) randomGrid.append(item);
+    for (const item of shuffled) randomGrid.append(item);
+  };
+
+  const loadRandomEmoji = async () => {
+    if (!(randomSection instanceof HTMLElement) || !(randomGrid instanceof HTMLElement)) return;
+
+    const searchRoot = randomSection.dataset.searchRoot || '/search';
+    const currentSlug = randomSection.dataset.currentSlug || '';
+
+    try {
+      const manifestResponse = await fetch(`${searchRoot}/manifest.json`);
+      if (!manifestResponse.ok) return;
+      const manifest = await manifestResponse.json();
+      const total = Math.max(0, Number(manifest.total) || 0);
+      const chunkSize = Math.max(1, Number(manifest.chunkSize) || 1000);
+      if (total < 2) return;
+
+      const ids = [];
+      const seen = new Set();
+      const targetCount = Math.min(24, total - 1);
+      const maxAttempts = Math.max(targetCount * 8, 64);
+
+      for (let attempt = 0; ids.length < targetCount && attempt < maxAttempts; attempt += 1) {
+        const id = Math.floor(Math.random() * total);
+        if (seen.has(id)) continue;
+        seen.add(id);
+        ids.push(id);
+      }
+
+      const chunkIndexes = [...new Set(ids.map((id) => Math.floor(id / chunkSize)))];
+      const chunks = new Map();
+      await Promise.all(chunkIndexes.map(async (chunkIndex) => {
+        const response = await fetch(`${searchRoot}/chunks/${String(chunkIndex).padStart(4, '0')}.json`);
+        if (!response.ok) return;
+        chunks.set(chunkIndex, await response.json());
+      }));
+
+      const records = ids
+        .map((id) => {
+          const chunkIndex = Math.floor(id / chunkSize);
+          const row = chunks.get(chunkIndex)?.[id % chunkSize];
+          return row ? expandSimilarRecord(row) : null;
+        })
+        .filter((record) => record && record.slug !== currentSlug)
+        .slice(0, 24);
+
+      if (!records.length) return;
+
+      const fragment = document.createDocumentFragment();
+      randomItems = records.map((record) => {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'detail-random-item';
+        wrapper.dataset.randomItem = '';
+        wrapper.append(createSimilarCard(record));
+        fragment.append(wrapper);
+        return wrapper;
+      });
+
+      randomGrid.replaceChildren(fragment);
+      randomSection.hidden = false;
+      shuffleRandomEmoji();
+    } catch (error) {
+      console.warn('Could not load random emoji', error);
     }
   };
 
-  if (randomItems.length) {
-    shuffleRandomEmoji();
-    randomShuffle?.addEventListener('click', shuffleRandomEmoji);
-  }
+  randomShuffle?.addEventListener('click', shuffleRandomEmoji);
+  loadRandomEmoji();
 </script>
 
 <style>
