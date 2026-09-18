@@ -359,6 +359,157 @@
   backdrop-filter: blur(6px);
 }
 
+.editor-page-skeleton {
+  pointer-events: none;
+  user-select: none;
+}
+
+.editor-skeleton-heading {
+  display: grid;
+  width: min(100%, 680px);
+  gap: 10px;
+}
+
+.editor-skeleton-actions {
+  display: flex;
+  gap: 7px;
+}
+
+.editor-skeleton-actions > span,
+.editor-skeleton-pill {
+  display: block;
+  width: 76px;
+  height: 38px;
+  border-radius: 999px;
+}
+
+.editor-skeleton-actions > span:last-child {
+  width: 72px;
+}
+
+.editor-skeleton-line,
+.editor-skeleton-control,
+.editor-skeleton-actions > span,
+.editor-skeleton-pill,
+.editor-skeleton-meta > span,
+.editor-stage-skeleton-canvas {
+  background:
+    linear-gradient(
+      100deg,
+      color-mix(in oklab, var(--card) 88%, var(--background)) 20%,
+      color-mix(in oklab, var(--foreground) 9%, var(--card)) 42%,
+      color-mix(in oklab, var(--card) 88%, var(--background)) 64%
+    );
+  background-size: 220% 100%;
+  animation: editor-skeleton-shimmer 1.15s ease-in-out infinite;
+}
+
+.editor-skeleton-line {
+  display: block;
+  height: 10px;
+  border-radius: 999px;
+}
+
+.editor-skeleton-line--eyebrow {
+  width: 126px;
+  height: 8px;
+}
+
+.editor-skeleton-line--title {
+  width: min(330px, 72%);
+  height: clamp(34px, 4vw, 54px);
+  border-radius: 12px;
+}
+
+.editor-skeleton-line--lead {
+  width: min(610px, 92%);
+  height: 12px;
+}
+
+.editor-skeleton-toolbar > div {
+  width: min(100%, 420px);
+}
+
+.editor-skeleton-line--toolbar-title {
+  width: min(210px, 62%);
+}
+
+.editor-skeleton-line--toolbar-meta {
+  width: min(330px, 84%);
+  height: 8px;
+}
+
+.editor-stage-skeleton {
+  display: grid;
+  width: min(100%, 360px);
+  place-items: center;
+  gap: 18px;
+}
+
+.editor-stage-skeleton-canvas {
+  display: block;
+  width: min(54vw, 220px);
+  max-width: 72%;
+  aspect-ratio: 1;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  box-shadow: 0 12px 34px rgb(0 0 0 / .05);
+}
+
+.editor-skeleton-line--stage {
+  width: min(180px, 58%);
+  height: 9px;
+}
+
+.editor-stage-loading .editor-stage-skeleton {
+  width: min(100%, 360px);
+}
+
+.editor-stage-loading {
+  inset: 50% auto auto 50%;
+  width: min(calc(100% - 32px), 460px);
+  min-height: 280px;
+  transform: translate(-50%, -50%);
+  border-style: solid;
+}
+
+.editor-skeleton-meta > span {
+  width: 92px;
+  height: 8px;
+  border-radius: 999px;
+}
+
+.editor-controls-skeleton .editor-control-group {
+  min-height: 118px;
+}
+
+.editor-skeleton-line--control-title {
+  width: 108px;
+}
+
+.editor-skeleton-line--control-meta {
+  width: 78px;
+  height: 7px;
+}
+
+.editor-skeleton-control {
+  display: block;
+  width: 100%;
+  height: 36px;
+  border-radius: 10px;
+}
+
+.editor-skeleton-control--short {
+  width: 68%;
+  height: 9px;
+  border-radius: 999px;
+}
+
+@keyframes editor-skeleton-shimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -20% 0; }
+}
+
 .editor-drag-hint {
   position: absolute;
   left: 50%;
@@ -692,6 +843,15 @@
     width: 100%;
   }
 
+  .editor-skeleton-actions {
+    width: 100%;
+  }
+
+  .editor-skeleton-actions > span {
+    flex: 1;
+    width: auto;
+  }
+
   .editor-history-actions button {
     flex: 1;
     justify-content: center;
@@ -804,5 +964,14 @@
 @media (prefers-reduced-motion: reduce) {
   .emoji-editor * {
     scroll-behavior: auto !important;
+  }
+
+  .editor-skeleton-line,
+  .editor-skeleton-control,
+  .editor-skeleton-actions > span,
+  .editor-skeleton-pill,
+  .editor-skeleton-meta > span,
+  .editor-stage-skeleton-canvas {
+    animation: none !important;
   }
 }
