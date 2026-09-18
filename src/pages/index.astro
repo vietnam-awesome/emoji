@@ -2,7 +2,6 @@
 import Layout from '../layouts/Layout.astro';
 import EmojiCard from '../components/EmojiCard.astro';
 import CategoryPills from '../components/beui/CategoryPills';
-import DeveloperGithubButton from '../components/beui/DeveloperGithubButton';
 import HeroShuffleButton from '../components/beui/HeroShuffleButton';
 import HomeSearchForm from '../components/beui/HomeSearchForm';
 import { emojiAssetUrl } from '../lib/emojiAsset';
@@ -140,12 +139,4 @@ const sections = [
     </section>
   ))}
 
-  <section class="shell developer-banner">
-    <div>
-      <p class="section-kicker">Static search architecture</p>
-      <h2>No runtime API or Worker required.</h2>
-      <p>GitHub Actions generates a compact sharded search index, then deploys the static site to GitHub Pages.</p>
-    </div>
-    <div class="developer-actions"><DeveloperGithubButton client:visible /></div>
-  </section>
 </Layout>
