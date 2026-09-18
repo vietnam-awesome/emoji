@@ -1,0 +1,169 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { withBase } from '../lib/url';
+
+const base = import.meta.env.BASE_URL;
+const browseUrl = withBase('/emojis', base);
+---
+<Layout
+  title="My Emoji — ePlus Emoji"
+  description="Your locally saved favorite emoji on ePlus Emoji."
+  robots="noindex, follow"
+>
+  <section class="shell favorites-page" data-favorites-page data-base={base}>
+    <header class="favorites-header">
+      <div>
+        <p class="eyebrow">Personal library</p>
+        <h1>My Emoji</h1>
+        <p>Favorites are stored only in this browser. Save emoji with the heart button anywhere in the library.</p>
+      </div>
+      <a class="secondary-action" href={browseUrl}>Browse emoji</a>
+    </header>
+
+    <div class="favorites-toolbar">
+      <p id="favorites-summary" aria-live="polite">Loading favorites…</p>
+      <button class="favorites-clear" id="favorites-clear" type="button" hidden>Clear all</button>
+    </div>
+
+    <div class="favorites-grid" id="favorites-grid"></div>
+
+    <div class="favorites-empty" id="favorites-empty" hidden>
+      <div aria-hidden="true">♡</div>
+      <h2>No favorites yet</h2>
+      <p>Tap the heart on an emoji to keep it here for quick access.</p>
+      <a class="primary-action" href={browseUrl}>Find emoji</a>
+    </div>
+  </section>
+
+  <script>
+    const STORAGE_KEY = 'eplus-emoji-favorites-v1';
+    const CHANGE_EVENT = 'eplus:favorites-changed';
+    const root = document.querySelector('[data-favorites-page]');
+    const grid = document.querySelector('#favorites-grid');
+    const empty = document.querySelector('#favorites-empty');
+    const summary = document.querySelector('#favorites-summary');
+    const clearButton = document.querySelector('#favorites-clear');
+    const base = root?.dataset.base || '/';
+    const basePrefix = base === '/' ? '' : base.replace(/\/$/, '');
+
+    const readFavorites = () => {
+      try {
+        const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+        return Array.isArray(parsed) ? parsed.filter((item) => item && typeof item === 'object' && item.slug) : [];
+      } catch {
+        return [];
+      }
+    };
+
+    const detailUrl = (slug) => `${basePrefix}/emoji/${encodeURIComponent(slug)}`;
+    const categoryUrl = (slug) => `${basePrefix}/categories/${encodeURIComponent(slug || 'other')}`;
+
+    const makeText = (tag, className, value) => {
+      const node = document.createElement(tag);
+      if (className) node.className = className;
+      node.textContent = value || '';
+      return node;
+    };
+
+    const createCard = (item) => {
+      const card = document.createElement('article');
+      card.className = 'emoji-card';
+      card.dataset.emojiCard = '';
+      card.dataset.cardVariant = 'default';
+      card.dataset.downloadKey = item.slug;
+      card.dataset.downloadName = item.name || item.slug;
+      card.dataset.downloadUrl = item.image || '';
+      card.dataset.downloadFilename = `${item.slug}.${item.format || 'png'}`;
+      card.dataset.favoriteKey = item.slug;
+      card.dataset.favoriteName = item.name || item.slug;
+      card.dataset.favoriteImage = item.image || '';
+      card.dataset.favoriteCategory = item.category || 'Other';
+      card.dataset.favoriteCategorySlug = item.categorySlug || 'other';
+      card.dataset.favoriteSource = item.sourceLabel || '';
+      card.dataset.favoriteFormat = item.format || '';
+      card.dataset.favoriteAnimated = item.animated ? 'yes' : 'no';
+      card.dataset.favoriteEmoji = item.emoji || '';
+      card.dataset.favoriteShortcode = item.shortcode || '';
+      card.dataset.category = item.category || 'Other';
+      card.dataset.categorySlug = item.categorySlug || 'other';
+      card.dataset.sourceLabel = item.sourceLabel || '';
+      card.dataset.animated = item.animated ? 'yes' : 'no';
+
+      const preview = document.createElement('a');
+      preview.className = 'emoji-preview is-image-loading';
+      preview.href = detailUrl(item.slug);
+      preview.setAttribute('aria-label', `Open ${item.name || item.slug}`);
+
+      const image = document.createElement('img');
+      image.src = item.image || '';
+      image.alt = item.name || item.slug;
+      image.loading = 'lazy';
+      image.width = 128;
+      image.height = 128;
+      const settle = () => preview.classList.remove('is-image-loading');
+      if (image.complete) queueMicrotask(settle);
+      else {
+        image.addEventListener('load', settle, { once: true });
+        image.addEventListener('error', settle, { once: true });
+      }
+      preview.append(image);
+
+      if (item.animated) {
+        const badge = makeText('span', 'card-motion-badge', 'GIF');
+        preview.append(badge);
+      }
+
+      const body = document.createElement('div');
+      body.className = 'emoji-card-body';
+      const titleRow = document.createElement('div');
+      titleRow.className = 'emoji-title-row';
+
+      const name = makeText('a', 'emoji-name', item.name || item.slug);
+      name.href = detailUrl(item.slug);
+      titleRow.append(name);
+      if (item.emoji) titleRow.append(makeText('span', 'native-emoji', item.emoji));
+
+      const category = makeText('a', 'emoji-category', item.category || 'Other');
+      category.href = categoryUrl(item.categorySlug);
+
+      const meta = document.createElement('div');
+      meta.className = 'emoji-meta';
+      meta.append(
+        makeText('span', '', item.sourceLabel || 'Saved'),
+        makeText('span', '', item.animated ? 'Animated' : String(item.format || 'Static').toUpperCase())
+      );
+
+      body.append(titleRow, category, meta);
+      card.append(preview, body);
+      return card;
+    };
+
+    const render = () => {
+      if (!(grid instanceof HTMLElement)) return;
+      const favorites = readFavorites();
+      grid.replaceChildren(...favorites.map(createCard));
+
+      if (summary) {
+        summary.textContent = favorites.length === 1
+          ? '1 saved emoji'
+          : `${favorites.length.toLocaleString('en-US')} saved emoji`;
+      }
+      if (empty instanceof HTMLElement) empty.hidden = favorites.length > 0;
+      if (clearButton instanceof HTMLButtonElement) clearButton.hidden = favorites.length === 0;
+    };
+
+    clearButton?.addEventListener('click', () => {
+      if (!window.confirm('Remove all saved emoji from My Emoji?')) return;
+      localStorage.removeItem(STORAGE_KEY);
+      render();
+      document.dispatchEvent(new CustomEvent(CHANGE_EVENT, { detail: { favorites: [] } }));
+    });
+
+    document.addEventListener(CHANGE_EVENT, render);
+    window.addEventListener('storage', (event) => {
+      if (event.key === STORAGE_KEY) render();
+    });
+
+    render();
+  </script>
+</Layout>
