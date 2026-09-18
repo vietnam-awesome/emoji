@@ -122,12 +122,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          printf -v pr_body 'Automated ePlus import candidate from Actions run `%s`.\n\nReview the assets and catalog diff. Merge this PR into `data` only after approval. Production deployment starts automatically after the merge.' "$GITHUB_RUN_ID"
           pr_url="$(gh pr create \
             --repo "$GITHUB_REPOSITORY" \
             --base "$DATA_BRANCH" \
             --head "$IMPORT_BRANCH" \
             --title "Import ePlus Originals #${GITHUB_RUN_NUMBER}" \
-            --body "Automated ePlus import candidate from Actions run \`$GITHUB_RUN_ID\`.
-
-Review the emoji assets and catalog diff. Merge this PR into \`data\` only after approval. Production deployment happens automatically after the merge.")"
+            --body "$pr_body")"
           echo "Review PR: $pr_url"
