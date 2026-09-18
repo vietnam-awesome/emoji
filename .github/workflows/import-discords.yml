@@ -125,7 +125,7 @@ jobs:
   import:
     if: ${{ github.event_name == 'workflow_dispatch' && inputs._worker == true }}
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 240
     env:
       IMPORT_TAG: ${{ inputs.tag }}
       IMPORT_LIMIT: ${{ inputs.limit }}
@@ -183,9 +183,33 @@ jobs:
       - name: Install application dependencies
         working-directory: app
         run: npm install --ignore-scripts --no-audit --no-fund
+      - name: Detect resumable checkpoint
+        id: resume
+        working-directory: data
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git fetch origin \
+            "refs/heads/$DATA_BRANCH:refs/remotes/origin/$DATA_BRANCH"
+
+          if [ -n "${{ inputs.resume_branch }}" ]; then
+            echo "skip_import=true" >> "$GITHUB_OUTPUT"
+            echo "Explicit resume requested for $GITHUB_REF_NAME; download/import will be skipped."
+            exit 0
+          fi
+
+          if git log --format='%s' "refs/remotes/origin/$DATA_BRANCH..HEAD" \
+            | grep -Fxq "chore(data): checkpoint Discords.com import"; then
+            echo "skip_import=true" >> "$GITHUB_OUTPUT"
+            echo "Existing import checkpoint detected; download/import will be skipped."
+          else
+            echo "skip_import=false" >> "$GITHUB_OUTPUT"
+            echo "No import checkpoint detected; a fresh import is required."
+          fi
 
       - name: Install Chromium
-        if: ${{ inputs.resume_branch == '' }}
+        if: ${{ steps.resume.outputs.skip_import != 'true' }}
         working-directory: app
         run: npx playwright install --with-deps chromium
 
@@ -194,7 +218,7 @@ jobs:
         run: node ../app/scripts/emoji-store.mjs hydrate
 
       - name: Import Discords.com emoji categories
-        if: ${{ inputs.resume_branch == '' }}
+        if: ${{ steps.resume.outputs.skip_import != 'true' }}
         working-directory: data
         run: |
           node ../app/scripts/import-discords.mjs \
@@ -206,13 +230,13 @@ jobs:
             --delay-ms=350
 
       - name: Shard import checkpoint
-        if: ${{ inputs.resume_branch == '' }}
+        if: ${{ steps.resume.outputs.skip_import != 'true' }}
         working-directory: data
         run: node ../app/scripts/emoji-store.mjs shard
 
       - name: Commit and push import checkpoint
         id: checkpoint
-        if: ${{ inputs.resume_branch == '' }}
+        if: ${{ steps.resume.outputs.skip_import != 'true' }}
         working-directory: data
         shell: bash
         run: |
@@ -230,45 +254,27 @@ jobs:
           git commit -m "chore(data): checkpoint Discords.com import"
           git push origin "HEAD:$GITHUB_REF_NAME"
           echo "created=true" >> "$GITHUB_OUTPUT"
-
-      - name: Open draft review PR
-        if: ${{ inputs.resume_branch == '' && steps.checkpoint.outputs.created == 'true' }}
-        env:
-          GH_TOKEN: ${{ github.token }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          existing="$(gh pr list --repo "$GITHUB_REPOSITORY" --base "$DATA_BRANCH" --head "$GITHUB_REF_NAME" --state open --json number --jq '.[0].number // empty')"
-          if [ -z "$existing" ]; then
-            printf -v body 'Discords.com import checkpoint from Actions run `%s`.\n\nThe long-running import is already saved on branch `%s`. Validation runs next.' "$GITHUB_RUN_ID" "$GITHUB_REF_NAME"
-            gh pr create \
-              --repo "$GITHUB_REPOSITORY" \
-              --base "$DATA_BRANCH" \
-              --head "$GITHUB_REF_NAME" \
-              --draft \
-              --title "Import Discords.com Emojis #${GITHUB_RUN_NUMBER}" \
-              --body "$body"
-          fi
+          echo "Checkpoint pushed before verification."
 
       - name: Hydrate checkpoint for verification
-        if: ${{ inputs.resume_branch != '' || steps.checkpoint.outputs.created == 'true' }}
+        if: ${{ steps.resume.outputs.skip_import == 'true' || steps.checkpoint.outputs.created == 'true' }}
         working-directory: data
         run: node ../app/scripts/emoji-store.mjs hydrate
 
       - name: Verify emoji metadata
-        if: ${{ inputs.resume_branch != '' || steps.checkpoint.outputs.created == 'true' }}
+        if: ${{ steps.resume.outputs.skip_import == 'true' || steps.checkpoint.outputs.created == 'true' }}
         working-directory: data
         env:
           VERIFY_DATA_SKIP_ASSETS: '1'
         run: node ../app/scripts/verify-data.mjs
 
       - name: Shard verified catalog
-        if: ${{ inputs.resume_branch != '' || steps.checkpoint.outputs.created == 'true' }}
+        if: ${{ steps.resume.outputs.skip_import == 'true' || steps.checkpoint.outputs.created == 'true' }}
         working-directory: data
         run: node ../app/scripts/emoji-store.mjs shard
 
       - name: Commit verified data
-        if: ${{ inputs.resume_branch != '' || steps.checkpoint.outputs.created == 'true' }}
+        if: ${{ steps.resume.outputs.skip_import == 'true' || steps.checkpoint.outputs.created == 'true' }}
         working-directory: data
         shell: bash
         run: |
@@ -281,22 +287,56 @@ jobs:
           fi
           git push origin "HEAD:$GITHUB_REF_NAME"
 
-      - name: Mark PR ready for review
-        if: ${{ inputs.resume_branch != '' || steps.checkpoint.outputs.created == 'true' }}
+      - name: Open review PR
+        if: ${{ steps.resume.outputs.skip_import == 'true' || steps.checkpoint.outputs.created == 'true' }}
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
-          set -euo pipefail
-          pr_number="$(gh pr list --repo "$GITHUB_REPOSITORY" --base "$DATA_BRANCH" --head "$GITHUB_REF_NAME" --state open --json number --jq '.[0].number // empty')"
-          if [ -n "$pr_number" ]; then
-            gh pr ready "$pr_number" --repo "$GITHUB_REPOSITORY" || true
+          set -uo pipefail
+
+          compare_url="https://github.com/${GITHUB_REPOSITORY}/compare/${DATA_BRANCH}...${GITHUB_REF_NAME}?expand=1"
+          existing="$(gh pr list \
+            --repo "$GITHUB_REPOSITORY" \
+            --base "$DATA_BRANCH" \
+            --head "$GITHUB_REF_NAME" \
+            --state open \
+            --json number \
+            --jq '.[0].number // empty' 2>/dev/null || true)"
+
+          if [ -n "$existing" ]; then
+            if gh pr ready "$existing" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+              echo "PR #$existing is ready for review."
+            else
+              echo "::warning::Verified import is safe on $GITHUB_REF_NAME, but PR #$existing could not be marked ready automatically."
+            fi
           else
-            printf -v body 'Verified Discords.com import from branch `%s`.' "$GITHUB_REF_NAME"
-            gh pr create \
+            printf -v body 'Verified Discords.com import from branch `%s`.\n\nThe import checkpoint was pushed before verification. A failed PR operation does not invalidate or delete the imported data.' "$GITHUB_REF_NAME"
+
+            if gh pr create \
               --repo "$GITHUB_REPOSITORY" \
               --base "$DATA_BRANCH" \
               --head "$GITHUB_REF_NAME" \
               --title "Import Discords.com Emojis #${GITHUB_RUN_NUMBER}" \
-              --body "$body"
+              --body "$body" >/dev/null 2>&1; then
+              echo "Review PR created."
+            else
+              echo "::warning::Automatic PR creation is unavailable. Import and verification already succeeded."
+              echo "::warning::Create the PR manually: $compare_url"
+            fi
           fi
+
+          exit 0
+
+      - name: Recovery summary
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          {
+            echo "### Discords import recovery"
+            echo "- Import branch: \`$GITHUB_REF_NAME\`"
+            echo "- Long-running import is checkpointed and pushed before verification."
+            echo "- Re-running a failed worker automatically skips the download/import once that checkpoint exists."
+            echo "- Pull-request creation is best-effort and cannot fail a verified import."
+            echo "- Worker timeout: 240 minutes."
+          } >> "$GITHUB_STEP_SUMMARY"
