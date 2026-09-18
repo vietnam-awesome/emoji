@@ -80,19 +80,24 @@ function Scramble({ text }: { text: string }) {
 }
 
 function EmojiTile({ item }: { item: NotFoundEmoji }) {
+  const [loaded, setLoaded] = useState(false);
+
   return (
     <a
       href={item.href}
       aria-label={`Open ${item.name}`}
       className="group/item relative grid size-20 place-items-center overflow-hidden rounded-2xl border border-border bg-card/85 shadow-sm transition-[transform,border-color,background] duration-200 hover:-translate-y-1 hover:border-border-strong hover:bg-background sm:size-24"
     >
+      {!loaded ? <span className="not-found-image-skeleton" aria-hidden="true" /> : null}
       <img
         src={item.image}
         alt=""
         width={64}
         height={64}
         loading="lazy"
-        className="size-12 object-contain transition-transform duration-200 group-hover/item:scale-105 sm:size-14"
+        onLoad={() => setLoaded(true)}
+        onError={() => setLoaded(true)}
+        className={`relative z-[2] size-12 object-contain transition-[opacity,transform] duration-200 group-hover/item:scale-105 sm:size-14 ${loaded ? 'opacity-100' : 'opacity-0'}`}
       />
       {item.animated ? (
         <span className="absolute right-2 top-2 rounded-full bg-primary px-1.5 py-0.5 text-[.46rem] font-extrabold tracking-[.06em] text-primary-foreground">
