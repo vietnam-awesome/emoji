@@ -164,7 +164,30 @@ function hashString(value: string) {
 
 function resolveStrategy(strategy: CookStrategy, first: string, second: string): CookStrategy {
   if (strategy !== 'auto') return strategy;
-  return AUTO_STRATEGIES[hashString(`${first}:${second}`) % AUTO_STRATEGIES.length];
+
+  const seed = hashString(`${first}:${second}`);
+  const firstItem = findEmoji(first);
+  const secondItem = findEmoji(second);
+
+  // Established emoji mixers generally expose compatible combinations rather
+  // than assigning every pair a completely arbitrary layout. Keep Auto fun,
+  // but bias the composition toward the semantic role of ingredient B.
+  if (['👑', '🎩', '🕶️'].includes(second)) return 'wear';
+  if (secondItem?.category === 'Gestures') return 'badge';
+  if (secondItem?.category === 'Symbols' || secondItem?.category === 'Nature') {
+    return seed % 2 === 0 ? 'surround' : 'badge';
+  }
+  if (secondItem?.category === 'Food') {
+    return (['inside', 'split', 'badge'] as CookStrategy[])[seed % 3];
+  }
+  if (secondItem?.category === 'Objects') {
+    return (['badge', 'inside', 'split'] as CookStrategy[])[seed % 3];
+  }
+  if (firstItem?.category && firstItem.category === secondItem?.category) {
+    return (['stack', 'split', 'repeat'] as CookStrategy[])[seed % 3];
+  }
+
+  return AUTO_STRATEGIES[seed % AUTO_STRATEGIES.length];
 }
 
 function findEmoji(value: string | null) {
