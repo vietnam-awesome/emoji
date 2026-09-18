@@ -196,10 +196,9 @@ function drawGlyph(
   context.globalAlpha = alpha;
   context.font = `${size}px ${EMOJI_FONT}`;
 
-  // Color-emoji fonts have noticeably different baselines on Apple, Windows and
-  // Android. Center using the measured painted bounds instead of relying on
-  // textBaseline="middle", which is why the first Cook preview could look
-  // vertically clipped or off-center on iPhone/Safari.
+  // Color emoji fonts use different baselines across Apple, Windows and
+  // Android. Center from the actual painted glyph bounds so iPhone/Safari
+  // previews do not sit too high, too low or get clipped unexpectedly.
   const metrics = context.measureText(glyph);
   const left = Number.isFinite(metrics.actualBoundingBoxLeft) ? metrics.actualBoundingBoxLeft : metrics.width / 2;
   const right = Number.isFinite(metrics.actualBoundingBoxRight) ? metrics.actualBoundingBoxRight : metrics.width / 2;
@@ -306,19 +305,210 @@ function RecipePreview({
   second,
   strategy,
   background = 'transparent',
-  label,
 }: {
   first: CookEmoji;
   second: CookEmoji;
   strategy: CookStrategy;
   background?: CookBackground;
-  label?: string;
 }) {
   const ref = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     if (ref.current) renderRecipe(ref.current, first, second, strategy, background, 160);
   }, [first, second, strategy, background]);
+
+  return <canvas ref={ref} width={160} height={160} aria-hidden="true" />;
+}
+
+export default function EmojiCook({ editorUrl }: Props) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [first, setFirst] = useState<CookEmoji>(EMOJI_POOL.find((item) => item.emoji === '😎') ?? EMOJI_POOL[0]);
+  const [second, setSecond] = useState<CookEmoji>(EMOJI_POOL.find((item) => item.emoji === '🔥') ?? EMOJI_POOL[1]);
+  const [activeSlot, setActiveSlot] = useState<IngredientSlot>('first');
+  const [strategy, setStrategy] = useState<CookStrategy>('auto');
+  const [background, setBackground] = useState<CookBackground>('transparent');
+  const [format, setFormat] = useState<ExportFormat>('png');
+  const [query, setQuery] = useState('');
+  const [category, setCategory] = useState('All');
+  const [tab, setTab] = useState('pick');
+  const [status, setStatus] = useState('');
+  const [error, setError] = useState('');
+  const [initialized, setInitialized] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const queryFirst = findEmoji(params.get('a'));
+    const querySecond = findEmoji(params.get('b'));
+    const queryStrategy = params.get('style') as CookStrategy | null;
+    const queryBackground = params.get('bg') as CookBackground | null;
+    if (queryFirst) setFirst(queryFirst);
+    if (querySecond) setSecond(querySecond);
+    if (queryStrategy && STRATEGIES.some((item) => item.value === queryStrategy)) setStrategy(queryStrategy);
+    if (queryBackground && BACKGROUNDS.some((item) => item.value === queryBackground)) setBackground(queryBackground);
+    setInitialized(true);
+  }, []);
+
+  const resolvedStrategy = useMemo(
+    () => resolveStrategy(strategy, first.emoji, second.emoji),
+    [strategy, first.emoji, second.emoji],
+  );
+
+  useEffect(() => {
+    if (!canvasRef.current) return;
+    renderRecipe(canvasRef.current, first, second, strategy, background);
+  }, [first, second, strategy, background]);
+
+  useEffect(() => {
+    if (!initialized) return;
+    const url = new URL(window.location.href);
+    url.searchParams.set('a', first.emoji);
+    url.searchParams.set('b', second.emoji);
+    if (strategy === 'auto') url.searchParams.delete('style');
+    else url.searchParams.set('style', strategy);
+    if (background === 'transparent') url.searchParams.delete('bg');
+    else url.searchParams.set('bg', background);
+    window.history.replaceState({}, '', url);
+  }, [initialized, first, second, strategy, background]);
+
+  const filteredEmoji = useMemo(() => {
+    const needle = query.trim().toLowerCase();
+    return EMOJI_POOL.filter((item) => {
+      if (category !== 'All' && item.category !== category) return false;
+      if (!needle) return true;
+      return `${item.emoji} ${item.label} ${item.category} ${item.keywords}`.toLowerCase().includes(needle);
+    });
+  }, [query, category]);
+
+  const exploreEmoji = useMemo(() => EMOJI_POOL
+    .filter((item) => item.emoji !== first.emoji)
+    .map((item) => ({ item, score: hashString(`${first.emoji}:${item.emoji}:explore`) }))
+    .sort((a, b) => a.score - b.score)
+    .slice(0, 16)
+    .map(({ item }) => item), [first.emoji]);
+
+  const chooseIngredient = (item: CookEmoji) => {
+    if (activeSlot === 'first') {
+      setFirst(item);
+      setActiveSlot('second');
+      setStatus(`${item.label} is ingredient A. Now pick ingredient B.`);
+    } else {
+      setSecond(item);
+      setStatus(`${item.label} is ingredient B. Your mix is ready.`);
+    }
+    setQuery('');
+    setError('');
+  };
+
+  const swapIngredients = () => {
+    setFirst(second);
+    setSecond(first);
+    setStatus('Ingredients swapped.');
+    setError('');
+  };
+
+  const randomize = () => {
+    const firstIndex = Math.floor(Math.random() * EMOJI_POOL.length);
+    let secondIndex = Math.floor(Math.random() * EMOJI_POOL.length);
+    if (secondIndex === firstIndex) secondIndex = (secondIndex + 1) % EMOJI_POOL.length;
+    setFirst(EMOJI_POOL[firstIndex]);
+    setSecond(EMOJI_POOL[secondIndex]);
+    setStrategy('auto');
+    setStatus('Fresh recipe generated.');
+    setError('');
+  };
+
+  const download = async () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    try {
+      setError('');
+      const blob = await canvasBlob(canvas, format);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      const stem = `cook-${slugify(first.label)}-${slugify(second.label)}`;
+      link.href = url;
+      link.download = `${stem}.${format}`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1200);
+      setStatus(`Downloaded ${format.toUpperCase()} · ${CANVAS_SIZE}×${CANVAS_SIZE}.`);
+    } catch (reason) {
+      setStatus('');
+      setError(reason instanceof Error ? reason.message : 'Download failed.');
+    }
+  };
+
+  const copyImage = async () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    try {
+      if (!('ClipboardItem' in window) || !navigator.clipboard?.write) {
+        throw new Error('Image copy is not supported in this browser. Use Download instead.');
+      }
+      const blob = await canvasBlob(canvas, 'png');
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+      setError('');
+      setStatus('Cooked emoji copied as PNG.');
+    } catch (reason) {
+      setStatus('');
+      setError(reason instanceof Error ? reason.message : 'Copy failed.');
+    }
+  };
+
+  const copyLink = async () => {
+    try {
+      if (!navigator.clipboard?.writeText) throw new Error('Link copy is not supported in this browser.');
+      await navigator.clipboard.writeText(window.location.href);
+      setError('');
+      setStatus('Recipe link copied.');
+    } catch (reason) {
+      setStatus('');
+      setError(reason instanceof Error ? reason.message : 'Unable to copy this recipe link.');
+    }
+  };
+
+  const shareRecipe = async () => {
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: `${first.emoji} + ${second.emoji} · Emoji Cook`,
+          text: `Cook ${first.label} with ${second.label}`,
+          url: window.location.href,
+        });
+        setError('');
+        setStatus('Recipe shared.');
+        return;
+      }
+      await copyLink();
+    } catch (reason) {
+      if (reason instanceof DOMException && reason.name === 'AbortError') return;
+      setStatus('');
+      setError(reason instanceof Error ? reason.message : 'Unable to share this recipe.');
+    }
+  };
+
+  const editInEditor = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    try {
+      const name = `cook-${slugify(first.label)}-${slugify(second.label)}.png`;
+      sessionStorage.setItem(EDITOR_HANDOFF_KEY, canvas.toDataURL('image/png'));
+      sessionStorage.setItem(EDITOR_HANDOFF_NAME_KEY, name);
+      window.location.href = `${editorUrl}?handoff=cook`;
+    } catch {
+      setError('The cooked emoji could not be handed off to the editor. Download it and upload it there instead.');
+    }
+  };
+
+  const applyExplore = (item: CookEmoji) => {
+    setSecond(item);
+    setStrategy('auto');
+    setActiveSlot('second');
+    setTab('pick');
+    setStatus(`${first.label} + ${item.label} is ready to cook.`);
+    setError('');
+  };
 
   return (
     <div className="cook-page" data-cook-strategy={resolvedStrategy}>
@@ -377,13 +567,7 @@ function RecipePreview({
           onClick={() => document.querySelector('.cook-result')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
           aria-label="Jump to cooked result"
         >
-          <RecipePreview
-            first={first}
-            second={second}
-            strategy={strategy}
-            background={background}
-            label="Current cooked emoji preview"
-          />
+          <RecipePreview first={first} second={second} strategy={strategy} background={background} />
           <span>Result</span>
         </button>
         <Button
@@ -469,7 +653,7 @@ function RecipePreview({
                   <span className="section-kicker">Combos with {first.emoji}</span>
                   <h2>See the result before choosing</h2>
                 </div>
-                <p>Unlike the first version, these cards render the actual local recipe preview instead of showing only A + B.</p>
+                <p>These cards render the actual local recipe preview, so you can choose a combination by result instead of guessing from A + B.</p>
               </div>
               <div className="cook-recipe-grid">
                 {exploreEmoji.map((item) => (
