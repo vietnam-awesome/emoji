@@ -15,6 +15,7 @@ const cookSkeleton = await readFile(new URL('../src/components/cook/CookSkeleton
 const editorPage = await readFile(new URL('../src/pages/editor.astro', import.meta.url), 'utf8');
 const editorClient = await readFile(new URL('../src/components/editor/EmojiEditor.tsx', import.meta.url), 'utf8');
 const editorCss = await readFile(new URL('../src/styles/editor.css', import.meta.url), 'utf8');
+const catalogPagesCss = await readFile(new URL('../src/styles/catalog-pages.css', import.meta.url), 'utf8');
 const beuiCss = await readFile(new URL('../src/styles/beui.css', import.meta.url), 'utf8');
 
 test('emoji cards expose an image skeleton until the asset settles', () => {
@@ -63,6 +64,8 @@ test('catalog and category incremental loading use card-shaped skeletons', () =>
   assert.match(categoryPage, /grid\.append\(createGridSkeleton/);
   assert.match(categoryPage, /grid\.replaceChildren\(createGridSkeleton/);
   assert.match(categoryPage, /aria-busy/);
+  assert.match(categoryPage, /grid\.replaceChildren\(\.\.\.previousNodes\)/);
+  assert.match(catalogPagesCss, /body\[data-page="browse"\] \.catalog-skeleton-grid/);
 });
 
 test('home emoji picks keep a skeleton until each image settles', () => {
@@ -84,6 +87,7 @@ test('404 emoji marquee keeps build-time content and skeletons lazy tile images'
   assert.match(notFound, /const \[loaded, setLoaded\] = useState\(false\)/);
   assert.match(notFound, /not-found-image-skeleton/);
   assert.match(notFound, /onLoad=\{\(\) => setLoaded\(true\)\}/);
+  assert.match(notFound, /imageRef\.current\?\.complete/);
   assert.match(beuiCss, /\.not-found-image-skeleton/);
 });
 
