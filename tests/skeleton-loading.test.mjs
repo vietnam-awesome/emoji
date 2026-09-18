@@ -5,6 +5,7 @@ import test from 'node:test';
 const emojiCard = await readFile(new URL('../src/components/EmojiCard.astro', import.meta.url), 'utf8');
 const cardClient = await readFile(new URL('../src/scripts/emoji-card-client.js', import.meta.url), 'utf8');
 const browsePage = await readFile(new URL('../src/pages/emojis/index.astro', import.meta.url), 'utf8');
+const homeClient = await readFile(new URL('../src/scripts/home.js', import.meta.url), 'utf8');
 const beuiCss = await readFile(new URL('../src/styles/beui.css', import.meta.url), 'utf8');
 
 test('emoji cards expose an image skeleton until the asset settles', () => {
@@ -24,4 +25,12 @@ test('catalog async states render a responsive skeleton grid instead of a spinne
   assert.match(beuiCss, /\.catalog-skeleton-card/);
   assert.match(beuiCss, /\.catalog-skeleton-media/);
   assert.match(beuiCss, /@media \(max-width:430px\)[\s\S]*\.catalog-skeleton-grid \{ grid-template-columns: repeat\(2,minmax\(0,1fr\)\)/);
+});
+
+test('home search uses skeleton rows while suggestion shards are loading', () => {
+  assert.match(homeClient, /function|const showSuggestionSkeletons/);
+  assert.match(homeClient, /showSuggestionSkeletons\(\)/);
+  assert.match(homeClient, /home-search-skeleton/);
+  assert.match(beuiCss, /\.home-search-skeleton/);
+  assert.match(beuiCss, /\.home-search-skeleton-thumb/);
 });
