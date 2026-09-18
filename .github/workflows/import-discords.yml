@@ -33,11 +33,12 @@ on:
 
 permissions:
   contents: write
-  actions: write
+  pull-requests: write
 
 env:
   APP_BRANCH: main
   DATA_BRANCH: data
+  IMPORT_BRANCH_PREFIX: import/discords
 
 concurrency:
   group: emoji-data-write
@@ -69,7 +70,7 @@ jobs:
             !/src/data/
           sparse-checkout-cone-mode: false
 
-      - name: Checkout writable emoji data branch
+      - name: Checkout data branch for review import
         uses: actions/checkout@v7
         with:
           ref: ${{ env.DATA_BRANCH }}
@@ -93,6 +94,17 @@ jobs:
             exit 1
           fi
           echo "Writable emoji data branch: $branch"
+
+      - name: Create review branch from data
+        id: review_branch
+        working-directory: data
+        shell: bash
+        run: |
+          set -euo pipefail
+          import_branch="${IMPORT_BRANCH_PREFIX}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          git switch -c "$import_branch"
+          echo "name=$import_branch" >> "$GITHUB_OUTPUT"
+          echo "Review branch: $import_branch"
 
       - name: Setup Node.js
         uses: actions/setup-node@v7
@@ -147,17 +159,29 @@ jobs:
           git commit -m "chore(data): import Discords.com emojis"
           echo "created=true" >> "$GITHUB_OUTPUT"
 
-      - name: Push data branch
+      - name: Push review branch
         if: steps.import_commit.outputs.created == 'true'
         working-directory: data
+        env:
+          IMPORT_BRANCH: ${{ steps.review_branch.outputs.name }}
         run: |
           set -euo pipefail
-          git pull --rebase origin "$DATA_BRANCH"
-          git push origin "HEAD:$DATA_BRANCH"
+          git push --set-upstream origin "HEAD:$IMPORT_BRANCH"
 
-      - name: Rebuild UI from updated catalog
+      - name: Open review pull request
         if: steps.import_commit.outputs.created == 'true'
-        working-directory: app
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh workflow run deploy-pages.yml --ref "$APP_BRANCH"
+          IMPORT_BRANCH: ${{ steps.review_branch.outputs.name }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          pr_url="$(gh pr create \
+            --repo "$GITHUB_REPOSITORY" \
+            --base "$DATA_BRANCH" \
+            --head "$IMPORT_BRANCH" \
+            --title "Import Discords.com Emojis #${GITHUB_RUN_NUMBER}" \
+            --body "Automated Discords.com emoji import candidate from Actions run \`$GITHUB_RUN_ID\`.
+
+Review the assets and catalog diff. Merge this PR into \`data\` only after approval. Production deployment starts automatically after the merge.")"
+          echo "Review PR: $pr_url"
