@@ -78,8 +78,10 @@ test('editor separates view zoom from export canvas size', () => {
   assert.match(editorClient, /ResizeObserver/);
   assert.match(editorClient, /previewCssSize \* pixelRatio/);
   assert.match(editorClient, /viewMode === 'actual'/);
-  assert.match(editorClient, />Fit<\/button>/);
-  assert.match(editorClient, />100%<\/button>/);
+  assert.match(editorClient, /setViewMode\('fit'\)/);
+  assert.match(editorClient, /setViewMode\('actual'\)/);
+  assert.match(editorClient, />\s*Fit\s*<\/button>/s);
+  assert.match(editorClient, />\s*100%\s*<\/button>/s);
   assert.match(editorClient, /Canvas <strong>\{settings\.size\}×\{settings\.size\}px<\/strong>/);
   assert.match(editorClient, /Image scale <strong>/);
   assert.match(editorClient, /Export uses the full square canvas/);
