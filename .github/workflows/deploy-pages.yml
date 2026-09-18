@@ -136,8 +136,12 @@ jobs:
             echo "- Size: ${mib} MiB (${bytes} bytes)"
             echo "- Files: ${files}"
           } >> "$GITHUB_STEP_SUMMARY"
-          if [ "$bytes" -gt 1073741824 ]; then
-            echo "::warning::Pages output is above GitHub Pages' officially supported 1 GiB site size."
+          limit_bytes="$((950 * 1024 * 1024))"
+          if [ "$bytes" -gt "$limit_bytes" ]; then
+            echo "::error::Pages output is ${mib} MiB, above the 950 MiB safety limit. Refusing to upload an artifact that GitHub Pages is likely to reject."
+            du -sh dist/emoji dist/search 2>/dev/null || true
+            echo "Detail files: $(find dist/emoji -type f -name '*.html' 2>/dev/null | wc -l | tr -d ' ')"
+            exit 1
           fi
 
       - name: Configure Pages
