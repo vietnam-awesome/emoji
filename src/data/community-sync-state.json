@@ -293,314 +293,523 @@
   },
   "discords": {
     "tag": "all",
+    "startBatch": 101,
+    "batchesRequested": 25,
+    "endBatch": 125,
     "categories": {
       "aesthetic": {
         "name": "Aesthetic",
         "url": "https://discords.com/emoji-list/tag/Aesthetic",
-        "discovered": 1785,
-        "maxBatches": 100,
-        "lastRunAt": "2026-09-14T02:07:00.696Z"
+        "discovered": 0,
+        "startBatch": 101,
+        "batchesRequested": 25,
+        "lastBatchReached": 82,
+        "nextBatch": null,
+        "complete": true,
+        "adultFiltered": 0,
+        "lastRunAt": "2026-09-18T10:23:25.021Z"
       },
       "animated": {
         "name": "Animated",
         "url": "https://discords.com/emoji-list/tag/Animated",
-        "discovered": 2000,
-        "maxBatches": 100,
-        "lastRunAt": "2026-09-14T02:09:38.410Z"
+        "discovered": 491,
+        "startBatch": 101,
+        "batchesRequested": 25,
+        "lastBatchReached": 125,
+        "nextBatch": 126,
+        "complete": false,
+        "adultFiltered": 77,
+        "lastRunAt": "2026-09-18T10:27:23.964Z"
       },
       "anime": {
         "name": "Anime",
         "url": "https://discords.com/emoji-list/tag/Anime",
-        "discovered": 2000,
-        "maxBatches": 100,
-        "lastRunAt": "2026-09-14T02:10:59.687Z"
+        "discovered": 494,
+        "startBatch": 101,
+        "batchesRequested": 25,
+        "lastBatchReached": 125,
+        "nextBatch": 126,
+        "complete": false,
+        "adultFiltered": 45,
+        "lastRunAt": "2026-09-18T10:29:31.340Z"
       },
       "blobs": {
         "name": "Blobs",
         "url": "https://discords.com/emoji-list/tag/Blobs",
-        "discovered": 2000,
-        "maxBatches": 100,
-        "lastRunAt": "2026-09-14T02:12:26.485Z"
+        "discovered": 500,
+        "startBatch": 101,
+        "batchesRequested": 25,
+        "lastBatchReached": 125,
+        "nextBatch": 126,
+        "complete": false,
+        "adultFiltered": 1,
+        "lastRunAt": "2026-09-18T10:31:41.648Z"
       },
       "blue": {
         "name": "Blue",
         "url": "https://discords.com/emoji-list/tag/Blue",
-        "discovered": 2000,
-        "maxBatches": 100,
-        "lastRunAt": "2026-09-14T02:14:07.785Z"
+        "discovered": 500,
+        "startBatch": 101,
+        "batchesRequested": 25,
+        "lastBatchReached": 125,
+        "nextBatch": 126,
+        "complete": false,
+        "adultFiltered": 8,
+        "lastRunAt": "2026-09-18T10:34:22.141Z"
       },
       "blurple": {
         "name": "Blurple",
         "url": "https://discords.com/emoji-list/tag/Blurple",
-        "discovered": 2000,
-        "maxBatches": 100,
-        "lastRunAt": "2026-09-14T02:15:20.328Z"
+        "discovered": 0,
+        "startBatch": 101,
+        "batchesRequested": 25,
+        "lastBatchReached": 95,
+        "nextBatch": null,
+        "complete": true,
+        "adultFiltered": 0,
+        "lastRunAt": "2026-09-18T10:35:38.804Z"
       },
       "bunny": {
         "name": "Bunny",
         "url": "https://discords.com/emoji-list/tag/Bunny",
-        "discovered": 1180,
-        "maxBatches": 100,
-        "lastRunAt": "2026-09-14T02:16:57.934Z"
+        "discovered": 500,
+        "startBatch": 101,
+        "batchesRequested": 25,
+        "lastBatchReached": 125,
+        "nextBatch": 126,
+        "complete": false,
+        "adultFiltered": 15,
+        "lastRunAt": "2026-09-18T10:40:32.722Z"
       },
       "cat": {
         "name": "Cat",
         "url": "https://discords.com/emoji-list/tag/Cat",
-        "discovered": 2000,
-        "maxBatches": 100,
-        "lastRunAt": "2026-09-14T02:18:19.240Z"
+        "discovered": 494,
+        "startBatch": 101,
+        "batchesRequested": 25,
+        "lastBatchReached": 125,
+        "nextBatch": 126,
+        "complete": false,
+        "adultFiltered": 23,
+        "lastRunAt": "2026-09-18T10:42:38.521Z"
       },
       "celebrity": {
         "name": "Celebrity",
         "url": "https://discords.com/emoji-list/tag/Celebrity",
-        "discovered": 817,
-        "maxBatches": 100,
-        "lastRunAt": "2026-09-14T02:18:46.003Z"
+        "discovered": 0,
+        "startBatch": 101,
+        "batchesRequested": 25,
+        "lastBatchReached": 39,
+        "nextBatch": null,
+        "complete": true,
+        "adultFiltered": 0,
+        "lastRunAt": "2026-09-18T10:43:06.327Z"
       },
       "crying": {
         "name": "Crying",
         "url": "https://discords.com/emoji-list/tag/Crying",
-        "discovered": 2000,
-        "maxBatches": 100,
-        "lastRunAt": "2026-09-14T02:20:27.312Z"
+        "discovered": 500,
+        "startBatch": 101,
+        "batchesRequested": 25,
+        "lastBatchReached": 125,
+        "nextBatch": 126,
+        "complete": false,
+        "adultFiltered": 6,
+        "lastRunAt": "2026-09-18T10:45:42.682Z"
       },
       "crypto": {
         "name": "Crypto",
         "url": "https://discords.com/emoji-list/tag/Crypto",
-        "discovered": 380,
-        "maxBatches": 100,
-        "lastRunAt": "2026-09-14T02:21:55.874Z"
+        "discovered": 0,
+        "startBatch": 101,
+        "batchesRequested": 25,
+        "lastBatchReached": 1,
+        "nextBatch": null,
+        "complete": true,
+        "adultFiltered": 0,
+        "lastRunAt": "2026-09-18T10:45:43.702Z"
       },
       "cute": {
         "name": "Cute",
         "url": "https://discords.com/emoji-list/tag/Cute",
-        "discovered": 2000,
-        "maxBatches": 100,
-        "lastRunAt": "2026-09-14T02:23:20.196Z"
+        "discovered": 500,
+        "startBatch": 101,
+        "batchesRequested": 25,
+        "lastBatchReached": 125,
+        "nextBatch": 126,
+        "complete": false,
+        "adultFiltered": 16,
+        "lastRunAt": "2026-09-18T10:47:55.145Z"
       },
       "dancing": {
         "name": "Dancing",
         "url": "https://discords.com/emoji-list/tag/Dancing",
-        "discovered": 2000,
-        "maxBatches": 100,
-        "lastRunAt": "2026-09-14T02:26:41.807Z"
+        "discovered": 500,
+        "startBatch": 101,
+        "batchesRequested": 25,
+        "lastBatchReached": 125,
+        "nextBatch": 126,
+        "complete": false,
+        "adultFiltered": 6,
+        "lastRunAt": "2026-09-18T10:52:34.428Z"
       },
       "dog": {
         "name": "Dog",
         "url": "https://discords.com/emoji-list/tag/Dog",
-        "discovered": 2000,
-        "maxBatches": 100,
-        "lastRunAt": "2026-09-14T02:29:57.733Z"
+        "discovered": 499,
+        "startBatch": 101,
+        "batchesRequested": 25,
+        "lastBatchReached": 125,
+        "nextBatch": 126,
+        "complete": false,
+        "adultFiltered": 16,
+        "lastRunAt": "2026-09-18T10:57:44.714Z"
       },
       "fire": {
         "name": "Fire",
         "url": "https://discords.com/emoji-list/tag/Fire",
-        "discovered": 2000,
-        "maxBatches": 100,
-        "lastRunAt": "2026-09-14T02:31:48.469Z"
+        "discovered": 491,
+        "startBatch": 101,
+        "batchesRequested": 25,
+        "lastBatchReached": 125,
+        "nextBatch": 126,
+        "complete": false,
+        "adultFiltered": 50,
+        "lastRunAt": "2026-09-18T11:01:14.550Z"
       },
       "furry": {
         "name": "Furry",
         "url": "https://discords.com/emoji-list/tag/Furry",
-        "discovered": 2000,
-        "maxBatches": 100,
-        "lastRunAt": "2026-09-14T02:33:25.991Z"
+        "discovered": 492,
+        "startBatch": 101,
+        "batchesRequested": 25,
+        "lastBatchReached": 125,
+        "nextBatch": 126,
+        "complete": false,
+        "adultFiltered": 46,
+        "lastRunAt": "2026-09-18T11:03:49.319Z"
       },
       "gaming": {
         "name": "Gaming",
         "url": "https://discords.com/emoji-list/tag/Gaming",
-        "discovered": 2000,
-        "maxBatches": 100,
-        "lastRunAt": "2026-09-14T02:34:52.122Z"
+        "discovered": 499,
+        "startBatch": 101,
+        "batchesRequested": 25,
+        "lastBatchReached": 125,
+        "nextBatch": 126,
+        "complete": false,
+        "adultFiltered": 4,
+        "lastRunAt": "2026-09-18T11:06:04.493Z"
       },
       "happy": {
         "name": "Happy",
         "url": "https://discords.com/emoji-list/tag/Happy",
-        "discovered": 2000,
-        "maxBatches": 100,
-        "lastRunAt": "2026-09-14T02:36:35.424Z"
+        "discovered": 499,
+        "startBatch": 101,
+        "batchesRequested": 25,
+        "lastBatchReached": 125,
+        "nextBatch": 126,
+        "complete": false,
+        "adultFiltered": 23,
+        "lastRunAt": "2026-09-18T11:08:44.248Z"
       },
       "head": {
         "name": "Head",
         "url": "https://discords.com/emoji-list/tag/Head",
-        "discovered": 2000,
-        "maxBatches": 100,
-        "lastRunAt": "2026-09-14T02:39:43.994Z"
+        "discovered": 491,
+        "startBatch": 101,
+        "batchesRequested": 25,
+        "lastBatchReached": 125,
+        "nextBatch": 126,
+        "complete": false,
+        "adultFiltered": 34,
+        "lastRunAt": "2026-09-18T11:13:06.106Z"
       },
       "heart": {
         "name": "Heart",
         "url": "https://discords.com/emoji-list/tag/Heart",
-        "discovered": 2000,
-        "maxBatches": 100,
-        "lastRunAt": "2026-09-14T02:41:06.444Z"
-      },
-      "hentai": {
-        "name": "Hentai",
-        "url": "https://discords.com/emoji-list/tag/Hentai",
-        "discovered": 2000,
-        "maxBatches": 100,
-        "lastRunAt": "2026-09-14T02:42:23.846Z"
+        "discovered": 496,
+        "startBatch": 101,
+        "batchesRequested": 25,
+        "lastBatchReached": 125,
+        "nextBatch": 126,
+        "complete": false,
+        "adultFiltered": 38,
+        "lastRunAt": "2026-09-18T11:15:12.613Z"
       },
       "laughing": {
         "name": "Laughing",
         "url": "https://discords.com/emoji-list/tag/Laughing",
-        "discovered": 2000,
-        "maxBatches": 100,
-        "lastRunAt": "2026-09-14T02:44:11.257Z"
+        "discovered": 499,
+        "startBatch": 101,
+        "batchesRequested": 25,
+        "lastBatchReached": 125,
+        "nextBatch": 126,
+        "complete": false,
+        "adultFiltered": 20,
+        "lastRunAt": "2026-09-18T11:17:52.623Z"
       },
       "logo": {
         "name": "Logo",
         "url": "https://discords.com/emoji-list/tag/Logo",
-        "discovered": 2000,
-        "maxBatches": 100,
-        "lastRunAt": "2026-09-14T02:45:31.160Z"
+        "discovered": 500,
+        "startBatch": 101,
+        "batchesRequested": 25,
+        "lastBatchReached": 125,
+        "nextBatch": 126,
+        "complete": false,
+        "adultFiltered": 4,
+        "lastRunAt": "2026-09-18T11:19:54.487Z"
       },
       "memes": {
         "name": "Memes",
         "url": "https://discords.com/emoji-list/tag/Memes",
-        "discovered": 2000,
-        "maxBatches": 100,
-        "lastRunAt": "2026-09-14T02:46:54.987Z"
+        "discovered": 496,
+        "startBatch": 101,
+        "batchesRequested": 25,
+        "lastBatchReached": 125,
+        "nextBatch": 126,
+        "complete": false,
+        "adultFiltered": 33,
+        "lastRunAt": "2026-09-18T11:22:02.680Z"
       },
       "minecraft": {
         "name": "Minecraft",
         "url": "https://discords.com/emoji-list/tag/Minecraft",
-        "discovered": 460,
-        "maxBatches": 100,
-        "lastRunAt": "2026-09-14T02:47:28.247Z"
+        "discovered": 500,
+        "startBatch": 101,
+        "batchesRequested": 25,
+        "lastBatchReached": 125,
+        "nextBatch": 126,
+        "complete": false,
+        "adultFiltered": 0,
+        "lastRunAt": "2026-09-18T11:28:02.024Z"
       },
       "neko": {
         "name": "Neko",
         "url": "https://discords.com/emoji-list/tag/Neko",
-        "discovered": 2000,
-        "maxBatches": 100,
-        "lastRunAt": "2026-09-14T02:49:50.661Z"
+        "discovered": 498,
+        "startBatch": 101,
+        "batchesRequested": 25,
+        "lastBatchReached": 125,
+        "nextBatch": 126,
+        "complete": false,
+        "adultFiltered": 17,
+        "lastRunAt": "2026-09-18T11:31:51.466Z"
       },
       "orange": {
         "name": "Orange",
         "url": "https://discords.com/emoji-list/tag/Orange",
-        "discovered": 2000,
-        "maxBatches": 100,
-        "lastRunAt": "2026-09-14T02:51:09.241Z"
+        "discovered": 500,
+        "startBatch": 101,
+        "batchesRequested": 25,
+        "lastBatchReached": 125,
+        "nextBatch": 126,
+        "complete": false,
+        "adultFiltered": 1,
+        "lastRunAt": "2026-09-18T11:33:50.910Z"
       },
       "panda": {
         "name": "Panda",
         "url": "https://discords.com/emoji-list/tag/Panda",
-        "discovered": 2000,
-        "maxBatches": 100,
-        "lastRunAt": "2026-09-14T02:52:32.697Z"
+        "discovered": 500,
+        "startBatch": 101,
+        "batchesRequested": 25,
+        "lastBatchReached": 125,
+        "nextBatch": 126,
+        "complete": false,
+        "adultFiltered": 3,
+        "lastRunAt": "2026-09-18T11:35:59.194Z"
       },
       "party": {
         "name": "Party",
         "url": "https://discords.com/emoji-list/tag/Party",
-        "discovered": 2000,
-        "maxBatches": 100,
-        "lastRunAt": "2026-09-14T02:53:54.348Z"
+        "discovered": 500,
+        "startBatch": 101,
+        "batchesRequested": 25,
+        "lastBatchReached": 125,
+        "nextBatch": 126,
+        "complete": false,
+        "adultFiltered": 0,
+        "lastRunAt": "2026-09-18T11:38:07.988Z"
       },
       "pepe": {
         "name": "Pepe",
         "url": "https://discords.com/emoji-list/tag/Pepe",
-        "discovered": 2000,
-        "maxBatches": 100,
-        "lastRunAt": "2026-09-14T02:55:18.474Z"
+        "discovered": 494,
+        "startBatch": 101,
+        "batchesRequested": 25,
+        "lastBatchReached": 125,
+        "nextBatch": 126,
+        "complete": false,
+        "adultFiltered": 31,
+        "lastRunAt": "2026-09-18T11:40:17.131Z"
       },
       "pixel": {
         "name": "Pixel",
         "url": "https://discords.com/emoji-list/tag/Pixel",
-        "discovered": 2000,
-        "maxBatches": 100,
-        "lastRunAt": "2026-09-14T02:56:36.289Z"
+        "discovered": 500,
+        "startBatch": 101,
+        "batchesRequested": 25,
+        "lastBatchReached": 125,
+        "nextBatch": 126,
+        "complete": false,
+        "adultFiltered": 6,
+        "lastRunAt": "2026-09-18T11:42:18.177Z"
       },
       "purple": {
         "name": "Purple",
         "url": "https://discords.com/emoji-list/tag/Purple",
-        "discovered": 2000,
-        "maxBatches": 100,
-        "lastRunAt": "2026-09-14T02:57:58.472Z"
+        "discovered": 500,
+        "startBatch": 101,
+        "batchesRequested": 25,
+        "lastBatchReached": 125,
+        "nextBatch": 126,
+        "complete": false,
+        "adultFiltered": 9,
+        "lastRunAt": "2026-09-18T11:44:21.582Z"
       },
       "red": {
         "name": "Red",
         "url": "https://discords.com/emoji-list/tag/Red",
-        "discovered": 2000,
-        "maxBatches": 100,
-        "lastRunAt": "2026-09-14T02:59:32.845Z"
+        "discovered": 498,
+        "startBatch": 101,
+        "batchesRequested": 25,
+        "lastBatchReached": 125,
+        "nextBatch": 126,
+        "complete": false,
+        "adultFiltered": 11,
+        "lastRunAt": "2026-09-18T11:46:50.161Z"
       },
       "roblox": {
         "name": "Roblox",
         "url": "https://discords.com/emoji-list/tag/Roblox",
-        "discovered": 2000,
-        "maxBatches": 100,
-        "lastRunAt": "2026-09-14T03:00:49.947Z"
+        "discovered": 500,
+        "startBatch": 101,
+        "batchesRequested": 25,
+        "lastBatchReached": 125,
+        "nextBatch": 126,
+        "complete": false,
+        "adultFiltered": 4,
+        "lastRunAt": "2026-09-18T11:48:49.417Z"
       },
       "role-icons": {
         "name": "Role Icons",
         "url": "https://discords.com/emoji-list/tag/Role%20Icons",
-        "discovered": 2000,
-        "maxBatches": 100,
-        "lastRunAt": "2026-09-14T03:02:05.638Z"
+        "discovered": 499,
+        "startBatch": 101,
+        "batchesRequested": 25,
+        "lastBatchReached": 125,
+        "nextBatch": 126,
+        "complete": false,
+        "adultFiltered": 4,
+        "lastRunAt": "2026-09-18T11:50:46.797Z"
       },
       "sad": {
         "name": "Sad",
         "url": "https://discords.com/emoji-list/tag/Sad",
-        "discovered": 2000,
-        "maxBatches": 100,
-        "lastRunAt": "2026-09-14T03:03:58.300Z"
+        "discovered": 500,
+        "startBatch": 101,
+        "batchesRequested": 25,
+        "lastBatchReached": 125,
+        "nextBatch": 126,
+        "complete": false,
+        "adultFiltered": 9,
+        "lastRunAt": "2026-09-18T11:54:46.313Z"
       },
       "skull": {
         "name": "Skull",
         "url": "https://discords.com/emoji-list/tag/Skull",
-        "discovered": 2000,
-        "maxBatches": 100,
-        "lastRunAt": "2026-09-14T03:05:16.358Z"
+        "discovered": 500,
+        "startBatch": 101,
+        "batchesRequested": 25,
+        "lastBatchReached": 125,
+        "nextBatch": 126,
+        "complete": false,
+        "adultFiltered": 2,
+        "lastRunAt": "2026-09-18T11:56:48.062Z"
       },
       "sparkle": {
         "name": "Sparkle",
         "url": "https://discords.com/emoji-list/tag/Sparkle",
-        "discovered": 2000,
-        "maxBatches": 100,
-        "lastRunAt": "2026-09-14T03:06:37.926Z"
+        "discovered": 498,
+        "startBatch": 101,
+        "batchesRequested": 25,
+        "lastBatchReached": 125,
+        "nextBatch": 126,
+        "complete": false,
+        "adultFiltered": 12,
+        "lastRunAt": "2026-09-18T11:58:54.009Z"
       },
       "star": {
         "name": "Star",
         "url": "https://discords.com/emoji-list/tag/Star",
-        "discovered": 2000,
-        "maxBatches": 100,
-        "lastRunAt": "2026-09-14T03:08:08.787Z"
+        "discovered": 500,
+        "startBatch": 101,
+        "batchesRequested": 25,
+        "lastBatchReached": 125,
+        "nextBatch": 126,
+        "complete": false,
+        "adultFiltered": 7,
+        "lastRunAt": "2026-09-18T12:01:08.131Z"
       },
       "thinking": {
         "name": "Thinking",
         "url": "https://discords.com/emoji-list/tag/Thinking",
-        "discovered": 2000,
-        "maxBatches": 100,
-        "lastRunAt": "2026-09-14T03:10:43.629Z"
+        "discovered": 500,
+        "startBatch": 101,
+        "batchesRequested": 25,
+        "lastBatchReached": 125,
+        "nextBatch": 126,
+        "complete": false,
+        "adultFiltered": 7,
+        "lastRunAt": "2026-09-18T12:05:28.502Z"
       },
       "utility": {
         "name": "Utility",
         "url": "https://discords.com/emoji-list/tag/Utility",
-        "discovered": 1579,
-        "maxBatches": 100,
-        "lastRunAt": "2026-09-14T03:11:39.387Z"
+        "discovered": 0,
+        "startBatch": 101,
+        "batchesRequested": 25,
+        "lastBatchReached": 71,
+        "nextBatch": null,
+        "complete": true,
+        "adultFiltered": 5,
+        "lastRunAt": "2026-09-18T12:06:25.560Z"
       },
       "valorant": {
         "name": "Valorant",
         "url": "https://discords.com/emoji-list/tag/Valorant",
-        "discovered": 2000,
-        "maxBatches": 100,
-        "lastRunAt": "2026-09-14T03:12:55.656Z"
+        "discovered": 500,
+        "startBatch": 101,
+        "batchesRequested": 25,
+        "lastBatchReached": 125,
+        "nextBatch": 126,
+        "complete": false,
+        "adultFiltered": 2,
+        "lastRunAt": "2026-09-18T12:08:22.562Z"
       },
       "verified": {
         "name": "Verified",
         "url": "https://discords.com/emoji-list/tag/Verified",
-        "discovered": 2000,
-        "maxBatches": 100,
-        "lastRunAt": "2026-09-14T03:14:16.256Z"
+        "discovered": 500,
+        "startBatch": 101,
+        "batchesRequested": 25,
+        "lastBatchReached": 125,
+        "nextBatch": 126,
+        "complete": false,
+        "adultFiltered": 0,
+        "lastRunAt": "2026-09-18T12:10:25.658Z"
       }
     },
-    "discovered": 69128,
-    "missingBeforeRun": 69083,
-    "attemptedThisRun": 69083,
-    "importedThisRun": 69082,
-    "failedThisRun": 1,
-    "lastRunAt": "2026-09-14T03:31:05.779Z"
+    "discovered": 18013,
+    "adultFilteredThisRun": 595,
+    "purgedAdultRecords": 0,
+    "purgedAdultAssets": 0,
+    "missingBeforeRun": 16404,
+    "attemptedThisRun": 16404,
+    "importedThisRun": 16404,
+    "failedThisRun": 0,
+    "lastRunAt": "2026-09-18T12:14:20.488Z"
   }
 }
