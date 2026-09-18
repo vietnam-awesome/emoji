@@ -4,6 +4,7 @@ import test from 'node:test';
 
 const editorPage = await readFile(new URL('../src/pages/editor.astro', import.meta.url), 'utf8');
 const editorClient = await readFile(new URL('../src/components/editor/EmojiEditor.tsx', import.meta.url), 'utf8');
+const editorCss = await readFile(new URL('../src/styles/editor.css', import.meta.url), 'utf8');
 const frameTimeline = await readFile(new URL('../src/components/editor/GifFrameTimeline.tsx', import.meta.url), 'utf8');
 const detail = await readFile(new URL('../src/components/beui/EmojiDetail.astro', import.meta.url), 'utf8');
 const sitemap = await readFile(new URL('../src/pages/sitemap-static.xml.js', import.meta.url), 'utf8');
@@ -69,4 +70,22 @@ test('emoji detail exposes an editor action and preserves animated source hint',
 
 test('editor is discoverable to crawlers', () => {
   assert.match(sitemap, /\$\{SITE\}\/editor/);
+});
+
+test('editor separates view zoom from export canvas size', () => {
+  assert.match(editorClient, /type ViewMode = 'fit' \| 'actual'/);
+  assert.match(editorClient, /const \[viewMode, setViewMode\]/);
+  assert.match(editorClient, /ResizeObserver/);
+  assert.match(editorClient, /previewCssSize \* pixelRatio/);
+  assert.match(editorClient, /viewMode === 'actual'/);
+  assert.match(editorClient, /setViewMode\('fit'\)/);
+  assert.match(editorClient, /setViewMode\('actual'\)/);
+  assert.match(editorClient, />\s*Fit\s*<\/button>/s);
+  assert.match(editorClient, />\s*100%\s*<\/button>/s);
+  assert.match(editorClient, /Canvas <strong>\{settings\.size\}×\{settings\.size\}px<\/strong>/);
+  assert.match(editorClient, /Image scale <strong>/);
+  assert.match(editorClient, /Export uses the full square canvas/);
+  assert.match(editorCss, /\.editor-view-controls/);
+  assert.match(editorCss, /\.editor-view-segmented/);
+  assert.match(editorCss, /width: min\(100%, var\(--editor-preview-size, 128px\)\)/);
 });
