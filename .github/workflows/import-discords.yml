@@ -1,0 +1,302 @@
+name: Import Discords.com Emojis
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Category to import. Use all to auto-discover every safe Discords category."
+        required: true
+        default: "all"
+        type: string
+      limit:
+        description: "Maximum missing emoji to download. Use 0 for all discovered emoji."
+        required: true
+        default: "200"
+        type: string
+      start_batch:
+        description: "First Load more batch to collect."
+        required: true
+        default: "1"
+        type: string
+      max_pages:
+        description: "Number of batches to scan."
+        required: true
+        default: "25"
+        type: string
+      concurrency:
+        description: "Parallel image downloads (1-8)"
+        required: true
+        default: "4"
+        type: string
+      resume_branch:
+        description: "Optional existing import/discords-* branch to resume without downloading again."
+        required: false
+        default: ""
+        type: string
+      _worker:
+        description: "Internal worker mode. Leave disabled when starting an import manually."
+        required: true
+        default: false
+        type: boolean
+  schedule:
+    - cron: "30 0 * * 0"
+
+permissions:
+  contents: write
+  actions: write
+  pull-requests: write
+
+env:
+  APP_BRANCH: main
+  DATA_BRANCH: data
+  IMPORT_BRANCH_PREFIX: import/discords
+  WORKFLOW_FILE: import-discords.yml
+
+concurrency:
+  group: discords-import-${{ github.event_name == 'workflow_dispatch' && inputs._worker == true && github.ref_name || 'launcher' }}
+  cancel-in-progress: false
+
+jobs:
+  launch:
+    if: ${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs._worker != true) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      IMPORT_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || 'all' }}
+      IMPORT_LIMIT: ${{ github.event_name == 'workflow_dispatch' && inputs.limit || '75' }}
+      IMPORT_START_BATCH: ${{ github.event_name == 'workflow_dispatch' && inputs.start_batch || '1' }}
+      IMPORT_MAX_PAGES: ${{ github.event_name == 'workflow_dispatch' && inputs.max_pages || '25' }}
+      IMPORT_CONCURRENCY: ${{ github.event_name == 'workflow_dispatch' && inputs.concurrency || '4' }}
+      RESUME_BRANCH: ${{ github.event_name == 'workflow_dispatch' && inputs.resume_branch || '' }}
+
+    steps:
+      - name: Create or select import branch
+        id: branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ -n "$RESUME_BRANCH" ]; then
+            case "$RESUME_BRANCH" in
+              import/discords-*) ;;
+              *)
+                echo "Invalid resume branch: $RESUME_BRANCH" >&2
+                exit 1
+                ;;
+            esac
+
+            gh api "repos/$GITHUB_REPOSITORY/branches/$RESUME_BRANCH" >/dev/null
+            import_branch="$RESUME_BRANCH"
+          else
+            data_sha="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/$DATA_BRANCH" --jq '.object.sha')"
+            import_branch="${IMPORT_BRANCH_PREFIX}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+            gh api \
+              --method POST \
+              "repos/$GITHUB_REPOSITORY/git/refs" \
+              -f ref="refs/heads/$import_branch" \
+              -f sha="$data_sha" >/dev/null
+          fi
+
+          echo "name=$import_branch" >> "$GITHUB_OUTPUT"
+          echo "Import branch: $import_branch"
+
+      - name: Dispatch this workflow on the import branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+          IMPORT_BRANCH: ${{ steps.branch.outputs.name }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh workflow run "$WORKFLOW_FILE" \
+            --repo "$GITHUB_REPOSITORY" \
+            --ref "$IMPORT_BRANCH" \
+            -f tag="$IMPORT_TAG" \
+            -f limit="$IMPORT_LIMIT" \
+            -f start_batch="$IMPORT_START_BATCH" \
+            -f max_pages="$IMPORT_MAX_PAGES" \
+            -f concurrency="$IMPORT_CONCURRENCY" \
+            -f resume_branch="$RESUME_BRANCH" \
+            -f _worker=true
+
+          echo "Worker dispatched on branch: $IMPORT_BRANCH"
+
+  import:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs._worker == true }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      IMPORT_TAG: ${{ inputs.tag }}
+      IMPORT_LIMIT: ${{ inputs.limit }}
+      IMPORT_START_BATCH: ${{ inputs.start_batch }}
+      IMPORT_MAX_PAGES: ${{ inputs.max_pages }}
+      IMPORT_CONCURRENCY: ${{ inputs.concurrency }}
+
+    steps:
+      - name: Verify import branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          case "$GITHUB_REF_NAME" in
+            import/discords-*) ;;
+            *)
+              echo "Refusing to run Discords import on '$GITHUB_REF_NAME'. Expected import/discords-*." >&2
+              exit 1
+              ;;
+          esac
+          echo "Import worker branch: $GITHUB_REF_NAME"
+
+      - name: Checkout importer runtime from main
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ env.APP_BRANCH }}
+          persist-credentials: false
+          path: app
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: |
+            /*
+            !/public/emojis/
+            !/src/data/
+          sparse-checkout-cone-mode: false
+
+      - name: Checkout import branch
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.ref_name }}
+          persist-credentials: true
+          path: data
+          fetch-depth: 0
+          filter: blob:none
+          sparse-checkout: |
+            /src/data/
+            /public/emojis/community/discords/
+            /.github/workflows/import-discords.yml
+          sparse-checkout-cone-mode: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - name: Install application dependencies
+        working-directory: app
+        run: npm install --ignore-scripts --no-audit --no-fund
+
+      - name: Install Chromium
+        if: ${{ inputs.resume_branch == '' }}
+        working-directory: app
+        run: npx playwright install --with-deps chromium
+
+      - name: Hydrate catalog
+        working-directory: data
+        run: node ../app/scripts/emoji-store.mjs hydrate
+
+      - name: Import Discords.com emoji categories
+        if: ${{ inputs.resume_branch == '' }}
+        working-directory: data
+        run: |
+          node ../app/scripts/import-discords.mjs \
+            --tag="$IMPORT_TAG" \
+            --limit="$IMPORT_LIMIT" \
+            --start-batch="$IMPORT_START_BATCH" \
+            --max-pages="$IMPORT_MAX_PAGES" \
+            --concurrency="$IMPORT_CONCURRENCY" \
+            --delay-ms=350
+
+      - name: Shard import checkpoint
+        if: ${{ inputs.resume_branch == '' }}
+        working-directory: data
+        run: node ../app/scripts/emoji-store.mjs shard
+
+      - name: Commit and push import checkpoint
+        id: checkpoint
+        if: ${{ inputs.resume_branch == '' }}
+        working-directory: data
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A src/data public/emojis/community/discords
+
+          if git diff --cached --quiet; then
+            echo "created=false" >> "$GITHUB_OUTPUT"
+            echo "No Discords.com updates found."
+            exit 0
+          fi
+
+          git commit -m "chore(data): checkpoint Discords.com import"
+          git push origin "HEAD:$GITHUB_REF_NAME"
+          echo "created=true" >> "$GITHUB_OUTPUT"
+
+      - name: Open draft review PR
+        if: ${{ inputs.resume_branch == '' && steps.checkpoint.outputs.created == 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          existing="$(gh pr list --repo "$GITHUB_REPOSITORY" --base "$DATA_BRANCH" --head "$GITHUB_REF_NAME" --state open --json number --jq '.[0].number // empty')"
+          if [ -z "$existing" ]; then
+            printf -v body 'Discords.com import checkpoint from Actions run `%s`.\n\nThe long-running import is already saved on branch `%s`. Validation runs next.' "$GITHUB_RUN_ID" "$GITHUB_REF_NAME"
+            gh pr create \
+              --repo "$GITHUB_REPOSITORY" \
+              --base "$DATA_BRANCH" \
+              --head "$GITHUB_REF_NAME" \
+              --draft \
+              --title "Import Discords.com Emojis #${GITHUB_RUN_NUMBER}" \
+              --body "$body"
+          fi
+
+      - name: Hydrate checkpoint for verification
+        if: ${{ inputs.resume_branch != '' || steps.checkpoint.outputs.created == 'true' }}
+        working-directory: data
+        run: node ../app/scripts/emoji-store.mjs hydrate
+
+      - name: Verify emoji metadata
+        if: ${{ inputs.resume_branch != '' || steps.checkpoint.outputs.created == 'true' }}
+        working-directory: data
+        env:
+          VERIFY_DATA_SKIP_ASSETS: '1'
+        run: node ../app/scripts/verify-data.mjs
+
+      - name: Shard verified catalog
+        if: ${{ inputs.resume_branch != '' || steps.checkpoint.outputs.created == 'true' }}
+        working-directory: data
+        run: node ../app/scripts/emoji-store.mjs shard
+
+      - name: Commit verified data
+        if: ${{ inputs.resume_branch != '' || steps.checkpoint.outputs.created == 'true' }}
+        working-directory: data
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A src/data public/emojis/community/discords
+          if ! git diff --cached --quiet; then
+            git commit -m "chore(data): finalize verified Discords.com import"
+          fi
+          git push origin "HEAD:$GITHUB_REF_NAME"
+
+      - name: Mark PR ready for review
+        if: ${{ inputs.resume_branch != '' || steps.checkpoint.outputs.created == 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          pr_number="$(gh pr list --repo "$GITHUB_REPOSITORY" --base "$DATA_BRANCH" --head "$GITHUB_REF_NAME" --state open --json number --jq '.[0].number // empty')"
+          if [ -n "$pr_number" ]; then
+            gh pr ready "$pr_number" --repo "$GITHUB_REPOSITORY" || true
+          else
+            printf -v body 'Verified Discords.com import from branch `%s`.' "$GITHUB_REF_NAME"
+            gh pr create \
+              --repo "$GITHUB_REPOSITORY" \
+              --base "$DATA_BRANCH" \
+              --head "$GITHUB_REF_NAME" \
+              --title "Import Discords.com Emojis #${GITHUB_RUN_NUMBER}" \
+              --body "$body"
+          fi
