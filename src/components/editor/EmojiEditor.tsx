@@ -18,6 +18,7 @@ import GifFrameTimeline, { type GifTimelineFrame } from './GifFrameTimeline';
 
 type FitMode = 'contain' | 'cover';
 type ExportFormat = 'png' | 'webp' | 'gif';
+type ViewMode = 'fit' | 'actual';
 
 type Settings = {
   size: number;
@@ -152,6 +153,7 @@ async function decodeGif(blob: Blob, width: number, height: number): Promise<Dec
 
 export default function EmojiEditor({ browseUrl }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const stageRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
   const objectUrlRef = useRef<string | null>(null);
   const settingsRef = useRef<Settings>(DEFAULTS);
@@ -168,6 +170,8 @@ export default function EmojiEditor({ browseUrl }: Props) {
   const [past, setPast] = useState<HistorySnapshot[]>([]);
   const [future, setFuture] = useState<HistorySnapshot[]>([]);
   const [format, setFormat] = useState<ExportFormat>('png');
+  const [viewMode, setViewMode] = useState<ViewMode>('fit');
+  const [stageWidth, setStageWidth] = useState(560);
   const [loading, setLoading] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [error, setError] = useState('');
@@ -343,6 +347,25 @@ export default function EmojiEditor({ browseUrl }: Props) {
   }, [loadRemote]);
 
   useEffect(() => {
+    const stage = stageRef.current;
+    if (!stage) return;
+
+    const updateStageWidth = () => {
+      const horizontalPadding = window.innerWidth <= 720 ? 32 : 80;
+      setStageWidth(Math.max(96, stage.clientWidth - horizontalPadding));
+    };
+
+    updateStageWidth();
+    const observer = new ResizeObserver(updateStageWidth);
+    observer.observe(stage);
+    window.addEventListener('resize', updateStageWidth);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', updateStageWidth);
+    };
+  }, []);
+
+  useEffect(() => {
     if (!source?.animated || !playing) return;
     const activeFrames = gifFramesRef.current.filter((frame) => frame.enabled);
     if (!activeFrames.length) return;
@@ -412,15 +435,25 @@ export default function EmojiEditor({ browseUrl }: Props) {
     context.restore();
   }, [source]);
 
+  const availablePreviewSize = Math.max(96, Math.min(560, stageWidth));
+  const fitPreviewSize = Math.min(
+    availablePreviewSize,
+    settings.size * 8,
+  );
+  const previewCssSize = viewMode === 'actual'
+    ? Math.min(settings.size, availablePreviewSize)
+    : fitPreviewSize;
+  const viewZoomPercent = Math.max(1, Math.round((previewCssSize / settings.size) * 100));
+
   useEffect(() => {
     if (!canvasRef.current) return;
 
-    // Keep the editor preview at its real CSS pixel size instead of stretching
-    // a 32/64/128px output canvas to the full stage. Render at device pixel
-    // density for a crisp preview, but never enlarge the preview itself.
+    // View zoom is intentionally separate from document/output pixels. The
+    // preview can be enlarged for comfortable editing while export still uses
+    // settings.size exactly, like Photoshop/Figma document zoom.
     const pixelRatio = Math.min(2, Math.max(1, window.devicePixelRatio || 1));
-    draw(canvasRef.current, settings.size, undefined, settings.size * pixelRatio);
-  }, [draw, settings, source, currentFrameId, gifFrames]);
+    draw(canvasRef.current, settings.size, undefined, previewCssSize * pixelRatio);
+  }, [draw, settings, source, currentFrameId, gifFrames, previewCssSize]);
 
   const makeGifBlob = useCallback(async () => {
     const frames = gifFramesRef.current.filter((frame) => frame.enabled);
@@ -647,7 +680,7 @@ export default function EmojiEditor({ browseUrl }: Props) {
   const currentFrameIndex = Math.max(0, gifFrames.findIndex((frame) => frame.id === currentFrame?.id));
   const gifDuration = activeFrames.reduce((total, frame) => total + frame.delay, 0) / gifSpeed;
   const previewStyle = {
-    '--editor-preview-size': `${settings.size}px`,
+    '--editor-preview-size': `${previewCssSize}px`,
   } as CSSProperties;
 
   return (
@@ -682,7 +715,7 @@ export default function EmojiEditor({ browseUrl }: Props) {
             <label className="editor-upload-button"><Upload /><span>{source ? 'Replace' : 'Upload image'}</span><input type="file" accept="image/*" onChange={(event) => void upload(event.target.files?.[0])} /></label>
           </div>
 
-          <div className="editor-stage">
+          <div className="editor-stage" ref={stageRef}>
             {loading && <div className="editor-stage-loading">Loading image…</div>}
             {!source && !loading && (
               <label className="editor-empty-state">
@@ -694,23 +727,44 @@ export default function EmojiEditor({ browseUrl }: Props) {
               </label>
             )}
             {source && (
-              <div className="editor-checkerboard" style={previewStyle}>
-                <canvas
-                  ref={canvasRef}
-                  className={dragging ? 'is-dragging' : ''}
-                  onPointerDown={pointerDown}
-                  onPointerMove={pointerMove}
-                  onPointerUp={pointerEnd}
-                  onPointerCancel={pointerEnd}
-                  aria-label="Emoji preview. Drag to reposition."
-                />
-              </div>
+              <>
+                <div className="editor-view-controls" aria-label="Preview zoom">
+                  <span>View <strong>{viewZoomPercent}%</strong></span>
+                  <div className="editor-view-segmented">
+                    <button
+                      type="button"
+                      className={viewMode === 'fit' ? 'is-active' : ''}
+                      onClick={() => setViewMode('fit')}
+                    >
+                      Fit
+                    </button>
+                    <button
+                      type="button"
+                      className={viewMode === 'actual' ? 'is-active' : ''}
+                      onClick={() => setViewMode('actual')}
+                    >
+                      100%
+                    </button>
+                  </div>
+                </div>
+                <div className="editor-checkerboard" style={previewStyle}>
+                  <canvas
+                    ref={canvasRef}
+                    className={dragging ? 'is-dragging' : ''}
+                    onPointerDown={pointerDown}
+                    onPointerMove={pointerMove}
+                    onPointerUp={pointerEnd}
+                    onPointerCancel={pointerEnd}
+                    aria-label="Emoji canvas preview. Drag the image to reposition it inside the export canvas."
+                  />
+                </div>
+                <div className="editor-drag-hint"><Move /> Drag image to reposition</div>
+              </>
             )}
-            {source && <div className="editor-drag-hint"><Move /> Drag to reposition</div>}
           </div>
           <div className="editor-canvas-meta">
-            <span>Output <strong>{settings.size}×{settings.size}px</strong></span>
-            <span>Preview <strong>1:1 max</strong></span>
+            <span>Canvas <strong>{settings.size}×{settings.size}px</strong></span>
+            <span>View <strong>{viewZoomPercent}%</strong></span>
             <span>Image scale <strong>{Math.round(settings.zoom)}%</strong></span>
             {source?.animated && <span>Frame <strong>{currentFrameIndex + 1}/{gifFrames.length}</strong></span>}
           </div>
@@ -769,8 +823,9 @@ export default function EmojiEditor({ browseUrl }: Props) {
           </section>
 
           <section className="editor-control-group">
-            <div className="editor-control-heading"><strong>Output size</strong><small>Square emoji canvas</small></div>
+            <div className="editor-control-heading"><strong>Canvas size</strong><small>Export dimensions</small></div>
             <div className="editor-size-presets">{PRESETS.map((size) => <button key={size} type="button" className={settings.size === size ? 'is-active' : ''} onClick={() => commit({ size })}>{size}</button>)}</div>
+            <small className="editor-control-help">Export uses the full square canvas, including transparent space around the image.</small>
           </section>
 
           <section className="editor-control-group">
