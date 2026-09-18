@@ -300,6 +300,26 @@
     font-size: 0.66rem;
   }
 
+  /* Keep the category result count and client mode switcher in normal flow.
+     The generic mobile BEUI rule stacks this toolbar and the hydrated control
+     can otherwise be pushed far below the summary, leaving a large blank gap. */
+  body[data-page="category-detail"] .category-results-toolbar {
+    min-height: 0;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 8px;
+    padding-block: 0 8px;
+  }
+
+  body[data-page="category-detail"] .category-results-summary {
+    flex: 1 1 auto;
+  }
+
+  body[data-page="category-detail"] .beui-mode-control {
+    margin-left: auto;
+  }
+
   body[data-page="category-detail"] .related-categories {
     margin-top: 34px;
     padding-top: 24px;

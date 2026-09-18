@@ -168,7 +168,15 @@ const tagTargetUrl = (tag) => {
       </div>
       <a href={categoryUrl}>More in {category} <span>→</span></a>
     </div>
-    <div class="detail-similar-grid" data-similar-grid></div>
+    <div class="detail-similar-grid" data-similar-grid>
+      {Array.from({ length: 6 }).map(() => (
+        <div class="detail-client-card-skeleton" aria-hidden="true">
+          <span class="detail-client-card-skeleton-media"></span>
+          <span class="detail-client-card-skeleton-line detail-client-card-skeleton-line--title"></span>
+          <span class="detail-client-card-skeleton-line detail-client-card-skeleton-line--meta"></span>
+        </div>
+      ))}
+    </div>
   </section>
 
   <section
@@ -189,7 +197,15 @@ const tagTargetUrl = (tag) => {
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 3h5v5M4 20l6.5-6.5M21 16v5h-5M14.5 10.5 21 4M4 4l16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
     </div>
-    <div class="detail-random-grid" data-random-grid></div>
+    <div class="detail-random-grid" data-random-grid>
+      {Array.from({ length: 6 }).map(() => (
+        <div class="detail-client-card-skeleton" aria-hidden="true">
+          <span class="detail-client-card-skeleton-media"></span>
+          <span class="detail-client-card-skeleton-line detail-client-card-skeleton-line--title"></span>
+          <span class="detail-client-card-skeleton-line detail-client-card-skeleton-line--meta"></span>
+        </div>
+      ))}
+    </div>
   </section>
 </section>
 
@@ -420,12 +436,19 @@ const tagTargetUrl = (tag) => {
     preview.setAttribute('aria-label', `Open ${emoji.name}`);
 
     const image = document.createElement('img');
-    image.src = emoji.image;
     image.alt = emoji.name;
     image.loading = 'lazy';
     image.width = 128;
     image.height = 128;
+
+    // Client-rendered cards settle their own image skeleton so a cached image
+    // cannot finish before the shared MutationObserver attaches its listeners.
+    const settlePreview = () => preview.classList.remove('is-image-loading');
+    image.addEventListener('load', settlePreview, { once: true });
+    image.addEventListener('error', settlePreview, { once: true });
+    image.src = emoji.image;
     preview.append(image);
+    if (image.complete) queueMicrotask(settlePreview);
 
     if (emoji.animated) {
       const badge = document.createElement('span');
@@ -535,12 +558,13 @@ const tagTargetUrl = (tag) => {
         .slice(0, 12)
         .map(({ record }) => record);
 
-      if (!candidates.length) return;
+      if (!candidates.length) { similarSection.hidden = true; return; }
       const fragment = document.createDocumentFragment();
       for (const record of candidates) fragment.append(createSimilarCard(record));
       similarGrid.replaceChildren(fragment);
       similarSection.hidden = false;
     } catch (error) {
+      similarSection.hidden = true;
       console.warn('Could not load similar emoji', error);
     }
   };
@@ -609,7 +633,7 @@ const tagTargetUrl = (tag) => {
         .filter((record) => record && record.slug !== currentSlug)
         .slice(0, 24);
 
-      if (!records.length) return;
+      if (!records.length) { randomSection.hidden = true; return; }
 
       const fragment = document.createDocumentFragment();
       randomItems = records.map((record) => {
@@ -625,6 +649,7 @@ const tagTargetUrl = (tag) => {
       randomSection.hidden = false;
       shuffleRandomEmoji();
     } catch (error) {
+      randomSection.hidden = true;
       console.warn('Could not load random emoji', error);
     }
   };
@@ -655,5 +680,31 @@ const tagTargetUrl = (tag) => {
       padding-inline: 9px;
       font-size: .7rem;
     }
+  }
+
+  .detail-client-card-skeleton {
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--background);
+  }
+  .detail-client-card-skeleton-media {
+    display: block;
+    aspect-ratio: 1/.88;
+    border-bottom: 1px solid var(--border);
+  }
+  .detail-client-card-skeleton-line {
+    display: block;
+    height: 10px;
+    margin-inline: 10px;
+    border-radius: 999px;
+  }
+  .detail-client-card-skeleton-line--title { width: 58%; margin-top: 12px; }
+  .detail-client-card-skeleton-line--meta { width: 76%; margin-top: 10px; margin-bottom: 12px; }
+  .detail-client-card-skeleton-media,
+  .detail-client-card-skeleton-line {
+    background: linear-gradient(100deg, color-mix(in oklab,var(--card) 88%,var(--background)) 20%, color-mix(in oklab,var(--foreground) 9%,var(--card)) 42%, color-mix(in oklab,var(--card) 88%,var(--background)) 64%);
+    background-size: 220% 100%;
+    animation: beui-skeleton-shimmer 1.15s ease-in-out infinite;
   }
 </style>
