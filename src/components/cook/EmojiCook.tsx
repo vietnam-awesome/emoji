@@ -194,10 +194,21 @@ function drawGlyph(
   context.translate(x, y);
   context.rotate(rotation * Math.PI / 180);
   context.globalAlpha = alpha;
-  context.textAlign = 'center';
-  context.textBaseline = 'middle';
   context.font = `${size}px ${EMOJI_FONT}`;
-  context.fillText(glyph, 0, 0);
+
+  // Color-emoji fonts have noticeably different baselines on Apple, Windows and
+  // Android. Center using the measured painted bounds instead of relying on
+  // textBaseline="middle", which is why the first Cook preview could look
+  // vertically clipped or off-center on iPhone/Safari.
+  const metrics = context.measureText(glyph);
+  const left = Number.isFinite(metrics.actualBoundingBoxLeft) ? metrics.actualBoundingBoxLeft : metrics.width / 2;
+  const right = Number.isFinite(metrics.actualBoundingBoxRight) ? metrics.actualBoundingBoxRight : metrics.width / 2;
+  const ascent = Number.isFinite(metrics.actualBoundingBoxAscent) ? metrics.actualBoundingBoxAscent : size * 0.5;
+  const descent = Number.isFinite(metrics.actualBoundingBoxDescent) ? metrics.actualBoundingBoxDescent : size * 0.5;
+
+  context.textAlign = 'left';
+  context.textBaseline = 'alphabetic';
+  context.fillText(glyph, (left - right) / 2, (ascent - descent) / 2);
   context.restore();
 }
 
