@@ -12,7 +12,7 @@ import {
   Undo2,
   Upload,
 } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../motion/select';
 import GifFrameTimeline, { type GifTimelineFrame } from './GifFrameTimeline';
 
@@ -360,15 +360,23 @@ export default function EmojiEditor({ browseUrl }: Props) {
     return () => window.clearTimeout(timer);
   }, [currentFrameId, gifFrames, gifSpeed, playing, replaceCurrentFrameId, source?.animated]);
 
-  const draw = useCallback((canvas: HTMLCanvasElement, size: number, drawableOverride?: CanvasImageSource) => {
+  const draw = useCallback((
+    canvas: HTMLCanvasElement,
+    size: number,
+    drawableOverride?: CanvasImageSource,
+    renderSize = size,
+  ) => {
     const context = canvas.getContext('2d');
     const current = settingsRef.current;
     const currentFrame = gifFramesRef.current.find((frame) => frame.id === currentFrameIdRef.current);
     const drawable = drawableOverride ?? currentFrame?.canvas ?? imageRef.current ?? undefined;
     if (!context) return;
 
-    canvas.width = size;
-    canvas.height = size;
+    const safeRenderSize = Math.max(1, Math.round(renderSize));
+    const renderScale = safeRenderSize / Math.max(1, size);
+    canvas.width = safeRenderSize;
+    canvas.height = safeRenderSize;
+    context.setTransform(renderScale, 0, 0, renderScale, 0, 0);
     context.clearRect(0, 0, size, size);
     context.imageSmoothingEnabled = true;
     context.imageSmoothingQuality = 'high';
@@ -405,7 +413,13 @@ export default function EmojiEditor({ browseUrl }: Props) {
   }, [source]);
 
   useEffect(() => {
-    if (canvasRef.current) draw(canvasRef.current, settings.size);
+    if (!canvasRef.current) return;
+
+    // Keep the editor preview at its real CSS pixel size instead of stretching
+    // a 32/64/128px output canvas to the full stage. Render at device pixel
+    // density for a crisp preview, but never enlarge the preview itself.
+    const pixelRatio = Math.min(2, Math.max(1, window.devicePixelRatio || 1));
+    draw(canvasRef.current, settings.size, undefined, settings.size * pixelRatio);
   }, [draw, settings, source, currentFrameId, gifFrames]);
 
   const makeGifBlob = useCallback(async () => {
@@ -632,6 +646,9 @@ export default function EmojiEditor({ browseUrl }: Props) {
   const currentFrame = gifFrames.find((frame) => frame.id === currentFrameId) ?? gifFrames[0];
   const currentFrameIndex = Math.max(0, gifFrames.findIndex((frame) => frame.id === currentFrame?.id));
   const gifDuration = activeFrames.reduce((total, frame) => total + frame.delay, 0) / gifSpeed;
+  const previewStyle = {
+    '--editor-preview-size': `${settings.size}px`,
+  } as CSSProperties;
 
   return (
     <div className="emoji-editor">
@@ -677,7 +694,7 @@ export default function EmojiEditor({ browseUrl }: Props) {
               </label>
             )}
             {source && (
-              <div className="editor-checkerboard">
+              <div className="editor-checkerboard" style={previewStyle}>
                 <canvas
                   ref={canvasRef}
                   className={dragging ? 'is-dragging' : ''}
@@ -693,7 +710,8 @@ export default function EmojiEditor({ browseUrl }: Props) {
           </div>
           <div className="editor-canvas-meta">
             <span>Output <strong>{settings.size}×{settings.size}px</strong></span>
-            <span>Zoom <strong>{Math.round(settings.zoom)}%</strong></span>
+            <span>Preview <strong>1:1 max</strong></span>
+            <span>Image scale <strong>{Math.round(settings.zoom)}%</strong></span>
             {source?.animated && <span>Frame <strong>{currentFrameIndex + 1}/{gifFrames.length}</strong></span>}
           </div>
 
