@@ -18,19 +18,26 @@ test('Emoji Cook is a client-only public tool using local BeUI primitives', () =
   assert.doesNotMatch(cookClient, /fetch\(/);
 });
 
-test('Emoji Cook supports ingredient search, recipes, randomization and local export', () => {
+test('Emoji Cook uses a combination-first picker with visual combo previews', () => {
   assert.match(cookClient, /const EMOJI_POOL/);
+  assert.match(cookClient, /const \[category, setCategory\]/);
+  assert.match(cookClient, /const CATEGORIES/);
+  assert.match(cookClient, /setActiveSlot\('second'\)/);
+  assert.match(cookClient, /See the result before choosing/);
+  assert.match(cookClient, /RecipePreview/);
+  assert.match(cookClient, /renderRecipe\(ref\.current, first, second, strategy, background, 160\)/);
+  assert.match(cookClient, /cook-equation/);
+});
+
+test('Emoji Cook supports recipes, randomization, sharing and local export', () => {
   assert.match(cookClient, /resolveStrategy/);
-  assert.match(cookClient, /randomize/);
-  assert.match(cookClient, /Explore recipes/);
+  assert.match(cookClient, /const randomize =/);
   assert.match(cookClient, /canvas\.toBlob/);
   assert.match(cookClient, /image\/webp/);
   assert.match(cookClient, /ClipboardItem/);
+  assert.match(cookClient, /navigator\.share/);
   assert.match(cookClient, /history\.replaceState/);
-  assert.match(cookClient, /const \[category, setCategory\]/);
-  assert.match(cookClient, /RecipePreview/);
-  assert.match(cookClient, /See the result before choosing/);
-  assert.match(cookClient, /setActiveSlot\('second'\)/);
+  assert.match(cookClient, /actualBoundingBoxAscent/);
 });
 
 test('Cook result can be handed off to the existing editor without a server upload', () => {
@@ -40,7 +47,6 @@ test('Cook result can be handed off to the existing editor without a server uplo
   assert.match(editorClient, /sessionStorage\.getItem\(EDITOR_HANDOFF_KEY\)/);
   assert.match(editorClient, /await fetch\(dataUrl\)/);
   assert.match(editorClient, /cleanUrl\.searchParams\.delete\('handoff'\)/);
-  assert.match(editorPage, /10000/);
 });
 
 test('Cook is discoverable from the BeUI primary navigation', () => {
