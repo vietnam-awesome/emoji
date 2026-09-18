@@ -161,18 +161,17 @@
     "license": "ePlus original artwork",
     "attribution": "ePlus Emoji"
   },
-  "ship-it.webp": {
-    "name": "Ship It",
-    "shortcode": "eplus_ship_it",
-    "categorySlug": "travel-places",
+  "blue-flag.webp": {
+    "name": "Blue Flag",
+    "shortcode": "eplus_blue_flag",
+    "categorySlug": "symbols",
     "subgroup": "originals",
     "tags": [
-      "ship",
-      "it",
+      "blue",
+      "flag",
       "eplus",
       "original",
       "blob",
-      "blue",
       "3d",
       "custom-emoji"
     ],
@@ -579,13 +578,13 @@
     "license": "ePlus original artwork",
     "attribution": "ePlus Emoji"
   },
-  "bug.webp": {
-    "name": "Bug",
-    "shortcode": "eplus_bug",
-    "categorySlug": "other",
+  "search.webp": {
+    "name": "Search",
+    "shortcode": "eplus_search",
+    "categorySlug": "symbols",
     "subgroup": "originals",
     "tags": [
-      "bug",
+      "search",
       "eplus",
       "original",
       "blob",
@@ -708,7 +707,7 @@
   "no.webp": {
     "name": "No",
     "shortcode": "eplus_no",
-    "categorySlug": "reactions",
+    "categorySlug": "symbols",
     "subgroup": "originals",
     "tags": [
       "no",
@@ -975,13 +974,13 @@
     "license": "ePlus original artwork",
     "attribution": "ePlus Emoji"
   },
-  "hot.webp": {
-    "name": "Hot",
-    "shortcode": "eplus_hot",
+  "warm.webp": {
+    "name": "Warm",
+    "shortcode": "eplus_warm",
     "categorySlug": "nature",
     "subgroup": "originals",
     "tags": [
-      "hot",
+      "warm",
       "eplus",
       "original",
       "blob",
@@ -996,7 +995,7 @@
   "temperature.webp": {
     "name": "Temperature",
     "shortcode": "eplus_temperature",
-    "categorySlug": "objects",
+    "categorySlug": "nature",
     "subgroup": "originals",
     "tags": [
       "temperature",
@@ -1594,7 +1593,7 @@
   "lucky.webp": {
     "name": "Lucky",
     "shortcode": "eplus_lucky",
-    "categorySlug": "reactions",
+    "categorySlug": "other",
     "subgroup": "originals",
     "tags": [
       "lucky",
@@ -1773,12 +1772,13 @@
     "license": "ePlus original artwork",
     "attribution": "ePlus Emoji"
   },
-  "flag.webp": {
-    "name": "Flag",
-    "shortcode": "eplus_flag",
+  "vietnam-flag.webp": {
+    "name": "Vietnam Flag",
+    "shortcode": "eplus_vietnam_flag",
     "categorySlug": "symbols",
     "subgroup": "originals",
     "tags": [
+      "vietnam",
       "flag",
       "eplus",
       "original",
