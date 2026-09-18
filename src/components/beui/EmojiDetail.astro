@@ -52,7 +52,7 @@ const tagTargetUrl = (tag) => {
         data-detail-open-zoom
         data-beui-tooltip={`Zoom ${emoji.name}`}
       >
-        <span class="detail-preview-canvas">
+        <span class="detail-preview-canvas is-image-loading">
           <img id="detail-preview-image" src={imageUrl} alt={emoji.name} />
         </span>
       </button>
@@ -132,7 +132,7 @@ const tagTargetUrl = (tag) => {
       </div>
       <button class="detail-lightbox-close" id="detail-lightbox-close" type="button" aria-label="Close preview">×</button>
     </div>
-    <div class="detail-lightbox-stage">
+    <div class="detail-lightbox-stage is-image-loading">
       <img id="detail-lightbox-image" src={imageUrl} alt={emoji.name} />
     </div>
   </div>
@@ -153,12 +153,27 @@ const tagTargetUrl = (tag) => {
 
   const previewZoomButtons = [...document.querySelectorAll('[data-detail-open-zoom]')];
   const previewImage = document.querySelector('#detail-preview-image');
+  const previewCanvas = previewImage?.closest('.detail-preview-canvas');
   const previewSize = document.querySelector('#detail-preview-size');
   const lightbox = document.querySelector('#detail-lightbox');
   const lightboxImage = document.querySelector('#detail-lightbox-image');
+  const lightboxStage = lightboxImage?.closest('.detail-lightbox-stage');
   const lightboxSize = document.querySelector('#detail-lightbox-size');
   const lightboxClose = document.querySelector('#detail-lightbox-close');
   const zoomButtons = [...document.querySelectorAll('[data-detail-zoom]')];
+
+  const settleImageSkeleton = (image, container) => {
+    if (!(image instanceof HTMLImageElement) || !(container instanceof Element)) return;
+    const settle = () => container.classList.remove('is-image-loading');
+    if (image.complete) queueMicrotask(settle);
+    else {
+      image.addEventListener('load', settle, { once: true });
+      image.addEventListener('error', settle, { once: true });
+    }
+  };
+
+  settleImageSkeleton(previewImage, previewCanvas);
+  settleImageSkeleton(lightboxImage, lightboxStage);
 
   const syncOriginalSize = () => {
     const sourceImage = lightboxImage instanceof HTMLImageElement ? lightboxImage : previewImage;
