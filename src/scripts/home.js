@@ -2,6 +2,16 @@ const poolNode = document.querySelector('#hero-random-pool');
 const randomGrid = document.querySelector('#hero-random-grid');
 const shuffleButton = document.querySelector('#hero-shuffle');
 
+const trackHeroImage = (link, image) => {
+  link.classList.add('is-image-loading');
+  const settle = () => link.classList.remove('is-image-loading');
+  if (image.complete) queueMicrotask(settle);
+  else {
+    image.addEventListener('load', settle, { once: true });
+    image.addEventListener('error', settle, { once: true });
+  }
+};
+
 if (poolNode && randomGrid) {
   try {
     const pool = JSON.parse(poolNode.textContent || '[]');
@@ -24,6 +34,7 @@ if (poolNode && randomGrid) {
         image.width = 64;
         image.height = 64;
         image.className = '!size-16 !max-h-16 !max-w-16 object-contain';
+        trackHeroImage(link, image);
         link.append(image);
 
         if (emoji.animated) {
@@ -43,6 +54,12 @@ if (poolNode && randomGrid) {
     console.error('Could not shuffle hero emoji', error);
   }
 }
+
+randomGrid?.querySelectorAll('a > img').forEach((image) => {
+  if (!(image instanceof HTMLImageElement)) return;
+  const link = image.closest('a');
+  if (link instanceof HTMLAnchorElement) trackHeroImage(link, image);
+});
 
 const homeSearchShell = document.querySelector('#home-search-shell');
 const homeSearchInput = document.querySelector('#home-emoji-search');
