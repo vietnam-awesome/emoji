@@ -19,7 +19,12 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: eplus-originals-assets
-          fetch-depth: 0
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: |
+            /public/emojis/eplus/
+            /.github/workflows/fix-eplus-crops.yml
+          sparse-checkout-cone-mode: false
 
       - name: Setup Python
         uses: actions/setup-python@v5
