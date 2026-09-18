@@ -23,7 +23,12 @@ on:
 
 permissions:
   contents: write
-  actions: write
+  pull-requests: write
+
+env:
+  APP_BRANCH: main
+  DATA_BRANCH: data
+  IMPORT_BRANCH_PREFIX: import/emojigg
 
 concurrency:
   group: emoji-data-write
@@ -39,10 +44,11 @@ jobs:
       IMPORT_MAX_PAGES_PER_CATEGORY: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.max_pages_per_category || '750' }}
 
     steps:
-      - name: Checkout application code
+      - name: Checkout importer runtime from main (read-only)
         uses: actions/checkout@v7
         with:
-          ref: main
+          ref: ${{ env.APP_BRANCH }}
+          persist-credentials: false
           path: app
           fetch-depth: 1
           filter: blob:none
@@ -52,10 +58,11 @@ jobs:
             !/src/data/
           sparse-checkout-cone-mode: false
 
-      - name: Checkout writable data branch
+      - name: Checkout data branch for review import
         uses: actions/checkout@v7
         with:
-          ref: data
+          ref: ${{ env.DATA_BRANCH }}
+          persist-credentials: true
           path: data
           fetch-depth: 0
           filter: blob:none
@@ -63,6 +70,29 @@ jobs:
             /src/data/
             /public/emojis/community/emojigg/
           sparse-checkout-cone-mode: false
+
+      - name: Verify writable checkout targets data branch
+        working-directory: data
+        shell: bash
+        run: |
+          set -euo pipefail
+          branch="$(git branch --show-current)"
+          if [ "$branch" != "$DATA_BRANCH" ]; then
+            echo "Refusing to write emoji data: checked out '$branch', expected '$DATA_BRANCH'." >&2
+            exit 1
+          fi
+          echo "Writable emoji data branch: $branch"
+
+      - name: Create review branch from data
+        id: review_branch
+        working-directory: data
+        shell: bash
+        run: |
+          set -euo pipefail
+          import_branch="${IMPORT_BRANCH_PREFIX}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          git switch -c "$import_branch"
+          echo "name=$import_branch" >> "$GITHUB_OUTPUT"
+          echo "Review branch: $import_branch"
 
       - name: Setup Node.js
         uses: actions/setup-node@v7
@@ -116,17 +146,29 @@ jobs:
           git commit -m "chore(data): import Emoji.gg catalog"
           echo "created=true" >> "$GITHUB_OUTPUT"
 
-      - name: Push data branch
+      - name: Push review branch
         if: steps.import_commit.outputs.created == 'true'
         working-directory: data
+        env:
+          IMPORT_BRANCH: ${{ steps.review_branch.outputs.name }}
         run: |
           set -euo pipefail
-          git pull --rebase origin data
-          git push origin HEAD:data
+          git push --set-upstream origin "HEAD:$IMPORT_BRANCH"
 
-      - name: Rebuild UI from updated catalog
+      - name: Open review pull request
         if: steps.import_commit.outputs.created == 'true'
-        working-directory: app
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh workflow run deploy-pages.yml --ref main
+          IMPORT_BRANCH: ${{ steps.review_branch.outputs.name }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          pr_url="$(gh pr create \
+            --repo "$GITHUB_REPOSITORY" \
+            --base "$DATA_BRANCH" \
+            --head "$IMPORT_BRANCH" \
+            --title "Import Emoji.gg Catalog #${GITHUB_RUN_NUMBER}" \
+            --body "Automated Emoji.gg import candidate from Actions run \`$GITHUB_RUN_ID\`.
+
+Review the assets and catalog diff. Merge this PR into \`data\` only after approval. Production deployment starts automatically after the merge.")"
+          echo "Review PR: $pr_url"

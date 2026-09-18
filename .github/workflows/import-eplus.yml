@@ -2,24 +2,18 @@ name: Import ePlus Originals
 
 on:
   workflow_dispatch:
-    inputs:
-      deploy_pages:
-        description: Rebuild emoji.eplus.dev after catalog update
-        required: false
-        default: true
-        type: boolean
-      sync_turso:
-        description: Sync updated catalog to Turso after import
-        required: false
-        default: true
-        type: boolean
 
 permissions:
   contents: write
-  actions: write
+  pull-requests: write
+
+env:
+  APP_BRANCH: main
+  DATA_BRANCH: data
+  IMPORT_BRANCH_PREFIX: import/eplus
 
 concurrency:
-  group: emoji-data-write
+  group: emoji-data-import-eplus
   cancel-in-progress: false
 
 jobs:
@@ -28,10 +22,11 @@ jobs:
     timeout-minutes: 30
 
     steps:
-      - name: Checkout application code
+      - name: Checkout importer runtime from main (read-only)
         uses: actions/checkout@v7
         with:
-          ref: main
+          ref: ${{ env.APP_BRANCH }}
+          persist-credentials: false
           path: app
           fetch-depth: 1
           filter: blob:none
@@ -41,10 +36,11 @@ jobs:
             !/src/data/
           sparse-checkout-cone-mode: false
 
-      - name: Checkout writable data branch
+      - name: Checkout data branch for review import
         uses: actions/checkout@v7
         with:
-          ref: data
+          ref: ${{ env.DATA_BRANCH }}
+          persist-credentials: true
           path: data
           fetch-depth: 0
           filter: blob:none
@@ -52,6 +48,22 @@ jobs:
             /src/data/
             /public/emojis/eplus/
           sparse-checkout-cone-mode: false
+
+      - name: Create review branch from data
+        id: review_branch
+        working-directory: data
+        shell: bash
+        run: |
+          set -euo pipefail
+          base_branch="$(git branch --show-current)"
+          if [ "$base_branch" != "$DATA_BRANCH" ]; then
+            echo "Refusing to import: checked out '$base_branch', expected '$DATA_BRANCH'." >&2
+            exit 1
+          fi
+          import_branch="${IMPORT_BRANCH_PREFIX}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          git switch -c "$import_branch"
+          echo "name=$import_branch" >> "$GITHUB_OUTPUT"
+          echo "Review branch: $import_branch"
 
       - name: Setup Node.js
         uses: actions/setup-node@v7
@@ -76,7 +88,7 @@ jobs:
         working-directory: data
         run: node ../app/scripts/emoji-store.mjs shard
 
-      - name: Commit ePlus original catalog
+      - name: Commit import candidate
         id: import_commit
         working-directory: data
         shell: bash
@@ -90,27 +102,32 @@ jobs:
             echo "created=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          git commit -m "feat(data): sync ePlus original emoji"
+          git commit -m "feat(data): import ePlus original emoji for review"
           echo "created=true" >> "$GITHUB_OUTPUT"
 
-      - name: Push data branch
+      - name: Push review branch
         if: steps.import_commit.outputs.created == 'true'
         working-directory: data
+        env:
+          IMPORT_BRANCH: ${{ steps.review_branch.outputs.name }}
         run: |
           set -euo pipefail
-          git pull --rebase origin data
-          git push origin HEAD:data
+          git push --set-upstream origin "HEAD:$IMPORT_BRANCH"
 
-      - name: Rebuild production site
-        if: steps.import_commit.outputs.created == 'true' && inputs.deploy_pages == true
-        working-directory: app
+      - name: Open review pull request
+        if: steps.import_commit.outputs.created == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh workflow run deploy-pages.yml --ref main
+          IMPORT_BRANCH: ${{ steps.review_branch.outputs.name }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          pr_url="$(gh pr create \
+            --repo "$GITHUB_REPOSITORY" \
+            --base "$DATA_BRANCH" \
+            --head "$IMPORT_BRANCH" \
+            --title "Import ePlus Originals #${GITHUB_RUN_NUMBER}" \
+            --body "Automated ePlus import candidate from Actions run \`$GITHUB_RUN_ID\`.
 
-      - name: Sync Turso catalog
-        if: steps.import_commit.outputs.created == 'true' && inputs.sync_turso == true
-        working-directory: app
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh workflow run sync-turso.yml --ref main -f dry_run=false -f force=false -f optimize_fts=false
+Review the emoji assets and catalog diff. Merge this PR into \`data\` only after approval. Production deployment happens automatically after the merge.")"
+          echo "Review PR: $pr_url"
