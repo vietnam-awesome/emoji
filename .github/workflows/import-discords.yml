@@ -193,11 +193,6 @@ jobs:
           git fetch origin \
             "refs/heads/$DATA_BRANCH:refs/remotes/origin/$DATA_BRANCH"
 
-          if [ -n "${{ inputs.resume_branch }}" ]; then
-            echo "skip_import=true" >> "$GITHUB_OUTPUT"
-            echo "Explicit resume requested for $GITHUB_REF_NAME; download/import will be skipped."
-            exit 0
-          fi
 
           if git log --format='%s' "refs/remotes/origin/$DATA_BRANCH..HEAD" \
             | grep -Fxq "chore(data): checkpoint Discords.com import"; then
