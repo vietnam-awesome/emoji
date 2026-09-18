@@ -5,7 +5,7 @@ import { emojiAssetUrl } from '../../lib/emojiAsset';
 import { emojiCategorySlug } from '../../lib/category';
 import { withBase } from '../../lib/url';
 
-const { emoji, similarEmojis = [], randomEmojis = [] } = Astro.props;
+const { emoji, randomEmojis = [] } = Astro.props;
 const base = import.meta.env.BASE_URL;
 const imageUrl = emojiAssetUrl(emoji, base);
 const browseUrl = withBase('/emojis', base);
@@ -141,21 +141,36 @@ const tagTargetUrl = (tag) => {
     </div>
   </div>
 
-  {similarEmojis.length > 0 && (
-    <section class="detail-similar" aria-labelledby="similar-emoji-title">
-      <div class="section-heading-modern">
-        <div>
-          <p class="section-kicker">Discovery</p>
-          <h2 id="similar-emoji-title">Similar emoji</h2>
-          <p>Related by Unicode identity, category, tags, collection and style.</p>
-        </div>
-        <a href={categoryUrl}>More in {category} <span>→</span></a>
+  <section
+    class="detail-similar"
+    aria-labelledby="similar-emoji-title"
+    data-similar-section
+    data-current-slug={emoji.slug}
+    data-current-name={emoji.name}
+    data-current-shortcode={emoji.shortcode || ''}
+    data-current-group={emoji.group || ''}
+    data-current-category={categorySlug}
+    data-current-source={emoji.source || ''}
+    data-current-format={emoji.format || ''}
+    data-current-animated={emoji.animated ? 'yes' : 'no'}
+    data-current-hexcode={emoji.hexcode || ''}
+    data-current-collection={emoji.collection || ''}
+    data-current-style={emoji.style || ''}
+    data-current-tags={JSON.stringify((emoji.tags || []).slice(0, 16))}
+    data-current-topics={JSON.stringify((emoji.topics || []).slice(0, 12))}
+    data-search-root={withBase('/search', base).replace(/\/$/, '')}
+    hidden
+  >
+    <div class="section-heading-modern">
+      <div>
+        <p class="section-kicker">Discovery</p>
+        <h2 id="similar-emoji-title">Similar emoji</h2>
+        <p>Related by Unicode identity, category, tags, collection and style.</p>
       </div>
-      <div class="detail-similar-grid">
-        {similarEmojis.map((item) => <EmojiCard emoji={item} />)}
-      </div>
-    </section>
-  )}
+      <a href={categoryUrl}>More in {category} <span>→</span></a>
+    </div>
+    <div class="detail-similar-grid" data-similar-grid></div>
+  </section>
 
   {randomEmojis.length > 0 && (
     <section class="detail-random" aria-labelledby="random-emoji-title">
@@ -298,6 +313,241 @@ const tagTargetUrl = (tag) => {
   lightbox?.addEventListener('click', (event) => {
     if (event.target === lightbox && lightbox instanceof HTMLDialogElement) lightbox.close();
   });
+
+  const similarSection = document.querySelector('[data-similar-section]');
+  const similarGrid = similarSection?.querySelector('[data-similar-grid]');
+
+  const normalizeSimilar = (value) => String(value || '')
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+
+  const compactSimilar = (value) => normalizeSimilar(value).replace(/\s+/g, '');
+
+  const safeJsonArray = (value) => {
+    try {
+      const parsed = JSON.parse(value || '[]');
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  };
+
+  const sharedSimilarCount = (left, right) => {
+    const rightSet = new Set((right || []).map(normalizeSimilar).filter(Boolean));
+    let count = 0;
+    for (const value of new Set((left || []).map(normalizeSimilar).filter(Boolean))) {
+      if (rightSet.has(value)) count += 1;
+    }
+    return count;
+  };
+
+  const similarWordSet = (record) => new Set(
+    normalizeSimilar([record?.name, record?.shortcode].filter(Boolean).join(' '))
+      .split(/\s+/)
+      .filter((word) => word.length > 1)
+  );
+
+  const matchesSimilar = (left, right) => {
+    const a = compactSimilar(left);
+    const b = compactSimilar(right);
+    return Boolean(a && b && a === b);
+  };
+
+  const scoreSimilar = (target, candidate) => {
+    if (!candidate || candidate.slug === target.slug) return Number.NEGATIVE_INFINITY;
+    let score = 0;
+    if (matchesSimilar(target.hexcode, candidate.hexcode)) score += 36;
+    if (matchesSimilar(target.category, candidate.categorySlug || candidate.category)) score += 14;
+    if (matchesSimilar(target.group, candidate.group)) score += 7;
+    if (matchesSimilar(target.collection, candidate.collection)) score += 5;
+    if (matchesSimilar(target.style, candidate.style)) score += 3;
+    if (matchesSimilar(target.shortcode, candidate.shortcode)) score += 8;
+    score += Math.min(sharedSimilarCount(target.tags, candidate.tags) * 5, 20);
+    score += Math.min(sharedSimilarCount(target.topics, candidate.topics) * 3, 9);
+
+    const targetWords = similarWordSet(target);
+    const candidateWords = similarWordSet(candidate);
+    let sharedWords = 0;
+    for (const word of targetWords) if (candidateWords.has(word)) sharedWords += 1;
+    score += Math.min(sharedWords * 2, 6);
+
+    if (matchesSimilar(target.source, candidate.source)) score += 1;
+    if (Boolean(target.animated) === Boolean(candidate.animated)) score += 1;
+    if (matchesSimilar(target.format, candidate.format)) score += 0.5;
+    return score;
+  };
+
+  const expandSimilarRecord = (row) => ({
+    slug: row.s,
+    name: row.n,
+    shortcode: row.c,
+    group: row.g,
+    category: row.ca,
+    categorySlug: row.cs,
+    tags: row.t || [],
+    source: row.src,
+    sourceLabel: row.sl,
+    image: row.i,
+    format: row.f,
+    animated: Boolean(row.a),
+    emoji: row.e || '',
+    hexcode: row.h,
+    collection: row.co,
+    style: row.st,
+    topics: row.tp || []
+  });
+
+  const createSimilarCard = (emoji) => {
+    const basePrefix = import.meta.env.BASE_URL === '/' ? '' : import.meta.env.BASE_URL.replace(/\/$/, '');
+    const detailUrl = `${basePrefix}/emoji/${encodeURIComponent(emoji.slug)}`;
+    const categorySlugValue = emoji.categorySlug || 'other';
+    const categoryUrlValue = `${basePrefix}/categories/${encodeURIComponent(categorySlugValue)}`;
+
+    const article = document.createElement('article');
+    article.className = 'emoji-card';
+    article.dataset.emojiCard = '';
+    article.dataset.category = emoji.category || emoji.group || 'Other';
+    article.dataset.categorySlug = categorySlugValue;
+    article.dataset.sourceLabel = emoji.sourceLabel || '';
+    article.dataset.downloadKey = emoji.slug;
+    article.dataset.downloadName = emoji.name;
+    article.dataset.downloadUrl = emoji.image;
+
+    const preview = document.createElement('a');
+    preview.className = 'emoji-preview is-image-loading';
+    preview.href = detailUrl;
+    preview.setAttribute('aria-label', `Open ${emoji.name}`);
+
+    const image = document.createElement('img');
+    image.src = emoji.image;
+    image.alt = emoji.name;
+    image.loading = 'lazy';
+    image.width = 128;
+    image.height = 128;
+    preview.append(image);
+
+    if (emoji.animated) {
+      const badge = document.createElement('span');
+      badge.className = 'card-motion-badge';
+      badge.textContent = 'GIF';
+      preview.append(badge);
+    }
+
+    const body = document.createElement('div');
+    body.className = 'emoji-card-body';
+
+    const titleRow = document.createElement('div');
+    titleRow.className = 'emoji-title-row';
+    const name = document.createElement('a');
+    name.className = 'emoji-name';
+    name.href = detailUrl;
+    name.textContent = emoji.name;
+    const nativeEmoji = document.createElement('span');
+    nativeEmoji.className = 'native-emoji';
+    nativeEmoji.setAttribute('aria-hidden', 'true');
+    nativeEmoji.textContent = emoji.emoji || '';
+    titleRow.append(name, nativeEmoji);
+
+    const categoryLink = document.createElement('a');
+    categoryLink.className = 'emoji-category';
+    categoryLink.href = categoryUrlValue;
+    categoryLink.textContent = emoji.category || emoji.group || 'Other';
+
+    const meta = document.createElement('div');
+    meta.className = 'emoji-meta';
+    const source = document.createElement('span');
+    source.textContent = emoji.sourceLabel || '';
+    const format = document.createElement('span');
+    format.textContent = emoji.animated ? 'Animated' : String(emoji.format || 'Static').toUpperCase();
+    meta.append(source, format);
+
+    body.append(titleRow, categoryLink, meta);
+    article.append(preview, body);
+    return article;
+  };
+
+  const loadSimilarEmoji = async () => {
+    if (!(similarSection instanceof HTMLElement) || !(similarGrid instanceof HTMLElement)) return;
+
+    const searchRoot = similarSection.dataset.searchRoot || '/search';
+    const target = {
+      slug: similarSection.dataset.currentSlug || '',
+      name: similarSection.dataset.currentName || '',
+      shortcode: similarSection.dataset.currentShortcode || '',
+      group: similarSection.dataset.currentGroup || '',
+      category: similarSection.dataset.currentCategory || '',
+      source: similarSection.dataset.currentSource || '',
+      format: similarSection.dataset.currentFormat || '',
+      animated: similarSection.dataset.currentAnimated === 'yes',
+      hexcode: similarSection.dataset.currentHexcode || '',
+      collection: similarSection.dataset.currentCollection || '',
+      style: similarSection.dataset.currentStyle || '',
+      tags: safeJsonArray(similarSection.dataset.currentTags),
+      topics: safeJsonArray(similarSection.dataset.currentTopics)
+    };
+
+    try {
+      const manifestResponse = await fetch(`${searchRoot}/manifest.json`);
+      if (!manifestResponse.ok) return;
+      const manifest = await manifestResponse.json();
+      const categoryEntry = manifest.categories?.find((entry) => entry.value === target.category);
+      if (!categoryEntry) return;
+
+      const idsResponse = await fetch(`${searchRoot}/facets/category/${categoryEntry.file}`);
+      if (!idsResponse.ok) return;
+      const categoryIds = await idsResponse.json();
+      if (!Array.isArray(categoryIds) || !categoryIds.length) return;
+
+      const sampleLimit = Math.min(240, categoryIds.length);
+      const sampledIds = [];
+      const seed = [...target.slug].reduce((hash, char) => (Math.imul(hash ^ char.charCodeAt(0), 16777619) >>> 0), 2166136261);
+      const start = categoryIds.length ? seed % categoryIds.length : 0;
+      const stride = categoryIds.length / Math.max(1, sampleLimit);
+      const seen = new Set();
+
+      for (let index = 0; index < sampleLimit; index += 1) {
+        const position = Math.floor((start + index * stride) % categoryIds.length);
+        const id = categoryIds[position];
+        if (seen.has(id)) continue;
+        seen.add(id);
+        sampledIds.push(id);
+      }
+
+      const chunkIndexes = [...new Set(sampledIds.map((id) => Math.floor(id / manifest.chunkSize)))];
+      const chunks = new Map();
+      await Promise.all(chunkIndexes.map(async (chunkIndex) => {
+        const response = await fetch(`${searchRoot}/chunks/${String(chunkIndex).padStart(4, '0')}.json`);
+        if (!response.ok) return;
+        chunks.set(chunkIndex, await response.json());
+      }));
+
+      const candidates = sampledIds
+        .map((id) => {
+          const chunkIndex = Math.floor(id / manifest.chunkSize);
+          const row = chunks.get(chunkIndex)?.[id % manifest.chunkSize];
+          return row ? expandSimilarRecord(row) : null;
+        })
+        .filter(Boolean)
+        .map((record) => ({ record, score: scoreSimilar(target, record) }))
+        .filter(({ score }) => Number.isFinite(score) && score > 0)
+        .sort((left, right) => right.score - left.score || left.record.name.localeCompare(right.record.name))
+        .slice(0, 12)
+        .map(({ record }) => record);
+
+      if (!candidates.length) return;
+      const fragment = document.createDocumentFragment();
+      for (const record of candidates) fragment.append(createSimilarCard(record));
+      similarGrid.replaceChildren(fragment);
+      similarSection.hidden = false;
+    } catch (error) {
+      console.warn('Could not load similar emoji', error);
+    }
+  };
+
+  loadSimilarEmoji();
 
   const randomGrid = document.querySelector('[data-random-grid]');
   const randomShuffle = document.querySelector('[data-random-shuffle]');

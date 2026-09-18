@@ -4,9 +4,6 @@ import EmojiDetail from '../../components/beui/EmojiDetail.astro';
 import emojis from '../../data/emojis.json';
 import { emojiCategorySlug } from '../../lib/category';
 import { withBase } from '../../lib/url';
-import { createSimilarEmojiResolver } from '../../lib/similarEmoji.mjs';
-
-const resolveSimilarEmoji = createSimilarEmojiResolver(emojis);
 
 export function getStaticPaths() {
   const fastBuild = process.env.FAST_BUILD === '1';
@@ -49,8 +46,7 @@ const normalizeIdentity = (value) => String(value || '')
   .replace(/[^a-z0-9]+/g, '');
 
 const { emoji } = Astro.props;
-const similarEmojis = resolveSimilarEmoji(emoji, 12);
-const excludedRandomIds = new Set([emoji.id, ...similarEmojis.map((item) => item.id)]);
+const excludedRandomIds = new Set([emoji.id]);
 const randomPool = [];
 const randomSeed = [...String(emoji.slug || emoji.id || emoji.name || '')]
   .reduce((hash, char) => (Math.imul(hash ^ char.charCodeAt(0), 16777619) >>> 0), 2166136261);
@@ -93,5 +89,5 @@ const keywords = [
 ].filter(Boolean);
 ---
 <Layout title={title} description={description} keywords={keywords} breadcrumbs={breadcrumbs}>
-  <EmojiDetail emoji={emoji} similarEmojis={similarEmojis} randomEmojis={randomPool} />
+  <EmojiDetail emoji={emoji} randomEmojis={randomPool} />
 </Layout>
