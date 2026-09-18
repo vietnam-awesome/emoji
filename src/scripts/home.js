@@ -210,6 +210,32 @@ if (homeSearchShell && homeSearchInput && homeSearchPanel && homeSearchList && h
     return link;
   };
 
+  const showSuggestionSkeletons = () => {
+    const fragment = document.createDocumentFragment();
+    for (let index = 0; index < 4; index += 1) {
+      const row = document.createElement('div');
+      row.className = 'home-search-skeleton';
+      row.setAttribute('aria-hidden', 'true');
+
+      const thumb = document.createElement('span');
+      thumb.className = 'home-search-skeleton-thumb';
+
+      const copy = document.createElement('span');
+      copy.className = 'home-search-skeleton-copy';
+      const title = document.createElement('span');
+      title.className = 'home-search-skeleton-line home-search-skeleton-line--title';
+      const meta = document.createElement('span');
+      meta.className = 'home-search-skeleton-line home-search-skeleton-line--meta';
+      copy.append(title, meta);
+
+      const tail = document.createElement('span');
+      tail.className = 'home-search-skeleton-tail';
+      row.append(thumb, copy, tail);
+      fragment.append(row);
+    }
+    homeSearchList.replaceChildren(fragment);
+  };
+
   const runSuggestions = async () => {
     const rawQuery = homeSearchInput.value.trim();
     const query = normalizeSearch(rawQuery);
@@ -220,7 +246,7 @@ if (homeSearchShell && homeSearchInput && homeSearchPanel && homeSearchList && h
     }
 
     const version = ++requestVersion;
-    homeSearchList.replaceChildren();
+    showSuggestionSkeletons();
     homeSearchSummary.textContent = 'Searching…';
     homeSearchAll.href = `${browseRoot}?q=${encodeURIComponent(rawQuery)}`;
     openSuggestions();
