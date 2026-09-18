@@ -1,0 +1,1813 @@
+{
+  "happy.webp": {
+    "name": "Happy",
+    "shortcode": "eplus_happy",
+    "categorySlug": "reactions",
+    "subgroup": "originals",
+    "tags": [
+      "happy",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "laugh.webp": {
+    "name": "Laugh",
+    "shortcode": "eplus_laugh",
+    "categorySlug": "reactions",
+    "subgroup": "originals",
+    "tags": [
+      "laugh",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "love.webp": {
+    "name": "Love",
+    "shortcode": "eplus_love",
+    "categorySlug": "reactions",
+    "subgroup": "originals",
+    "tags": [
+      "love",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "cool.webp": {
+    "name": "Cool",
+    "shortcode": "eplus_cool",
+    "categorySlug": "reactions",
+    "subgroup": "originals",
+    "tags": [
+      "cool",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "shock.webp": {
+    "name": "Shock",
+    "shortcode": "eplus_shock",
+    "categorySlug": "reactions",
+    "subgroup": "originals",
+    "tags": [
+      "shock",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "sleepy.webp": {
+    "name": "Sleepy",
+    "shortcode": "eplus_sleepy",
+    "categorySlug": "reactions",
+    "subgroup": "originals",
+    "tags": [
+      "sleepy",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "thinking.webp": {
+    "name": "Thinking",
+    "shortcode": "eplus_thinking",
+    "categorySlug": "reactions",
+    "subgroup": "originals",
+    "tags": [
+      "thinking",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "focus.webp": {
+    "name": "Focus",
+    "shortcode": "eplus_focus",
+    "categorySlug": "reactions",
+    "subgroup": "originals",
+    "tags": [
+      "focus",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "hype.webp": {
+    "name": "Hype",
+    "shortcode": "eplus_hype",
+    "categorySlug": "reactions",
+    "subgroup": "originals",
+    "tags": [
+      "hype",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "blue-flag.webp": {
+    "name": "Blue Flag",
+    "shortcode": "eplus_blue_flag",
+    "categorySlug": "symbols",
+    "subgroup": "originals",
+    "tags": [
+      "blue",
+      "flag",
+      "eplus",
+      "original",
+      "blob",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "smile.webp": {
+    "name": "Smile",
+    "shortcode": "eplus_smile",
+    "categorySlug": "reactions",
+    "subgroup": "originals",
+    "tags": [
+      "smile",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "thumbs-up.webp": {
+    "name": "Thumbs Up",
+    "shortcode": "eplus_thumbs_up",
+    "categorySlug": "reactions",
+    "subgroup": "originals",
+    "tags": [
+      "thumbs",
+      "up",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "shy.webp": {
+    "name": "Shy",
+    "shortcode": "eplus_shy",
+    "categorySlug": "reactions",
+    "subgroup": "originals",
+    "tags": [
+      "shy",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "wave.webp": {
+    "name": "Wave",
+    "shortcode": "eplus_wave",
+    "categorySlug": "reactions",
+    "subgroup": "originals",
+    "tags": [
+      "wave",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "cheer.webp": {
+    "name": "Cheer",
+    "shortcode": "eplus_cheer",
+    "categorySlug": "reactions",
+    "subgroup": "originals",
+    "tags": [
+      "cheer",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "heart-hug.webp": {
+    "name": "Heart Hug",
+    "shortcode": "eplus_heart_hug",
+    "categorySlug": "reactions",
+    "subgroup": "originals",
+    "tags": [
+      "heart",
+      "hug",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "kiss.webp": {
+    "name": "Kiss",
+    "shortcode": "eplus_kiss",
+    "categorySlug": "reactions",
+    "subgroup": "originals",
+    "tags": [
+      "kiss",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "grateful.webp": {
+    "name": "Grateful",
+    "shortcode": "eplus_grateful",
+    "categorySlug": "reactions",
+    "subgroup": "originals",
+    "tags": [
+      "grateful",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "blush.webp": {
+    "name": "Blush",
+    "shortcode": "eplus_blush",
+    "categorySlug": "reactions",
+    "subgroup": "originals",
+    "tags": [
+      "blush",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "fire.webp": {
+    "name": "Fire",
+    "shortcode": "eplus_fire",
+    "categorySlug": "nature",
+    "subgroup": "originals",
+    "tags": [
+      "fire",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "starry-eyes.webp": {
+    "name": "Starry Eyes",
+    "shortcode": "eplus_starry_eyes",
+    "categorySlug": "reactions",
+    "subgroup": "originals",
+    "tags": [
+      "starry",
+      "eyes",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "star.webp": {
+    "name": "Star",
+    "shortcode": "eplus_star",
+    "categorySlug": "symbols",
+    "subgroup": "originals",
+    "tags": [
+      "star",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "party.webp": {
+    "name": "Party",
+    "shortcode": "eplus_party",
+    "categorySlug": "activities",
+    "subgroup": "originals",
+    "tags": [
+      "party",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "confetti.webp": {
+    "name": "Confetti",
+    "shortcode": "eplus_confetti",
+    "categorySlug": "reactions",
+    "subgroup": "originals",
+    "tags": [
+      "confetti",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "gift.webp": {
+    "name": "Gift",
+    "shortcode": "eplus_gift",
+    "categorySlug": "objects",
+    "subgroup": "originals",
+    "tags": [
+      "gift",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "balloon.webp": {
+    "name": "Balloon",
+    "shortcode": "eplus_balloon",
+    "categorySlug": "objects",
+    "subgroup": "originals",
+    "tags": [
+      "balloon",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "coffee.webp": {
+    "name": "Coffee",
+    "shortcode": "eplus_coffee",
+    "categorySlug": "food-drink",
+    "subgroup": "originals",
+    "tags": [
+      "coffee",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "boba.webp": {
+    "name": "Boba",
+    "shortcode": "eplus_boba",
+    "categorySlug": "food-drink",
+    "subgroup": "originals",
+    "tags": [
+      "boba",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "pizza.webp": {
+    "name": "Pizza",
+    "shortcode": "eplus_pizza",
+    "categorySlug": "food-drink",
+    "subgroup": "originals",
+    "tags": [
+      "pizza",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "burger.webp": {
+    "name": "Burger",
+    "shortcode": "eplus_burger",
+    "categorySlug": "food-drink",
+    "subgroup": "originals",
+    "tags": [
+      "burger",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "fries.webp": {
+    "name": "Fries",
+    "shortcode": "eplus_fries",
+    "categorySlug": "food-drink",
+    "subgroup": "originals",
+    "tags": [
+      "fries",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "ramen.webp": {
+    "name": "Ramen",
+    "shortcode": "eplus_ramen",
+    "categorySlug": "food-drink",
+    "subgroup": "originals",
+    "tags": [
+      "ramen",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "search.webp": {
+    "name": "Search",
+    "shortcode": "eplus_search",
+    "categorySlug": "symbols",
+    "subgroup": "originals",
+    "tags": [
+      "search",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "wrench.webp": {
+    "name": "Wrench",
+    "shortcode": "eplus_wrench",
+    "categorySlug": "objects",
+    "subgroup": "originals",
+    "tags": [
+      "wrench",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "code.webp": {
+    "name": "Code",
+    "shortcode": "eplus_code",
+    "categorySlug": "objects",
+    "subgroup": "originals",
+    "tags": [
+      "code",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "idea.webp": {
+    "name": "Idea",
+    "shortcode": "eplus_idea",
+    "categorySlug": "symbols",
+    "subgroup": "originals",
+    "tags": [
+      "idea",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "check.webp": {
+    "name": "Check",
+    "shortcode": "eplus_check",
+    "categorySlug": "symbols",
+    "subgroup": "originals",
+    "tags": [
+      "check",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "target.webp": {
+    "name": "Target",
+    "shortcode": "eplus_target",
+    "categorySlug": "symbols",
+    "subgroup": "originals",
+    "tags": [
+      "target",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "404.webp": {
+    "name": "404",
+    "shortcode": "eplus_404",
+    "categorySlug": "symbols",
+    "subgroup": "originals",
+    "tags": [
+      "404",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "no.webp": {
+    "name": "No",
+    "shortcode": "eplus_no",
+    "categorySlug": "symbols",
+    "subgroup": "originals",
+    "tags": [
+      "no",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "warning.webp": {
+    "name": "Warning",
+    "shortcode": "eplus_warning",
+    "categorySlug": "symbols",
+    "subgroup": "originals",
+    "tags": [
+      "warning",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "loading.webp": {
+    "name": "Loading",
+    "shortcode": "eplus_loading",
+    "categorySlug": "symbols",
+    "subgroup": "originals",
+    "tags": [
+      "loading",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "sync.webp": {
+    "name": "Sync",
+    "shortcode": "eplus_sync",
+    "categorySlug": "symbols",
+    "subgroup": "originals",
+    "tags": [
+      "sync",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "database.webp": {
+    "name": "Database",
+    "shortcode": "eplus_database",
+    "categorySlug": "objects",
+    "subgroup": "originals",
+    "tags": [
+      "database",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "cloud.webp": {
+    "name": "Cloud",
+    "shortcode": "eplus_cloud",
+    "categorySlug": "objects",
+    "subgroup": "originals",
+    "tags": [
+      "cloud",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "upload.webp": {
+    "name": "Upload",
+    "shortcode": "eplus_upload",
+    "categorySlug": "objects",
+    "subgroup": "originals",
+    "tags": [
+      "upload",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "rocket.webp": {
+    "name": "Rocket",
+    "shortcode": "eplus_rocket",
+    "categorySlug": "travel-places",
+    "subgroup": "originals",
+    "tags": [
+      "rocket",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "server.webp": {
+    "name": "Server",
+    "shortcode": "eplus_server",
+    "categorySlug": "objects",
+    "subgroup": "originals",
+    "tags": [
+      "server",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "rainy.webp": {
+    "name": "Rainy",
+    "shortcode": "eplus_rainy",
+    "categorySlug": "nature",
+    "subgroup": "originals",
+    "tags": [
+      "rainy",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "umbrella.webp": {
+    "name": "Umbrella",
+    "shortcode": "eplus_umbrella",
+    "categorySlug": "objects",
+    "subgroup": "originals",
+    "tags": [
+      "umbrella",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "sunny.webp": {
+    "name": "Sunny",
+    "shortcode": "eplus_sunny",
+    "categorySlug": "nature",
+    "subgroup": "originals",
+    "tags": [
+      "sunny",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "cloudy.webp": {
+    "name": "Cloudy",
+    "shortcode": "eplus_cloudy",
+    "categorySlug": "nature",
+    "subgroup": "originals",
+    "tags": [
+      "cloudy",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "storm.webp": {
+    "name": "Storm",
+    "shortcode": "eplus_storm",
+    "categorySlug": "nature",
+    "subgroup": "originals",
+    "tags": [
+      "storm",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "cold.webp": {
+    "name": "Cold",
+    "shortcode": "eplus_cold",
+    "categorySlug": "nature",
+    "subgroup": "originals",
+    "tags": [
+      "cold",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "warm.webp": {
+    "name": "Warm",
+    "shortcode": "eplus_warm",
+    "categorySlug": "nature",
+    "subgroup": "originals",
+    "tags": [
+      "warm",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "temperature.webp": {
+    "name": "Temperature",
+    "shortcode": "eplus_temperature",
+    "categorySlug": "nature",
+    "subgroup": "originals",
+    "tags": [
+      "temperature",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "bundled-up.webp": {
+    "name": "Bundled Up",
+    "shortcode": "eplus_bundled_up",
+    "categorySlug": "objects",
+    "subgroup": "originals",
+    "tags": [
+      "bundled",
+      "up",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "windy.webp": {
+    "name": "Windy",
+    "shortcode": "eplus_windy",
+    "categorySlug": "nature",
+    "subgroup": "originals",
+    "tags": [
+      "windy",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "rainbow.webp": {
+    "name": "Rainbow",
+    "shortcode": "eplus_rainbow",
+    "categorySlug": "nature",
+    "subgroup": "originals",
+    "tags": [
+      "rainbow",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "headphones.webp": {
+    "name": "Headphones",
+    "shortcode": "eplus_headphones",
+    "categorySlug": "objects",
+    "subgroup": "originals",
+    "tags": [
+      "headphones",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "guitar.webp": {
+    "name": "Guitar",
+    "shortcode": "eplus_guitar",
+    "categorySlug": "objects",
+    "subgroup": "originals",
+    "tags": [
+      "guitar",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "camera.webp": {
+    "name": "Camera",
+    "shortcode": "eplus_camera",
+    "categorySlug": "objects",
+    "subgroup": "originals",
+    "tags": [
+      "camera",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "photo.webp": {
+    "name": "Photo",
+    "shortcode": "eplus_photo",
+    "categorySlug": "objects",
+    "subgroup": "originals",
+    "tags": [
+      "photo",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "map.webp": {
+    "name": "Map",
+    "shortcode": "eplus_map",
+    "categorySlug": "travel-places",
+    "subgroup": "originals",
+    "tags": [
+      "map",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "travel.webp": {
+    "name": "Travel",
+    "shortcode": "eplus_travel",
+    "categorySlug": "travel-places",
+    "subgroup": "originals",
+    "tags": [
+      "travel",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "airplane.webp": {
+    "name": "Airplane",
+    "shortcode": "eplus_airplane",
+    "categorySlug": "travel-places",
+    "subgroup": "originals",
+    "tags": [
+      "airplane",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "train.webp": {
+    "name": "Train",
+    "shortcode": "eplus_train",
+    "categorySlug": "travel-places",
+    "subgroup": "originals",
+    "tags": [
+      "train",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "car.webp": {
+    "name": "Car",
+    "shortcode": "eplus_car",
+    "categorySlug": "travel-places",
+    "subgroup": "originals",
+    "tags": [
+      "car",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "phone.webp": {
+    "name": "Phone",
+    "shortcode": "eplus_phone",
+    "categorySlug": "objects",
+    "subgroup": "originals",
+    "tags": [
+      "phone",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "chat.webp": {
+    "name": "Chat",
+    "shortcode": "eplus_chat",
+    "categorySlug": "objects",
+    "subgroup": "originals",
+    "tags": [
+      "chat",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "mail.webp": {
+    "name": "Mail",
+    "shortcode": "eplus_mail",
+    "categorySlug": "objects",
+    "subgroup": "originals",
+    "tags": [
+      "mail",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "document.webp": {
+    "name": "Document",
+    "shortcode": "eplus_document",
+    "categorySlug": "objects",
+    "subgroup": "originals",
+    "tags": [
+      "document",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "clipboard.webp": {
+    "name": "Clipboard",
+    "shortcode": "eplus_clipboard",
+    "categorySlug": "objects",
+    "subgroup": "originals",
+    "tags": [
+      "clipboard",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "calendar.webp": {
+    "name": "Calendar",
+    "shortcode": "eplus_calendar",
+    "categorySlug": "objects",
+    "subgroup": "originals",
+    "tags": [
+      "calendar",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "clock.webp": {
+    "name": "Clock",
+    "shortcode": "eplus_clock",
+    "categorySlug": "objects",
+    "subgroup": "originals",
+    "tags": [
+      "clock",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "money.webp": {
+    "name": "Money",
+    "shortcode": "eplus_money",
+    "categorySlug": "objects",
+    "subgroup": "originals",
+    "tags": [
+      "money",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "shopping.webp": {
+    "name": "Shopping",
+    "shortcode": "eplus_shopping",
+    "categorySlug": "objects",
+    "subgroup": "originals",
+    "tags": [
+      "shopping",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "home.webp": {
+    "name": "Home",
+    "shortcode": "eplus_home",
+    "categorySlug": "travel-places",
+    "subgroup": "originals",
+    "tags": [
+      "home",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "wide-eyes.webp": {
+    "name": "Wide Eyes",
+    "shortcode": "eplus_wide_eyes",
+    "categorySlug": "reactions",
+    "subgroup": "originals",
+    "tags": [
+      "wide",
+      "eyes",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "soft-smile.webp": {
+    "name": "Soft Smile",
+    "shortcode": "eplus_soft_smile",
+    "categorySlug": "reactions",
+    "subgroup": "originals",
+    "tags": [
+      "soft",
+      "smile",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "angry.webp": {
+    "name": "Angry",
+    "shortcode": "eplus_angry",
+    "categorySlug": "reactions",
+    "subgroup": "originals",
+    "tags": [
+      "angry",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "worried.webp": {
+    "name": "Worried",
+    "shortcode": "eplus_worried",
+    "categorySlug": "reactions",
+    "subgroup": "originals",
+    "tags": [
+      "worried",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "crying.webp": {
+    "name": "Crying",
+    "shortcode": "eplus_crying",
+    "categorySlug": "reactions",
+    "subgroup": "originals",
+    "tags": [
+      "crying",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "sobbing.webp": {
+    "name": "Sobbing",
+    "shortcode": "eplus_sobbing",
+    "categorySlug": "reactions",
+    "subgroup": "originals",
+    "tags": [
+      "sobbing",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "pleading.webp": {
+    "name": "Pleading",
+    "shortcode": "eplus_pleading",
+    "categorySlug": "reactions",
+    "subgroup": "originals",
+    "tags": [
+      "pleading",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "celebrate.webp": {
+    "name": "Celebrate",
+    "shortcode": "eplus_celebrate",
+    "categorySlug": "reactions",
+    "subgroup": "originals",
+    "tags": [
+      "celebrate",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "cheers.webp": {
+    "name": "Cheers",
+    "shortcode": "eplus_cheers",
+    "categorySlug": "food-drink",
+    "subgroup": "originals",
+    "tags": [
+      "cheers",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "star-hug.webp": {
+    "name": "Star Hug",
+    "shortcode": "eplus_star_hug",
+    "categorySlug": "reactions",
+    "subgroup": "originals",
+    "tags": [
+      "star",
+      "hug",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "lucky.webp": {
+    "name": "Lucky",
+    "shortcode": "eplus_lucky",
+    "categorySlug": "other",
+    "subgroup": "originals",
+    "tags": [
+      "lucky",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "content.webp": {
+    "name": "Content",
+    "shortcode": "eplus_content",
+    "categorySlug": "reactions",
+    "subgroup": "originals",
+    "tags": [
+      "content",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "cuddle.webp": {
+    "name": "Cuddle",
+    "shortcode": "eplus_cuddle",
+    "categorySlug": "reactions",
+    "subgroup": "originals",
+    "tags": [
+      "cuddle",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "happy-smile.webp": {
+    "name": "Happy Smile",
+    "shortcode": "eplus_happy_smile",
+    "categorySlug": "reactions",
+    "subgroup": "originals",
+    "tags": [
+      "happy",
+      "smile",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "heart.webp": {
+    "name": "Heart",
+    "shortcode": "eplus_heart",
+    "categorySlug": "reactions",
+    "subgroup": "originals",
+    "tags": [
+      "heart",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "dizzy.webp": {
+    "name": "Dizzy",
+    "shortcode": "eplus_dizzy",
+    "categorySlug": "reactions",
+    "subgroup": "originals",
+    "tags": [
+      "dizzy",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "sparkly-eyes.webp": {
+    "name": "Sparkly Eyes",
+    "shortcode": "eplus_sparkly_eyes",
+    "categorySlug": "reactions",
+    "subgroup": "originals",
+    "tags": [
+      "sparkly",
+      "eyes",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "joy.webp": {
+    "name": "Joy",
+    "shortcode": "eplus_joy",
+    "categorySlug": "reactions",
+    "subgroup": "originals",
+    "tags": [
+      "joy",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "silly.webp": {
+    "name": "Silly",
+    "shortcode": "eplus_silly",
+    "categorySlug": "reactions",
+    "subgroup": "originals",
+    "tags": [
+      "silly",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "sunglasses.webp": {
+    "name": "Sunglasses",
+    "shortcode": "eplus_sunglasses",
+    "categorySlug": "reactions",
+    "subgroup": "originals",
+    "tags": [
+      "sunglasses",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "vietnam-flag.webp": {
+    "name": "Vietnam Flag",
+    "shortcode": "eplus_vietnam_flag",
+    "categorySlug": "symbols",
+    "subgroup": "originals",
+    "tags": [
+      "vietnam",
+      "flag",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  },
+  "sleepy-blush.webp": {
+    "name": "Sleepy Blush",
+    "shortcode": "eplus_sleepy_blush",
+    "categorySlug": "reactions",
+    "subgroup": "originals",
+    "tags": [
+      "sleepy",
+      "blush",
+      "eplus",
+      "original",
+      "blob",
+      "blue",
+      "3d",
+      "custom-emoji"
+    ],
+    "sourceUrl": "https://emoji.eplus.dev/",
+    "license": "ePlus original artwork",
+    "attribution": "ePlus Emoji"
+  }
+}
