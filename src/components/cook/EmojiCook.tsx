@@ -2,10 +2,13 @@
 
 import {
   ArrowLeftRight,
+  Check,
   Copy,
   Download,
+  Link2,
   Pencil,
   Search,
+  Share2,
   Shuffle,
   Sparkles,
 } from 'lucide-react';
@@ -145,6 +148,9 @@ const FORMATS: Array<{ value: ExportFormat; label: string }> = [
   { value: 'webp', label: 'WebP' },
 ];
 
+const CATEGORIES = ['All', ...Array.from(new Set(EMOJI_POOL.map((item) => item.category)))];
+const VISUAL_STRATEGIES = STRATEGIES.filter((item) => item.value !== 'auto');
+
 const AUTO_STRATEGIES: CookStrategy[] = ['stack', 'wear', 'badge', 'split', 'surround', 'inside', 'repeat'];
 
 function hashString(value: string) {
@@ -281,166 +287,24 @@ function canvasBlob(canvas: HTMLCanvasElement, format: ExportFormat) {
   });
 }
 
-export default function EmojiCook({ editorUrl }: Props) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [first, setFirst] = useState<CookEmoji>(EMOJI_POOL.find((item) => item.emoji === '😎') ?? EMOJI_POOL[0]);
-  const [second, setSecond] = useState<CookEmoji>(EMOJI_POOL.find((item) => item.emoji === '🔥') ?? EMOJI_POOL[1]);
-  const [activeSlot, setActiveSlot] = useState<IngredientSlot>('first');
-  const [strategy, setStrategy] = useState<CookStrategy>('auto');
-  const [background, setBackground] = useState<CookBackground>('transparent');
-  const [format, setFormat] = useState<ExportFormat>('png');
-  const [query, setQuery] = useState('');
-  const [tab, setTab] = useState('pick');
-  const [status, setStatus] = useState('');
-  const [error, setError] = useState('');
-  const [initialized, setInitialized] = useState(false);
+function RecipePreview({
+  first,
+  second,
+  strategy,
+  background = 'transparent',
+  label,
+}: {
+  first: CookEmoji;
+  second: CookEmoji;
+  strategy: CookStrategy;
+  background?: CookBackground;
+  label?: string;
+}) {
+  const ref = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const queryFirst = findEmoji(params.get('a'));
-    const querySecond = findEmoji(params.get('b'));
-    const queryStrategy = params.get('style') as CookStrategy | null;
-    const queryBackground = params.get('bg') as CookBackground | null;
-    if (queryFirst) setFirst(queryFirst);
-    if (querySecond) setSecond(querySecond);
-    if (queryStrategy && STRATEGIES.some((item) => item.value === queryStrategy)) setStrategy(queryStrategy);
-    if (queryBackground && BACKGROUNDS.some((item) => item.value === queryBackground)) setBackground(queryBackground);
-    setInitialized(true);
-  }, []);
-
-  const resolvedStrategy = useMemo(
-    () => resolveStrategy(strategy, first.emoji, second.emoji),
-    [strategy, first.emoji, second.emoji],
-  );
-
-  useEffect(() => {
-    if (!canvasRef.current) return;
-    renderRecipe(canvasRef.current, first, second, strategy, background);
+    if (ref.current) renderRecipe(ref.current, first, second, strategy, background);
   }, [first, second, strategy, background]);
-
-  useEffect(() => {
-    if (!initialized) return;
-    const url = new URL(window.location.href);
-    url.searchParams.set('a', first.emoji);
-    url.searchParams.set('b', second.emoji);
-    if (strategy === 'auto') url.searchParams.delete('style');
-    else url.searchParams.set('style', strategy);
-    if (background === 'transparent') url.searchParams.delete('bg');
-    else url.searchParams.set('bg', background);
-    window.history.replaceState({}, '', url);
-  }, [initialized, first, second, strategy, background]);
-
-  const filteredEmoji = useMemo(() => {
-    const needle = query.trim().toLowerCase();
-    if (!needle) return EMOJI_POOL;
-    return EMOJI_POOL.filter((item) =>
-      `${item.emoji} ${item.label} ${item.category} ${item.keywords}`.toLowerCase().includes(needle),
-    );
-  }, [query]);
-
-  const exploreEmoji = useMemo(() => EMOJI_POOL
-    .filter((item) => item.emoji !== first.emoji)
-    .map((item) => ({ item, score: hashString(`${first.emoji}:${item.emoji}:explore`) }))
-    .sort((a, b) => a.score - b.score)
-    .slice(0, 16)
-    .map(({ item }) => item), [first.emoji]);
-
-  const chooseIngredient = (item: CookEmoji) => {
-    if (activeSlot === 'first') setFirst(item);
-    else setSecond(item);
-    setStatus(`${item.label} added as ${activeSlot === 'first' ? 'ingredient A' : 'ingredient B'}.`);
-    setError('');
-  };
-
-  const swapIngredients = () => {
-    setFirst(second);
-    setSecond(first);
-    setStatus('Ingredients swapped.');
-    setError('');
-  };
-
-  const randomize = () => {
-    const firstIndex = Math.floor(Math.random() * EMOJI_POOL.length);
-    let secondIndex = Math.floor(Math.random() * EMOJI_POOL.length);
-    if (secondIndex === firstIndex) secondIndex = (secondIndex + 1) % EMOJI_POOL.length;
-    setFirst(EMOJI_POOL[firstIndex]);
-    setSecond(EMOJI_POOL[secondIndex]);
-    setStrategy('auto');
-    setStatus('Fresh recipe generated.');
-    setError('');
-  };
-
-  const download = async () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    try {
-      setError('');
-      const blob = await canvasBlob(canvas, format);
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      const stem = `cook-${slugify(first.label)}-${slugify(second.label)}`;
-      link.href = url;
-      link.download = `${stem}.${format}`;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.setTimeout(() => URL.revokeObjectURL(url), 1200);
-      setStatus(`Downloaded ${format.toUpperCase()} · ${CANVAS_SIZE}×${CANVAS_SIZE}.`);
-    } catch (reason) {
-      setStatus('');
-      setError(reason instanceof Error ? reason.message : 'Download failed.');
-    }
-  };
-
-  const copyImage = async () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    try {
-      if (!('ClipboardItem' in window) || !navigator.clipboard?.write) {
-        throw new Error('Image copy is not supported in this browser. Use Download instead.');
-      }
-      const blob = await canvasBlob(canvas, 'png');
-      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-      setError('');
-      setStatus('Cooked emoji copied as PNG.');
-    } catch (reason) {
-      setStatus('');
-      setError(reason instanceof Error ? reason.message : 'Copy failed.');
-    }
-  };
-
-  const copyLink = async () => {
-    try {
-      if (!navigator.clipboard?.writeText) throw new Error('Link copy is not supported in this browser.');
-      await navigator.clipboard.writeText(window.location.href);
-      setError('');
-      setStatus('Recipe link copied.');
-    } catch (reason) {
-      setStatus('');
-      setError(reason instanceof Error ? reason.message : 'Unable to copy this recipe link.');
-    }
-  };
-
-  const editInEditor = () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    try {
-      const name = `cook-${slugify(first.label)}-${slugify(second.label)}.png`;
-      sessionStorage.setItem(EDITOR_HANDOFF_KEY, canvas.toDataURL('image/png'));
-      sessionStorage.setItem(EDITOR_HANDOFF_NAME_KEY, name);
-      window.location.href = `${editorUrl}?handoff=cook`;
-    } catch {
-      setError('The cooked emoji could not be handed off to the editor. Download it and upload it there instead.');
-    }
-  };
-
-  const applyExplore = (item: CookEmoji) => {
-    setSecond(item);
-    setActiveSlot('second');
-    setTab('pick');
-    setStatus(`${first.label} + ${item.label} is ready to cook.`);
-    setError('');
-  };
 
   return (
     <div className="cook-page" data-cook-strategy={resolvedStrategy}>
@@ -449,64 +313,95 @@ export default function EmojiCook({ editorUrl }: Props) {
         <div className="cook-hero-row">
           <div>
             <h1>Cook emoji</h1>
-            <p>Pick two Unicode emoji, choose a recipe style, then export a fresh mashup locally in your browser.</p>
+            <p>Choose two emoji and get an instant mashup. Pick a different style only when you want a variation.</p>
           </div>
           <Button variant="secondary" size="md" ripple onClick={randomize}>
             <Shuffle className="size-4" aria-hidden="true" />
-            Random cook
+            Surprise me
           </Button>
         </div>
         <div className="cook-hero-meta" aria-label="Emoji Cook capabilities">
           <span>No upload</span>
+          <span>Instant preview</span>
           <span>PNG + WebP</span>
-          <span>Shareable recipes</span>
           <span>Edit result</span>
         </div>
       </header>
 
+      <section className="cook-equation" aria-label="Current emoji combination">
+        <button
+          type="button"
+          className={`cook-equation-slot${activeSlot === 'first' ? ' is-active' : ''}`}
+          aria-pressed={activeSlot === 'first'}
+          onClick={() => {
+            setActiveSlot('first');
+            setTab('pick');
+          }}
+        >
+          <span>Emoji A</span>
+          <strong aria-hidden="true">{first.emoji}</strong>
+          <small>{first.label}</small>
+        </button>
+        <span className="cook-equation-operator" aria-hidden="true">+</span>
+        <button
+          type="button"
+          className={`cook-equation-slot${activeSlot === 'second' ? ' is-active' : ''}`}
+          aria-pressed={activeSlot === 'second'}
+          onClick={() => {
+            setActiveSlot('second');
+            setTab('pick');
+          }}
+        >
+          <span>Emoji B</span>
+          <strong aria-hidden="true">{second.emoji}</strong>
+          <small>{second.label}</small>
+        </button>
+        <span className="cook-equation-operator cook-equation-equals" aria-hidden="true">=</span>
+        <button
+          type="button"
+          className="cook-equation-result"
+          onClick={() => document.querySelector('.cook-result')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+          aria-label="Jump to cooked result"
+        >
+          <RecipePreview
+            first={first}
+            second={second}
+            strategy={strategy}
+            background={background}
+            label="Current cooked emoji preview"
+          />
+          <span>Result</span>
+        </button>
+        <Button
+          variant="secondary"
+          size="icon"
+          ripple
+          className="cook-swap cook-equation-swap"
+          aria-label="Swap ingredients"
+          onClick={swapIngredients}
+        >
+          <ActionSwapIcon value={`${first.emoji}:${second.emoji}`} animation="roll" className="size-4">
+            <ArrowLeftRight className="size-4" aria-hidden="true" />
+          </ActionSwapIcon>
+        </Button>
+      </section>
+
       <div className="cook-workspace">
         <section className="cook-builder" aria-label="Emoji ingredients and recipe controls">
-          <div className="cook-ingredients">
-            <button
-              type="button"
-              className={`cook-ingredient${activeSlot === 'first' ? ' is-active' : ''}`}
-              aria-pressed={activeSlot === 'first'}
-              onClick={() => setActiveSlot('first')}
-            >
-              <span className="cook-ingredient-kicker">Ingredient A</span>
-              <span className="cook-ingredient-emoji" aria-hidden="true">{first.emoji}</span>
-              <strong>{first.label}</strong>
-            </button>
-
-            <Button
-              variant="secondary"
-              size="icon"
-              ripple
-              className="cook-swap"
-              aria-label="Swap ingredients"
-              onClick={swapIngredients}
-            >
-              <ActionSwapIcon value={`${first.emoji}:${second.emoji}`} animation="roll" className="size-4">
-                <ArrowLeftRight className="size-4" aria-hidden="true" />
-              </ActionSwapIcon>
+          <div className="cook-picker-topline">
+            <div>
+              <span className="section-kicker">Choose ingredient {activeSlot === 'first' ? 'A' : 'B'}</span>
+              <h2>{activeSlot === 'first' ? first.emoji : second.emoji} {activeSlot === 'first' ? first.label : second.label}</h2>
+            </div>
+            <Button variant="ghost" size="sm" onClick={() => setActiveSlot(activeSlot === 'first' ? 'second' : 'first')}>
+              Switch to {activeSlot === 'first' ? 'B' : 'A'}
             </Button>
-
-            <button
-              type="button"
-              className={`cook-ingredient${activeSlot === 'second' ? ' is-active' : ''}`}
-              aria-pressed={activeSlot === 'second'}
-              onClick={() => setActiveSlot('second')}
-            >
-              <span className="cook-ingredient-kicker">Ingredient B</span>
-              <span className="cook-ingredient-emoji" aria-hidden="true">{second.emoji}</span>
-              <strong>{second.label}</strong>
-            </button>
           </div>
 
           <Tabs value={tab} onValueChange={setTab} variant="segment" className="cook-tabs">
-            <TabsList aria-label="Emoji Cook picker mode" className="cook-tabs-list">
-              <TabsTrigger value="pick">Pick emoji</TabsTrigger>
-              <TabsTrigger value="explore">Explore recipes</TabsTrigger>
+            <TabsList aria-label="Emoji Cook mode" className="cook-tabs-list">
+              <TabsTrigger value="pick">Choose emoji</TabsTrigger>
+              <TabsTrigger value="explore">Combos</TabsTrigger>
             </TabsList>
 
             <TabsContent value="pick" className="cook-tab-panel">
@@ -514,14 +409,23 @@ export default function EmojiCook({ editorUrl }: Props) {
                 type="search"
                 value={query}
                 onChange={setQuery}
-                placeholder={`Search ingredient ${activeSlot === 'first' ? 'A' : 'B'}`}
+                placeholder="Search smile, cat, fire, food…"
                 aria-label={`Search ingredient ${activeSlot === 'first' ? 'A' : 'B'}`}
                 leftIcon={<Search aria-hidden="true" />}
                 className="cook-search"
               />
+
+              <Tabs value={category} onValueChange={setCategory} variant="pill" className="cook-category-tabs">
+                <TabsList aria-label="Emoji categories" className="cook-category-list">
+                  {CATEGORIES.map((item) => (
+                    <TabsTrigger key={item} value={item}>{item}</TabsTrigger>
+                  ))}
+                </TabsList>
+              </Tabs>
+
               <div className="cook-picker-heading">
                 <span>{filteredEmoji.length} emoji</span>
-                <span>Picking {activeSlot === 'first' ? 'ingredient A' : 'ingredient B'}</span>
+                <span>Tap one to set {activeSlot === 'first' ? 'A' : 'B'}</span>
               </div>
               <div className="cook-picker-grid" role="list" aria-label="Available emoji ingredients">
                 {filteredEmoji.map((item) => {
@@ -542,16 +446,16 @@ export default function EmojiCook({ editorUrl }: Props) {
                   );
                 })}
               </div>
-              {!filteredEmoji.length ? <p className="cook-empty">No matching ingredient. Try a broader keyword.</p> : null}
+              {!filteredEmoji.length ? <p className="cook-empty">No matching emoji in this category. Clear the search or choose All.</p> : null}
             </TabsContent>
 
             <TabsContent value="explore" className="cook-tab-panel">
               <div className="cook-explore-copy">
                 <div>
-                  <span className="section-kicker">Explore with {first.emoji}</span>
-                  <h2>Try another ingredient</h2>
+                  <span className="section-kicker">Combos with {first.emoji}</span>
+                  <h2>See the result before choosing</h2>
                 </div>
-                <p>These recipes are generated from the local Unicode ingredient set. Pick one to return to the cooker.</p>
+                <p>Unlike the first version, these cards render the actual local recipe preview instead of showing only A + B.</p>
               </div>
               <div className="cook-recipe-grid">
                 {exploreEmoji.map((item) => (
@@ -562,8 +466,11 @@ export default function EmojiCook({ editorUrl }: Props) {
                     onClick={() => applyExplore(item)}
                     aria-label={`Cook ${first.label} with ${item.label}`}
                   >
-                    <span className="cook-recipe-glyphs" aria-hidden="true">{first.emoji}<b>+</b>{item.emoji}</span>
-                    <span>{item.label}</span>
+                    <span className="cook-combo-preview">
+                      <RecipePreview first={first} second={item} strategy="auto" />
+                    </span>
+                    <span className="cook-recipe-pair" aria-hidden="true">{first.emoji} + {item.emoji}</span>
+                    <strong>{item.label}</strong>
                     <small>{resolveStrategy('auto', first.emoji, item.emoji)}</small>
                   </button>
                 ))}
@@ -600,12 +507,31 @@ export default function EmojiCook({ editorUrl }: Props) {
               </Select>
             </div>
           </div>
+
+          <div className="cook-style-previews" aria-label="Recipe style previews">
+            {VISUAL_STRATEGIES.map((item) => {
+              const active = strategy === item.value || (strategy === 'auto' && resolvedStrategy === item.value);
+              return (
+                <button
+                  key={item.value}
+                  type="button"
+                  className={`cook-style-preview${active ? ' is-active' : ''}`}
+                  onClick={() => setStrategy(item.value)}
+                  aria-pressed={active}
+                >
+                  <RecipePreview first={first} second={second} strategy={item.value} background={background} />
+                  <span>{item.label}</span>
+                  {active ? <Check className="size-3" aria-hidden="true" /> : null}
+                </button>
+              );
+            })}
+          </div>
         </section>
 
         <aside className="cook-result" aria-label="Cooked emoji preview">
           <div className="cook-result-heading">
             <div>
-              <span className="section-kicker">Fresh from the cooker</span>
+              <span className="section-kicker">Cooked result</span>
               <h2>{first.emoji} + {second.emoji}</h2>
             </div>
             <span className="cook-strategy-badge"><Sparkles className="size-3" aria-hidden="true" /> {resolvedStrategy}</span>
@@ -620,22 +546,30 @@ export default function EmojiCook({ editorUrl }: Props) {
             />
           </div>
 
+          <div className="cook-result-meta" aria-label="Output details">
+            <span>512 × 512</span>
+            <span>{background}</span>
+            <span>{format.toUpperCase()}</span>
+          </div>
+
           <div className="cook-result-actions">
-            <Button variant="primary" size="md" ripple onClick={editInEditor}>
-              <Pencil className="size-4" aria-hidden="true" />
-              Edit result
-            </Button>
-            <Button variant="secondary" size="md" ripple onClick={download}>
+            <Button variant="primary" size="md" ripple onClick={download}>
               <Download className="size-4" aria-hidden="true" />
-              Download {format.toUpperCase()}
+              Download
+            </Button>
+            <Button variant="secondary" size="md" ripple onClick={editInEditor}>
+              <Pencil className="size-4" aria-hidden="true" />
+              Edit
             </Button>
             <Button variant="secondary" size="md" ripple onClick={copyImage}>
               <Copy className="size-4" aria-hidden="true" />
               Copy PNG
             </Button>
-            <Button variant="ghost" size="md" onClick={copyLink}>
-              <ArrowLeftRight className="size-4" aria-hidden="true" />
-              Copy recipe link
+            <Button variant="ghost" size="md" onClick={shareRecipe}>
+              {typeof navigator !== 'undefined' && navigator.share
+                ? <Share2 className="size-4" aria-hidden="true" />
+                : <Link2 className="size-4" aria-hidden="true" />}
+              Share
             </Button>
           </div>
 
@@ -643,7 +577,7 @@ export default function EmojiCook({ editorUrl }: Props) {
           {error ? <p className="cook-error" role="alert">{error}</p> : null}
 
           <p className="cook-local-note">
-            Emoji Cook renders standard Unicode emoji with your browser/device emoji font. It does not remix third-party catalog artwork, and the generated image stays on your device unless you choose to share it.
+            This tool composes standard Unicode emoji locally with your browser's emoji renderer. It does not copy Google Emoji Kitchen artwork or remix third-party catalog assets.
           </p>
         </aside>
       </div>
