@@ -68,6 +68,8 @@ interface Props {
 const PRESETS = [32, 64, 128, 256, 512];
 const GIF_SPEEDS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2, 3];
 const MAX_GIF_DECODE_PIXELS = 18_000_000;
+const EDITOR_HANDOFF_KEY = 'eplus-emoji-editor-handoff';
+const EDITOR_HANDOFF_NAME_KEY = 'eplus-emoji-editor-handoff-name';
 const DEFAULTS: Settings = {
   size: 128,
   padding: 8,
@@ -338,13 +340,51 @@ export default function EmojiEditor({ browseUrl }: Props) {
   }, [loadBlob]);
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const src = params.get('src');
-    if (src) void loadRemote(src, params.get('name') || 'emoji', params.get('animated') === '1');
+    let cancelled = false;
+
+    const loadInitialSource = async () => {
+      const params = new URLSearchParams(window.location.search);
+      const src = params.get('src');
+      if (src) {
+        await loadRemote(src, params.get('name') || 'emoji', params.get('animated') === '1');
+        return;
+      }
+
+      if (params.get('handoff') !== 'cook') return;
+
+      try {
+        const dataUrl = sessionStorage.getItem(EDITOR_HANDOFF_KEY);
+        const name = sessionStorage.getItem(EDITOR_HANDOFF_NAME_KEY) || 'cooked-emoji.png';
+        if (!dataUrl) throw new Error('The cooked emoji handoff expired. Return to Emoji Cook and choose Edit again.');
+
+        setLoading(true);
+        setError('');
+        const response = await fetch(dataUrl);
+        if (!response.ok) throw new Error('The cooked emoji could not be opened.');
+        const blob = await response.blob();
+        if (cancelled) return;
+        await loadBlob(blob, name, false);
+
+        sessionStorage.removeItem(EDITOR_HANDOFF_KEY);
+        sessionStorage.removeItem(EDITOR_HANDOFF_NAME_KEY);
+        const cleanUrl = new URL(window.location.href);
+        cleanUrl.searchParams.delete('handoff');
+        window.history.replaceState({}, '', cleanUrl);
+      } catch (reason) {
+        if (!cancelled) {
+          setError(reason instanceof Error ? reason.message : 'Unable to open the cooked emoji.');
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    void loadInitialSource();
     return () => {
+      cancelled = true;
       if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
     };
-  }, [loadRemote]);
+  }, [loadRemote, loadBlob]);
 
   useEffect(() => {
     const stage = stageRef.current;
