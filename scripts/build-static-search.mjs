@@ -81,10 +81,7 @@ function compactRecord(record) {
     h: String(record.hexcode || ''),
     co: String(record.collection || ''),
     st: String(record.style || ''),
-    tp: Array.isArray(record.topics) ? record.topics.slice(0, 12) : [],
-    li: String(record.license || ''),
-    at: String(record.attribution || ''),
-    su: String(record.sourceUrl || '')
+    tp: Array.isArray(record.topics) ? record.topics.slice(0, 12) : []
   };
 }
 
