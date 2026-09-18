@@ -132,11 +132,11 @@
 
 .gif-frame-card-top [role="checkbox"][data-state="checked"] svg,
 .gif-frame-current-checkbox [role="checkbox"][data-state="checked"] svg {
-  width: 13px;
-  height: 13px;
+  width: 18px;
+  height: 18px;
   color: #111 !important;
   stroke: #111 !important;
-  stroke-width: 3.2;
+  stroke-width: 4;
 }
 
 .gif-frame-card-top [role="checkbox"][data-state="unchecked"],
