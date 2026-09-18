@@ -141,12 +141,23 @@ const browseSelects = [
 
     <div class="catalog-results-stage" id="catalog-results-stage">
       <div class="catalog-loading-overlay" id="catalog-loading-overlay" role="status" aria-live="polite" hidden>
-        <div class="catalog-loading-card">
-          <span class="catalog-loading-spinner" aria-hidden="true"></span>
-          <span class="catalog-loading-copy">
+        <div class="catalog-loading-shell">
+          <div class="catalog-loading-copy">
             <strong id="catalog-loading-title">Searching emoji…</strong>
             <span id="catalog-loading-detail">Loading the matching search shard and results.</span>
-          </span>
+          </div>
+          <div class="catalog-skeleton-grid" aria-hidden="true">
+            {Array.from({ length: 12 }).map(() => (
+              <div class="catalog-skeleton-card">
+                <div class="catalog-skeleton-media"></div>
+                <div class="catalog-skeleton-body">
+                  <span class="catalog-skeleton-line catalog-skeleton-line--title"></span>
+                  <span class="catalog-skeleton-line"></span>
+                  <span class="catalog-skeleton-line catalog-skeleton-line--meta"></span>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
