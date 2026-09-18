@@ -4,6 +4,7 @@ import test from 'node:test';
 
 const editorPage = await readFile(new URL('../src/pages/editor.astro', import.meta.url), 'utf8');
 const editorClient = await readFile(new URL('../src/components/editor/EmojiEditor.tsx', import.meta.url), 'utf8');
+const editorCss = await readFile(new URL('../src/styles/editor.css', import.meta.url), 'utf8');
 const frameTimeline = await readFile(new URL('../src/components/editor/GifFrameTimeline.tsx', import.meta.url), 'utf8');
 const detail = await readFile(new URL('../src/components/beui/EmojiDetail.astro', import.meta.url), 'utf8');
 const sitemap = await readFile(new URL('../src/pages/sitemap-static.xml.js', import.meta.url), 'utf8');
@@ -69,4 +70,14 @@ test('emoji detail exposes an editor action and preserves animated source hint',
 
 test('editor is discoverable to crawlers', () => {
   assert.match(sitemap, /\$\{SITE\}\/editor/);
+});
+
+test('editor preview stays at native output size instead of being stretched to the stage', () => {
+  assert.match(editorClient, /--editor-preview-size/);
+  assert.match(editorClient, /window\.devicePixelRatio/);
+  assert.match(editorClient, /settings\.size \* pixelRatio/);
+  assert.match(editorClient, /Preview <strong>1:1 max<\/strong>/);
+  assert.match(editorCss, /width: min\(100%, var\(--editor-preview-size, 128px\)\)/);
+  assert.match(editorCss, /width: var\(--editor-preview-size, 128px\)/);
+  assert.doesNotMatch(editorCss, /\.editor-checkerboard \{\s*width: 100%;/);
 });
