@@ -127,7 +127,37 @@ async function discoverTagUrls(page) {
     tags.set(info.slug.toLowerCase(), info);
   }
 
-  const discovered = [...tags.values()].sort((a, b) => a.name.localeCompare(b.name));
+  let discovered = [...tags.values()].sort((a, b) => a.name.localeCompare(b.name));
+
+  if (discovered.length === 0) {
+    const savedCategories = state?.[SOURCE.id]?.categories || {};
+    const fallback = new Map();
+
+    for (const [savedSlug, saved] of Object.entries(savedCategories)) {
+      const name = String(saved?.name || titleize(savedSlug)).trim();
+      const slug = slugify(savedSlug || name);
+      if (!slug || isAdultText(slug, name)) {
+        if (slug) adultCategoriesSkipped += 1;
+        continue;
+      }
+
+      const info = discordsTagInfo(saved?.url || discordsTagUrl(name)) || {
+        slug,
+        name,
+        url: discordsTagUrl(name)
+      };
+      fallback.set(info.slug.toLowerCase(), info);
+    }
+
+    discovered = [...fallback.values()].sort((a, b) => a.name.localeCompare(b.name));
+    if (discovered.length > 0) {
+      console.warn(
+        `[${SOURCE.label}] live category links were not exposed by ${SOURCE.home}; ` +
+        `reusing ${discovered.length} safe categories from the previous sync state`
+      );
+    }
+  }
+
   console.log(
     `[${SOURCE.label}] discovered ${discovered.length} safe categories from ${SOURCE.home}` +
     (adultCategoriesSkipped ? `; skipped ${adultCategoriesSkipped} adult categories` : '')
