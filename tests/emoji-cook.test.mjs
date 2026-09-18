@@ -5,6 +5,7 @@ import test from 'node:test';
 const cookPage = await readFile(new URL('../src/pages/cook.astro', import.meta.url), 'utf8');
 const cookClient = await readFile(new URL('../src/components/cook/EmojiCook.tsx', import.meta.url), 'utf8');
 const cookCss = await readFile(new URL('../src/styles/cook.css', import.meta.url), 'utf8');
+const cookSkeleton = await readFile(new URL('../src/components/cook/CookSkeleton.astro', import.meta.url), 'utf8');
 const pressableCard = await readFile(new URL('../src/components/motion/pressable-card.tsx', import.meta.url), 'utf8');
 const editorClient = await readFile(new URL('../src/components/editor/EmojiEditor.tsx', import.meta.url), 'utf8');
 const siteHeader = await readFile(new URL('../src/components/beui/SiteHeader.tsx', import.meta.url), 'utf8');
@@ -81,4 +82,17 @@ test('Cook card-sized interactions use the shared BEUI pressable surface', () =>
   assert.match(cookClient, /<PressableCard[\s\S]+cook-recipe-card/);
   assert.match(cookClient, /<PressableCard[\s\S]+cook-style-preview/);
   assert.match(cookCss, /\[data-beui-pressable-card\]/);
+});
+
+
+test('Cook renders an SSR skeleton while the client-only island hydrates', () => {
+  assert.match(cookPage, /import CookSkeleton from '\.\.\/components\/cook\/CookSkeleton\.astro'/);
+  assert.match(cookPage, /<CookSkeleton slot="fallback" \/>/);
+  assert.match(cookSkeleton, /cook-skeleton/);
+  assert.match(cookSkeleton, /Loading Emoji Cook/);
+  assert.match(cookSkeleton, /Array\.from\(\{ length: 24 \}\)/);
+  assert.match(cookCss, /cook-skeleton-shimmer/);
+  assert.match(cookCss, /\.cook-skeleton-equation/);
+  assert.match(cookCss, /\.cook-skeleton-picker-grid/);
+  assert.match(cookCss, /prefers-reduced-motion/);
 });
