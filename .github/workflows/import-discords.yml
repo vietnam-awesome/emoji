@@ -28,6 +28,11 @@ on:
         required: true
         default: "4"
         type: string
+      resume_branch:
+        description: "Optional existing import/discords-* branch to resume validation/finalization without downloading again."
+        required: false
+        default: ""
+        type: string
   schedule:
     - cron: "30 0 * * 0"
 
@@ -54,6 +59,7 @@ jobs:
       IMPORT_START_BATCH: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.start_batch || '1' }}
       IMPORT_MAX_PAGES: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.max_pages || '25' }}
       IMPORT_CONCURRENCY: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.concurrency || '4' }}
+      RESUME_BRANCH: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.resume_branch || '' }}
 
     steps:
       - name: Checkout importer runtime from main (read-only)
@@ -83,28 +89,41 @@ jobs:
             /public/emojis/community/discords/
           sparse-checkout-cone-mode: false
 
-      - name: Verify writable checkout targets data branch
-        working-directory: data
-        shell: bash
-        run: |
-          set -euo pipefail
-          branch="$(git branch --show-current)"
-          if [ "$branch" != "$DATA_BRANCH" ]; then
-            echo "Refusing to write emoji data: checked out '$branch', expected '$DATA_BRANCH'." >&2
-            exit 1
-          fi
-          echo "Writable emoji data branch: $branch"
-
-      - name: Create review branch from data
+      - name: Prepare review branch
         id: review_branch
         working-directory: data
         shell: bash
         run: |
           set -euo pipefail
-          import_branch="${IMPORT_BRANCH_PREFIX}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
-          git switch -c "$import_branch"
+
+          if [ -n "$RESUME_BRANCH" ]; then
+            case "$RESUME_BRANCH" in
+              import/discords-*) ;;
+              *)
+                echo "Refusing to resume unexpected branch '$RESUME_BRANCH'." >&2
+                exit 1
+                ;;
+            esac
+
+            git fetch origin "$RESUME_BRANCH:refs/remotes/origin/$RESUME_BRANCH"
+            git switch -C "$RESUME_BRANCH" --track "origin/$RESUME_BRANCH"
+            import_branch="$RESUME_BRANCH"
+            resumed=true
+          else
+            base_branch="$(git branch --show-current)"
+            if [ "$base_branch" != "$DATA_BRANCH" ]; then
+              echo "Refusing to import: checked out '$base_branch', expected '$DATA_BRANCH'." >&2
+              exit 1
+            fi
+
+            import_branch="${IMPORT_BRANCH_PREFIX}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+            git switch -c "$import_branch"
+            resumed=false
+          fi
+
           echo "name=$import_branch" >> "$GITHUB_OUTPUT"
-          echo "Review branch: $import_branch"
+          echo "resumed=$resumed" >> "$GITHUB_OUTPUT"
+          echo "Review branch: $import_branch (resumed=$resumed)"
 
       - name: Setup Node.js
         uses: actions/setup-node@v7
@@ -116,14 +135,16 @@ jobs:
         run: npm install --ignore-scripts --no-audit --no-fund
 
       - name: Install Chromium
+        if: steps.review_branch.outputs.resumed != 'true'
         working-directory: app
         run: npx playwright install --with-deps chromium
 
-      - name: Hydrate data-branch catalog
+      - name: Hydrate catalog
         working-directory: data
         run: node ../app/scripts/emoji-store.mjs hydrate
 
       - name: Import Discords.com emoji categories
+        if: steps.review_branch.outputs.resumed != 'true'
         working-directory: data
         run: |
           node ../app/scripts/import-discords.mjs \
@@ -134,53 +155,117 @@ jobs:
             --concurrency="$IMPORT_CONCURRENCY" \
             --delay-ms=350
 
-      - name: Verify emoji index
-        working-directory: data
-        run: node ../app/scripts/verify-data.mjs
-
-      - name: Shard emoji index for Git
+      # Normalize taxonomy and convert the large working JSON back to shards
+      # before the checkpoint. This makes the checkpoint safe to keep on Git.
+      - name: Shard import checkpoint
+        if: steps.review_branch.outputs.resumed != 'true'
         working-directory: data
         run: node ../app/scripts/emoji-store.mjs shard
 
-      - name: Commit imported data
-        id: import_commit
+      - name: Commit and push import checkpoint
+        id: checkpoint
+        if: steps.review_branch.outputs.resumed != 'true'
         working-directory: data
+        env:
+          IMPORT_BRANCH: ${{ steps.review_branch.outputs.name }}
         shell: bash
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A src/data public/emojis/community/discords
+
           if git diff --cached --quiet; then
             echo "No Discords.com updates found."
             echo "created=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          git commit -m "chore(data): import Discords.com emojis"
+
+          git commit -m "chore(data): checkpoint Discords.com import"
+          git push --set-upstream origin "HEAD:$IMPORT_BRANCH"
           echo "created=true" >> "$GITHUB_OUTPUT"
 
-      - name: Push review branch
-        if: steps.import_commit.outputs.created == 'true'
-        working-directory: data
-        env:
-          IMPORT_BRANCH: ${{ steps.review_branch.outputs.name }}
-        run: |
-          set -euo pipefail
-          git push --set-upstream origin "HEAD:$IMPORT_BRANCH"
-
-      - name: Open review pull request
-        if: steps.import_commit.outputs.created == 'true'
+      - name: Open draft review pull request
+        if: steps.checkpoint.outputs.created == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           IMPORT_BRANCH: ${{ steps.review_branch.outputs.name }}
         shell: bash
         run: |
           set -euo pipefail
-          printf -v pr_body 'Automated Discords.com emoji import candidate from Actions run `%s`.\n\nReview the assets and catalog diff. Merge this PR into `data` only after approval. Production deployment starts automatically after the merge.' "$GITHUB_RUN_ID"
+          printf -v pr_body 'Discords.com import checkpoint from Actions run `%s`.\n\nThe long-running download has already been committed to this branch. Validation runs after this checkpoint. If validation fails, rerun the workflow with Resume branch = `%s` instead of downloading everything again.' "$GITHUB_RUN_ID" "$IMPORT_BRANCH"
           pr_url="$(gh pr create \
             --repo "$GITHUB_REPOSITORY" \
             --base "$DATA_BRANCH" \
             --head "$IMPORT_BRANCH" \
+            --draft \
             --title "Import Discords.com Emojis #${GITHUB_RUN_NUMBER}" \
             --body "$pr_body")"
-          echo "Review PR: $pr_url"
+          echo "Draft review PR: $pr_url"
+
+      # A fresh hydrate from the checkpoint ensures every new record has the
+      # canonical taxonomy version before verification.
+      - name: Hydrate checkpoint for verification
+        if: steps.review_branch.outputs.resumed == 'true' || steps.checkpoint.outputs.created == 'true'
+        working-directory: data
+        run: node ../app/scripts/emoji-store.mjs hydrate
+
+      - name: Verify emoji metadata
+        if: steps.review_branch.outputs.resumed == 'true' || steps.checkpoint.outputs.created == 'true'
+        working-directory: data
+        env:
+          # This workflow sparsely checks out only Discords assets. Asset bytes
+          # are already validated while downloading, so verify global metadata here.
+          VERIFY_DATA_SKIP_ASSETS: '1'
+        run: node ../app/scripts/verify-data.mjs
+
+      - name: Shard verified catalog
+        if: steps.review_branch.outputs.resumed == 'true' || steps.checkpoint.outputs.created == 'true'
+        working-directory: data
+        run: node ../app/scripts/emoji-store.mjs shard
+
+      - name: Commit verified data
+        if: steps.review_branch.outputs.resumed == 'true' || steps.checkpoint.outputs.created == 'true'
+        working-directory: data
+        env:
+          IMPORT_BRANCH: ${{ steps.review_branch.outputs.name }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A src/data public/emojis/community/discords
+
+          if ! git diff --cached --quiet; then
+            git commit -m "chore(data): finalize verified Discords.com import"
+          fi
+
+          git push origin "HEAD:$IMPORT_BRANCH"
+
+      - name: Mark review pull request ready
+        if: steps.review_branch.outputs.resumed == 'true' || steps.checkpoint.outputs.created == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          IMPORT_BRANCH: ${{ steps.review_branch.outputs.name }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          pr_number="$(gh pr list \
+            --repo "$GITHUB_REPOSITORY" \
+            --base "$DATA_BRANCH" \
+            --head "$IMPORT_BRANCH" \
+            --state open \
+            --json number \
+            --jq '.[0].number // empty')"
+
+          if [ -z "$pr_number" ]; then
+            printf -v pr_body 'Verified Discords.com import from branch `%s`.' "$IMPORT_BRANCH"
+            gh pr create \
+              --repo "$GITHUB_REPOSITORY" \
+              --base "$DATA_BRANCH" \
+              --head "$IMPORT_BRANCH" \
+              --title "Import Discords.com Emojis #${GITHUB_RUN_NUMBER}" \
+              --body "$pr_body"
+          else
+            gh pr ready "$pr_number" --repo "$GITHUB_REPOSITORY" || true
+          fi
