@@ -4,6 +4,7 @@ import { mkdir, readFile, unlink, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { validateImageAsset } from './lib/emojigg-asset.mjs';
 import { isSensitiveText } from './lib/content-safety.mjs';
+import { applyEmojiTaxonomy } from './lib/emoji-taxonomy.mjs';
 import {
   discordEmojiAssetInfo,
   discordsTagInfo,
@@ -461,7 +462,7 @@ try {
       const duplicateId = byHash.get(asset.hash);
       const short = slugify(item.name) || `emoji-${item.id}`;
 
-      const record = {
+      const record = applyEmojiTaxonomy({
         id,
         slug: `discords-${short}-${item.id}`,
         name: item.name || `Discord Emoji ${item.id}`,
@@ -484,7 +485,7 @@ try {
         syncedAt: now,
         assetSha256: asset.hash,
         duplicateAsset: Boolean(duplicateId && duplicateId !== id)
-      };
+      });
 
       byId.set(id, record);
       if (!byHash.has(asset.hash)) byHash.set(asset.hash, id);
