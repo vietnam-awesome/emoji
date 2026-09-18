@@ -218,11 +218,14 @@ function renderRecipe(
   second: CookEmoji,
   strategy: CookStrategy,
   background: CookBackground,
+  outputSize = CANVAS_SIZE,
 ) {
-  canvas.width = CANVAS_SIZE;
-  canvas.height = CANVAS_SIZE;
+  canvas.width = outputSize;
+  canvas.height = outputSize;
   const context = canvas.getContext('2d');
   if (!context) return;
+  const renderScale = outputSize / CANVAS_SIZE;
+  context.setTransform(renderScale, 0, 0, renderScale, 0, 0);
   context.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
   if (background === 'light') {
     context.fillStyle = '#ffffff';
@@ -314,7 +317,7 @@ function RecipePreview({
   const ref = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
-    if (ref.current) renderRecipe(ref.current, first, second, strategy, background);
+    if (ref.current) renderRecipe(ref.current, first, second, strategy, background, 160);
   }, [first, second, strategy, background]);
 
   return (
