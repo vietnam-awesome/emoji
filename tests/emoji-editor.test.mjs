@@ -62,6 +62,8 @@ test('GIF timeline checkbox contrast is explicit on desktop and mobile', () => {
   assert.match(timelineCss, /color: #111 !important/);
   assert.match(timelineCss, /stroke: #111 !important/);
   assert.match(timelineCss, /width: 20px/);
+  assert.match(timelineCss, /width: 18px/);
+  assert.match(timelineCss, /stroke-width: 4/);
   assert.match(timelineCss, /border-color: var\(--border-strong\) !important/);
   assert.match(timelineCss, /@media \(max-width: 720px\)/);
 });
