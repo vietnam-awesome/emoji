@@ -69,6 +69,16 @@ const compact = variant === 'compact';
   data-download-name={emoji.name}
   data-download-url={imageUrl}
   data-download-filename={downloadFilename}
+  data-favorite-key={emoji.slug}
+  data-favorite-name={emoji.name}
+  data-favorite-image={imageUrl}
+  data-favorite-category={category}
+  data-favorite-category-slug={categorySlug}
+  data-favorite-source={emoji.sourceLabel}
+  data-favorite-format={extension}
+  data-favorite-animated={emoji.animated ? 'yes' : 'no'}
+  data-favorite-emoji={emoji.emoji}
+  data-favorite-shortcode={emoji.shortcode}
 >
   {!compact && (
     <>
@@ -76,6 +86,19 @@ const compact = variant === 'compact';
         <input type="checkbox" data-emoji-select aria-label={`Select ${emoji.name}`} />
         <span aria-hidden="true">✓</span>
       </label>
+
+      <button
+        class="emoji-card-favorite"
+        type="button"
+        data-favorite-action
+        data-beui-tooltip={`Save ${emoji.name} to My Emoji`}
+        aria-label={`Save ${emoji.name} to My Emoji`}
+        aria-pressed="false"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </button>
 
       <a
         class="emoji-card-download"
