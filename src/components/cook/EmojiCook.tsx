@@ -481,7 +481,7 @@ function RecipePreview({
                     aria-label={`Cook ${first.label} with ${item.label}`}
                   >
                     <span className="cook-combo-preview">
-                      <RecipePreview first={first} second={item} strategy="auto" />
+                      <RecipePreview first={first} second={item} strategy="auto" background={background} />
                     </span>
                     <span className="cook-recipe-pair" aria-hidden="true">{first.emoji} + {item.emoji}</span>
                     <strong>{item.label}</strong>
