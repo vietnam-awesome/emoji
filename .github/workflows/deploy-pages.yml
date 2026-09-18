@@ -124,6 +124,22 @@ jobs:
           fi
           du -sh dist
 
+      - name: Report Pages artifact size
+        shell: bash
+        run: |
+          set -euo pipefail
+          bytes="$(du -sb dist | cut -f1)"
+          files="$(find dist -type f | wc -l | tr -d ' ')"
+          mib="$((bytes / 1024 / 1024))"
+          {
+            echo "### GitHub Pages artifact"
+            echo "- Size: ${mib} MiB (${bytes} bytes)"
+            echo "- Files: ${files}"
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [ "$bytes" -gt 1073741824 ]; then
+            echo "::warning::Pages output is above GitHub Pages' officially supported 1 GiB site size."
+          fi
+
       - name: Configure Pages
         uses: actions/configure-pages@v6
 
