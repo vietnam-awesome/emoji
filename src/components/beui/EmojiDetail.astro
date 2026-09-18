@@ -564,7 +564,8 @@ const tagTargetUrl = (tag) => {
       similarGrid.replaceChildren(fragment);
       similarSection.hidden = false;
     } catch (error) {
-      similarSection.hidden = true;\n      console.warn('Could not load similar emoji', error);
+      similarSection.hidden = true;
+      console.warn('Could not load similar emoji', error);
     }
   };
 
@@ -648,7 +649,8 @@ const tagTargetUrl = (tag) => {
       randomSection.hidden = false;
       shuffleRandomEmoji();
     } catch (error) {
-      randomSection.hidden = true;\n      console.warn('Could not load random emoji', error);
+      randomSection.hidden = true;
+      console.warn('Could not load random emoji', error);
     }
   };
 
