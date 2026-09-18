@@ -1,10 +1,11 @@
 ---
 import EmojiShareDialog from './EmojiShareDialog.astro';
+import EmojiCard from '../EmojiCard.astro';
 import { emojiAssetUrl } from '../../lib/emojiAsset';
 import { emojiCategorySlug } from '../../lib/category';
 import { withBase } from '../../lib/url';
 
-const { emoji } = Astro.props;
+const { emoji, similarEmojis = [] } = Astro.props;
 const base = import.meta.env.BASE_URL;
 const imageUrl = emojiAssetUrl(emoji, base);
 const browseUrl = withBase('/emojis', base);
@@ -102,6 +103,25 @@ const tagTargetUrl = (tag) => {
           <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M12 4v10m0 0 4-4m-4 4-4-4M5 19h14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
           Download {String(emoji.format || '').toUpperCase()}
         </a>
+        <button
+          class="secondary-action detail-favorite-action"
+          type="button"
+          data-favorite-action
+          data-favorite-key={emoji.slug}
+          data-favorite-name={emoji.name}
+          data-favorite-image={imageUrl}
+          data-favorite-category={category}
+          data-favorite-category-slug={categorySlug}
+          data-favorite-source={emoji.sourceLabel}
+          data-favorite-format={emoji.format || ''}
+          data-favorite-animated={emoji.animated ? 'yes' : 'no'}
+          data-favorite-emoji={emoji.emoji || ''}
+          data-favorite-shortcode={emoji.shortcode || ''}
+          aria-pressed="false"
+        >
+          <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span data-favorite-label>Save to My Emoji</span>
+        </button>
         <EmojiShareDialog emoji={emoji} imageUrl={imageUrl} />
       </div>
 
@@ -118,6 +138,22 @@ const tagTargetUrl = (tag) => {
       </dl>
     </div>
   </div>
+
+  {similarEmojis.length > 0 && (
+    <section class="detail-similar" aria-labelledby="similar-emoji-title">
+      <div class="section-heading-modern">
+        <div>
+          <p class="section-kicker">Discovery</p>
+          <h2 id="similar-emoji-title">Similar emoji</h2>
+          <p>Related by Unicode identity, category, tags, collection and style.</p>
+        </div>
+        <a href={categoryUrl}>More in {category} <span>→</span></a>
+      </div>
+      <div class="detail-similar-grid">
+        {similarEmojis.map((item) => <EmojiCard emoji={item} />)}
+      </div>
+    </section>
+  )}
 </section>
 
 <dialog class="detail-lightbox" id="detail-lightbox" aria-label={`Preview ${emoji.name}`}>
