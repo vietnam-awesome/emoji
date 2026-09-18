@@ -115,32 +115,42 @@
 }
 
 .gif-frame-card-top [role="checkbox"] {
-  width: 18px;
-  height: 18px;
-  border-radius: 5px;
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
 }
 
-/* Keep GIF timeline checkboxes readable regardless of utility ordering in the
- * compiled Tailwind bundle. The checked box uses the foreground as its fill
- * and the background as its checkmark color in both light and dark themes. */
+/* GIF frame selection should read as a checkbox, not as a black/white status
+ * block. Use the UI accent for the checked state and keep a neutral outlined
+ * box when unchecked. */
 .gif-frame-card-top [role="checkbox"][data-state="checked"],
 .gif-frame-current-checkbox [role="checkbox"][data-state="checked"] {
-  border-color: var(--primary) !important;
-  background: var(--primary) !important;
-  color: var(--primary-foreground) !important;
+  border-color: var(--beui-accent) !important;
+  background: var(--beui-accent) !important;
+  color: var(--accent-foreground) !important;
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--beui-accent) 24%, transparent);
 }
 
 .gif-frame-card-top [role="checkbox"][data-state="checked"] svg,
 .gif-frame-current-checkbox [role="checkbox"][data-state="checked"] svg {
-  color: var(--primary-foreground) !important;
+  width: 13px;
+  height: 13px;
+  color: var(--accent-foreground) !important;
   stroke: currentColor !important;
+  stroke-width: 3.2;
 }
 
 .gif-frame-card-top [role="checkbox"][data-state="unchecked"],
 .gif-frame-current-checkbox [role="checkbox"][data-state="unchecked"] {
-  border-color: color-mix(in oklab, var(--muted-foreground) 50%, transparent) !important;
-  background: var(--background) !important;
+  border-color: var(--border-strong) !important;
+  background: color-mix(in oklab, var(--background) 94%, transparent) !important;
   color: var(--foreground) !important;
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--foreground) 3%, transparent);
+}
+
+.gif-frame-card-top [role="checkbox"][data-state="unchecked"]:hover,
+.gif-frame-current-checkbox [role="checkbox"][data-state="unchecked"]:hover {
+  border-color: color-mix(in oklab, var(--beui-accent) 65%, var(--border-strong)) !important;
 }
 
 .gif-frame-preview {
