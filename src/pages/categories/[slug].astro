@@ -430,6 +430,7 @@ const description = `Browse ${category.count.toLocaleString('en-US')} ${category
         currentPage = Math.max(1, Math.min(page, totalPages));
         const start = (currentPage - 1) * PAGE_SIZE;
         const end = Math.min(start + PAGE_SIZE, resultTotal);
+        const previousNodes = [...grid.childNodes];
         grid.replaceChildren(createGridSkeleton(Math.max(1, end - start)));
         explorer.setAttribute('aria-busy', 'true');
         try {
@@ -448,6 +449,7 @@ const description = `Browse ${category.count.toLocaleString('en-US')} ${category
           if (scrollIntoView) explorer.scrollIntoView({ behavior: 'smooth', block: 'start' });
         } catch (error) {
           console.error('Could not load category page', error);
+          grid.replaceChildren(...previousNodes);
           rangeCount.textContent = 'Could not load this page. Please retry.';
         } finally {
           clearGridSkeletons();
@@ -459,6 +461,7 @@ const description = `Browse ${category.count.toLocaleString('en-US')} ${category
       async function renderScrollStart() {
         if (busy) return;
         busy = true;
+        const previousNodes = [...grid.childNodes];
         grid.replaceChildren(createGridSkeleton(Math.max(1, Math.min(PAGE_SIZE, resultTotal))));
         explorer.setAttribute('aria-busy', 'true');
         try {
@@ -475,6 +478,7 @@ const description = `Browse ${category.count.toLocaleString('en-US')} ${category
           syncUrl();
         } catch (error) {
           console.error('Could not restore category scroll view', error);
+          grid.replaceChildren(...previousNodes);
         } finally {
           clearGridSkeletons();
           explorer.removeAttribute('aria-busy');
