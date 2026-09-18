@@ -1,6 +1,7 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import EmojiCook from '../components/cook/EmojiCook';
+import CookSkeleton from '../components/cook/CookSkeleton.astro';
 import { withBase } from '../lib/url';
 import '../styles/cook.css';
 
@@ -17,5 +18,7 @@ const editorUrl = withBase('/editor', base);
     { name: 'Cook emoji' }
   ]}
 >
-  <EmojiCook editorUrl={editorUrl} client:only="react" />
+  <EmojiCook editorUrl={editorUrl} client:only="react">
+    <CookSkeleton slot="fallback" />
+  </EmojiCook>
 </Layout>
