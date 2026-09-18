@@ -28,7 +28,7 @@ test('catalog async states render a responsive skeleton grid instead of a spinne
 });
 
 test('home search uses skeleton rows while suggestion shards are loading', () => {
-  assert.match(homeClient, /function|const showSuggestionSkeletons/);
+  assert.match(homeClient, /const showSuggestionSkeletons = \(\) =>/);
   assert.match(homeClient, /showSuggestionSkeletons\(\)/);
   assert.match(homeClient, /home-search-skeleton/);
   assert.match(beuiCss, /\.home-search-skeleton/);
