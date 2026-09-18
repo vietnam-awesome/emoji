@@ -20,16 +20,20 @@ export default function SiteHeader({ homeUrl, emojisUrl, categoriesUrl, routePat
   const [searchOpen, setSearchOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [navPreviewHref, setNavPreviewHref] = useState<string | null>(null);
+  const [favoriteCount, setFavoriteCount] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const rootRef = useRef<HTMLElement>(null);
-  const cookUrl = `${homeUrl.replace(/\/$/, '')}/cook`;
+  const rootUrl = homeUrl.replace(/\/$/, '');
+  const cookUrl = `${rootUrl}/cook`;
+  const favoritesUrl = `${rootUrl}/favorites`;
 
   const nav = useMemo(() => [
     { label: 'Home', href: homeUrl, active: routePath === '/' },
     { label: 'Browse', href: emojisUrl, active: routePath === '/emojis' || routePath.startsWith('/emoji/') },
     { label: 'Categories', href: categoriesUrl, active: routePath === '/categories' || routePath.startsWith('/categories/') },
-    { label: 'Cook', href: cookUrl, active: routePath === '/cook' }
-  ], [homeUrl, emojisUrl, categoriesUrl, cookUrl, routePath]);
+    { label: 'Cook', href: cookUrl, active: routePath === '/cook' },
+    { label: 'My Emoji', href: favoritesUrl, active: routePath === '/favorites', count: favoriteCount }
+  ], [homeUrl, emojisUrl, categoriesUrl, cookUrl, favoritesUrl, routePath, favoriteCount]);
 
   const activeNavHref = nav.find((item) => item.active)?.href ?? null;
   const highlightedNavHref = navPreviewHref ?? activeNavHref;
@@ -74,6 +78,28 @@ export default function SiteHeader({ homeUrl, emojisUrl, categoriesUrl, routePat
       document.body.style.overflow = previousOverflow;
     };
   }, [menuOpen]);
+
+  useEffect(() => {
+    const storageKey = 'eplus-emoji-favorites-v1';
+    const updateCount = () => {
+      try {
+        const parsed = JSON.parse(localStorage.getItem(storageKey) || '[]');
+        setFavoriteCount(Array.isArray(parsed) ? parsed.length : 0);
+      } catch {
+        setFavoriteCount(0);
+      }
+    };
+    const onStorage = (event: StorageEvent) => {
+      if (event.key === storageKey) updateCount();
+    };
+    updateCount();
+    window.addEventListener('storage', onStorage);
+    document.addEventListener('eplus:favorites-changed', updateCount);
+    return () => {
+      window.removeEventListener('storage', onStorage);
+      document.removeEventListener('eplus:favorites-changed', updateCount);
+    };
+  }, []);
 
   const panelTransition = reduceMotion ? { duration: 0.12 } : SPRING_PANEL;
 
@@ -133,14 +159,19 @@ export default function SiteHeader({ homeUrl, emojisUrl, categoriesUrl, routePat
                   />
                 ) : null}
                 <motion.span
-                  className="relative z-10"
+                  className="relative z-10 flex items-center gap-1.5"
                   animate={{
                     color: highlighted ? 'var(--foreground)' : 'var(--muted-foreground)',
                     y: highlighted && !reduceMotion ? -0.25 : 0
                   }}
                   transition={reduceMotion ? { duration: 0 } : { duration: 0.16 }}
                 >
-                  {item.label}
+                  <span>{item.label}</span>
+                  {'count' in item && item.count > 0 ? (
+                    <span className="rounded-full bg-foreground px-1.5 py-0.5 text-[.55rem] font-bold leading-none text-background">
+                      {item.count > 99 ? '99+' : item.count}
+                    </span>
+                  ) : null}
                 </motion.span>
               </a>
             );
@@ -258,7 +289,14 @@ export default function SiteHeader({ homeUrl, emojisUrl, categoriesUrl, routePat
                     aria-current={item.active ? 'page' : undefined}
                     className={`flex min-h-12 items-center justify-between rounded-xl px-3.5 text-sm font-medium no-underline outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring ${item.active ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-transparent text-foreground hover:bg-muted'}`}
                   >
-                    <span>{item.label}</span>
+                    <span className="flex items-center gap-2">
+                      <span>{item.label}</span>
+                      {'count' in item && item.count > 0 ? (
+                        <span className="rounded-full bg-foreground px-1.5 py-0.5 text-[.58rem] font-bold leading-none text-background">
+                          {item.count > 99 ? '99+' : item.count}
+                        </span>
+                      ) : null}
+                    </span>
                     <ArrowRight className="size-4 shrink-0" aria-hidden="true" />
                   </a>
                 ))}
