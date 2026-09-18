@@ -1,0 +1,1393 @@
+@layer components {
+  .cook-page {
+    width: min(1180px, calc(100% - 40px));
+    margin-inline: auto;
+    padding: 34px 0 72px;
+  }
+
+  .cook-hero {
+    display: grid;
+    gap: 14px;
+    margin-bottom: 24px;
+  }
+
+  .cook-hero-row {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 28px;
+  }
+
+  .cook-hero h1 {
+    margin: 0;
+    font-size: clamp(2.7rem, 6vw, 4.8rem);
+    line-height: .96;
+    letter-spacing: -.06em;
+  }
+
+  .cook-hero-row p {
+    max-width: 760px;
+    margin: 14px 0 0;
+    color: var(--muted-foreground);
+    font-size: .92rem;
+    line-height: 1.65;
+  }
+
+  .cook-hero-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+  }
+
+  .cook-hero-meta span,
+  .cook-strategy-badge,
+  .cook-result-meta span {
+    display: inline-flex;
+    min-height: 28px;
+    align-items: center;
+    gap: 5px;
+    padding: 0 9px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--card);
+    color: var(--muted-foreground);
+    font-size: .64rem;
+    font-weight: 700;
+    letter-spacing: .02em;
+    box-shadow: 0 1px 2px rgb(0 0 0 / .035);
+  }
+
+  .cook-page [data-beui-pressable-card] {
+    font: inherit;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .cook-page [data-beui-pressable-card][data-selected="true"] {
+    border-color: var(--border-strong);
+    background: var(--card);
+  }
+
+  .cook-workspace {
+    display: grid;
+    grid-template-columns: minmax(0, 1.25fr) minmax(340px, .75fr);
+    align-items: start;
+    gap: 18px;
+  }
+
+  .cook-builder,
+  .cook-result {
+    min-width: 0;
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    background: var(--background);
+    box-shadow: 0 1px 2px rgb(0 0 0 / .035);
+  }
+
+  .cook-builder {
+    padding: 18px;
+  }
+
+  .cook-result {
+    position: sticky;
+    top: 82px;
+    display: grid;
+    gap: 14px;
+    padding: 18px;
+  }
+
+  .cook-ingredients {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: center;
+    gap: 10px;
+  }
+
+  .cook-ingredient {
+    min-width: 0;
+    min-height: 154px;
+    display: grid;
+    place-items: center;
+    align-content: center;
+    gap: 6px;
+    padding: 16px;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: var(--card);
+    color: var(--foreground);
+    cursor: pointer;
+    transition: border-color .16s ease, transform .16s ease, box-shadow .16s ease, background .16s ease;
+  }
+
+  .cook-ingredient:hover {
+    transform: translateY(-1px);
+    border-color: var(--border-strong);
+  }
+
+  .cook-ingredient.is-active {
+    border-color: var(--border-strong);
+    background: var(--background);
+    box-shadow: 0 0 0 2px color-mix(in oklab, var(--foreground) 8%, transparent);
+  }
+
+  .cook-ingredient-kicker {
+    color: var(--muted-foreground);
+    font-size: .62rem;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+  }
+
+  .cook-ingredient-emoji {
+    font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+    font-size: 3.4rem;
+    line-height: 1;
+  }
+
+  .cook-ingredient strong {
+    max-width: 100%;
+    overflow: hidden;
+    font-size: .8rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .cook-swap {
+    width: 38px !important;
+    height: 38px !important;
+    border-radius: 999px !important;
+  }
+
+  .cook-tabs {
+    margin-top: 18px;
+  }
+
+  .cook-tabs-list {
+    width: 100%;
+  }
+
+  .cook-tabs-list > button {
+    flex: 1;
+  }
+
+  .cook-tab-panel {
+    margin-top: 14px;
+  }
+
+  .cook-search {
+    width: 100%;
+  }
+
+  .cook-picker-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 2px 8px;
+    color: var(--muted-foreground);
+    font-size: .64rem;
+  }
+
+  .cook-picker-grid {
+    display: grid;
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+    gap: 7px;
+    max-height: 390px;
+    overflow: auto;
+    padding: 1px 2px 2px;
+    scrollbar-gutter: stable;
+  }
+
+  .cook-picker-item {
+    min-width: 0;
+    min-height: 70px;
+    display: grid;
+    place-items: center;
+    align-content: center;
+    gap: 5px;
+    padding: 8px 5px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--background);
+    color: var(--foreground);
+    cursor: pointer;
+    transition: transform .14s ease, border-color .14s ease, background .14s ease, box-shadow .14s ease;
+  }
+
+  .cook-picker-item:hover {
+    border-color: var(--border-strong);
+    background: var(--card);
+  }
+
+  .cook-picker-item.is-selected {
+    border-color: var(--border-strong);
+    background: var(--card);
+    box-shadow: inset 0 0 0 1px var(--border-strong);
+  }
+
+  .cook-picker-item > span {
+    font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+    font-size: 1.72rem;
+    line-height: 1;
+  }
+
+  .cook-picker-item small {
+    width: 100%;
+    overflow: hidden;
+    color: var(--muted-foreground);
+    font-size: .52rem;
+    line-height: 1.2;
+    text-align: center;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .cook-empty {
+    padding: 26px 10px;
+    color: var(--muted-foreground);
+    font-size: .76rem;
+    text-align: center;
+  }
+
+  .cook-explore-copy {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 22px;
+    margin-bottom: 12px;
+  }
+
+  .cook-explore-copy h2 {
+    margin: 0;
+    font-size: 1.25rem;
+    letter-spacing: -.03em;
+  }
+
+  .cook-explore-copy > p {
+    max-width: 380px;
+    margin: 0;
+    color: var(--muted-foreground);
+    font-size: .7rem;
+    line-height: 1.5;
+  }
+
+  .cook-recipe-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .cook-recipe-card {
+    min-width: 0;
+    display: grid;
+    gap: 6px;
+    padding: 13px 10px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--background);
+    color: var(--foreground);
+    cursor: pointer;
+    text-align: left;
+    transition: transform .14s ease, border-color .14s ease, background .14s ease;
+  }
+
+  .cook-recipe-card:hover {
+    border-color: var(--border-strong);
+    background: var(--card);
+  }
+
+  .cook-recipe-glyphs {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+    font-size: 1.55rem;
+  }
+
+  .cook-recipe-glyphs b {
+    color: var(--muted-foreground);
+    font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+    font-size: .65rem;
+  }
+
+  .cook-recipe-card > span:not(.cook-recipe-glyphs) {
+    overflow: hidden;
+    font-size: .68rem;
+    font-weight: 650;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .cook-recipe-card small {
+    color: var(--muted-foreground);
+    font-size: .56rem;
+    text-transform: capitalize;
+  }
+
+  .cook-controls {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 9px;
+    margin-top: 18px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+  }
+
+  .cook-control {
+    min-width: 0;
+    display: grid;
+    gap: 6px;
+  }
+
+  .cook-control > span {
+    padding-left: 2px;
+    color: var(--muted-foreground);
+    font-size: .62rem;
+    font-weight: 700;
+  }
+
+  .cook-control [role="listbox"] > div {
+    max-height: 270px;
+    overflow-y: auto;
+  }
+
+  .cook-result-heading {
+    display: flex;
+    align-items: start;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .cook-result-heading h2 {
+    margin: 0;
+    font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+    font-size: 1.35rem;
+    letter-spacing: -.02em;
+  }
+
+  .cook-strategy-badge {
+    flex: 0 0 auto;
+    text-transform: capitalize;
+  }
+
+  .cook-canvas-shell {
+    overflow: hidden;
+    display: grid;
+    width: 100%;
+    aspect-ratio: 1;
+    place-items: center;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: var(--card);
+  }
+
+  .cook-canvas-shell.is-transparent {
+    background-image:
+      linear-gradient(45deg, color-mix(in oklab, var(--foreground) 5%, transparent) 25%, transparent 25%),
+      linear-gradient(-45deg, color-mix(in oklab, var(--foreground) 5%, transparent) 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, color-mix(in oklab, var(--foreground) 5%, transparent) 75%),
+      linear-gradient(-45deg, transparent 75%, color-mix(in oklab, var(--foreground) 5%, transparent) 75%);
+    background-size: 28px 28px;
+    background-position: 0 0, 0 14px, 14px -14px, -14px 0;
+  }
+
+  .cook-canvas-shell canvas {
+    width: 100%;
+    height: 100%;
+  }
+
+  .cook-result-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .cook-result-actions > button {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .cook-status,
+  .cook-error,
+  .cook-local-note {
+    margin: 0;
+    font-size: .68rem;
+    line-height: 1.5;
+  }
+
+  .cook-status {
+    color: var(--foreground);
+  }
+
+  .cook-error {
+    color: var(--destructive);
+  }
+
+  .cook-local-note {
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+    color: var(--muted-foreground);
+  }
+}
+
+@media (max-width: 980px) {
+  .cook-workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .cook-result {
+    position: relative;
+    top: auto;
+    grid-template-columns: minmax(260px, .75fr) minmax(0, 1.25fr);
+    align-items: start;
+  }
+
+  .cook-result-heading,
+  .cook-canvas-shell {
+    grid-column: 1;
+  }
+
+  .cook-result-actions,
+  .cook-status,
+  .cook-error,
+  .cook-local-note {
+    grid-column: 2;
+  }
+
+  .cook-result-actions {
+    align-self: end;
+  }
+}
+
+@media (max-width: 760px) {
+  .cook-page {
+    width: min(100% - 28px, 1180px);
+    padding-top: 24px;
+  }
+
+  .cook-hero-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .cook-hero-row > button {
+    width: max-content;
+  }
+
+  .cook-picker-grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+
+  .cook-recipe-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .cook-controls {
+    grid-template-columns: 1fr;
+  }
+
+  .cook-result {
+    grid-template-columns: 1fr;
+  }
+
+  .cook-result-heading,
+  .cook-canvas-shell,
+  .cook-result-actions,
+  .cook-status,
+  .cook-error,
+  .cook-local-note {
+    grid-column: 1;
+  }
+}
+
+@media (max-width: 520px) {
+  .cook-page {
+    width: min(100% - 20px, 1180px);
+    padding-bottom: 54px;
+  }
+
+  .cook-builder,
+  .cook-result {
+    padding: 12px;
+    border-radius: 15px;
+  }
+
+  .cook-ingredients {
+    grid-template-columns: minmax(0, 1fr) 34px minmax(0, 1fr);
+    gap: 6px;
+  }
+
+  .cook-ingredient {
+    min-height: 126px;
+    padding: 10px 6px;
+    border-radius: 13px;
+  }
+
+  .cook-ingredient-emoji {
+    font-size: 2.8rem;
+  }
+
+  .cook-ingredient strong {
+    font-size: .68rem;
+  }
+
+  .cook-swap {
+    width: 34px !important;
+    height: 34px !important;
+  }
+
+  .cook-picker-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+    max-height: 360px;
+  }
+
+  .cook-picker-item {
+    min-height: 66px;
+  }
+
+  .cook-recipe-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .cook-explore-copy {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .cook-result-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .cook-result-actions > button {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cook-ingredient,
+  .cook-picker-item,
+  .cook-recipe-card {
+    transition: none;
+  }
+}
+
+
+/* Emoji Cook v2: combination-first flow inspired by established emoji mixers. */
+@layer components {
+  .cook-equation {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(132px, 180px) auto;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 18px;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    background: var(--card);
+  }
+
+  .cook-equation-slot,
+  .cook-equation-result {
+    min-width: 0;
+    min-height: 112px;
+    border: 1px solid var(--border);
+    border-radius: 15px;
+    background: var(--background);
+    color: var(--foreground);
+  }
+
+  .cook-equation-slot {
+    display: grid;
+    place-items: center;
+    align-content: center;
+    gap: 4px;
+    padding: 10px;
+    cursor: pointer;
+    transition: border-color .16s ease, box-shadow .16s ease, transform .16s ease;
+  }
+
+  .cook-equation-slot:hover {
+    border-color: var(--border-strong);
+    background: var(--card);
+  }
+
+  .cook-equation-slot.is-active {
+    border-color: var(--border-strong);
+    box-shadow: 0 0 0 2px color-mix(in oklab, var(--foreground) 8%, transparent);
+  }
+
+  .cook-equation-slot > span {
+    color: var(--muted-foreground);
+    font-size: .58rem;
+    font-weight: 750;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+  }
+
+  .cook-equation-slot > strong {
+    font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+    font-size: 2.65rem;
+    line-height: 1;
+  }
+
+  .cook-equation-slot > small {
+    max-width: 100%;
+    overflow: hidden;
+    color: var(--foreground);
+    font-size: .68rem;
+    font-weight: 650;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .cook-equation-operator {
+    color: var(--muted-foreground);
+    font-size: 1.05rem;
+    font-weight: 800;
+  }
+
+  .cook-equation-result {
+    display: grid;
+    grid-template-columns: 82px minmax(0, 1fr);
+    align-items: center;
+    gap: 8px;
+    padding: 8px;
+    cursor: pointer;
+  }
+
+  .cook-equation-result canvas {
+    width: 82px;
+    height: 82px;
+    border-radius: 12px;
+    object-fit: contain;
+  }
+
+  .cook-equation-result > span {
+    color: var(--muted-foreground);
+    font-size: .66rem;
+    font-weight: 700;
+  }
+
+  .cook-picker-topline {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+
+  .cook-picker-topline h2 {
+    margin: 2px 0 0;
+    font-size: 1rem;
+    letter-spacing: -.02em;
+  }
+
+  .cook-category-tabs {
+    min-width: 0;
+    margin-top: 10px;
+  }
+
+  .cook-category-list {
+    display: flex;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    gap: 4px;
+    padding: 4px;
+    scrollbar-width: none;
+  }
+
+  .cook-category-list::-webkit-scrollbar {
+    display: none;
+  }
+
+  .cook-category-list > button {
+    flex: 0 0 auto;
+    min-height: 30px;
+    padding-inline: 10px;
+    font-size: .66rem;
+  }
+
+  .cook-combo-preview {
+    display: grid !important;
+    width: 100%;
+    aspect-ratio: 1;
+    place-items: center;
+    overflow: hidden !important;
+    border: 1px solid var(--border);
+    border-radius: 11px;
+    background:
+      linear-gradient(45deg, color-mix(in oklab, var(--foreground) 4%, transparent) 25%, transparent 25%),
+      linear-gradient(-45deg, color-mix(in oklab, var(--foreground) 4%, transparent) 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, color-mix(in oklab, var(--foreground) 4%, transparent) 75%),
+      linear-gradient(-45deg, transparent 75%, color-mix(in oklab, var(--foreground) 4%, transparent) 75%);
+    background-size: 18px 18px;
+    background-position: 0 0, 0 9px, 9px -9px, -9px 0;
+  }
+
+  .cook-combo-preview canvas {
+    width: 100%;
+    height: 100%;
+  }
+
+  .cook-recipe-card {
+    align-content: start;
+  }
+
+  .cook-recipe-card > .cook-recipe-pair {
+    overflow: visible;
+    color: var(--muted-foreground);
+    font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+    font-size: .74rem;
+    line-height: 1.2;
+    white-space: normal;
+  }
+
+  .cook-recipe-card > strong {
+    overflow: hidden;
+    font-size: .68rem;
+    line-height: 1.25;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .cook-style-previews {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 7px;
+    margin-top: 12px;
+  }
+
+  .cook-style-preview {
+    position: relative;
+    min-width: 0;
+    display: grid;
+    gap: 5px;
+    padding: 6px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--background);
+    color: var(--foreground);
+    cursor: pointer;
+    text-align: center;
+  }
+
+  .cook-style-preview:hover,
+  .cook-style-preview.is-active {
+    border-color: var(--border-strong);
+    background: var(--card);
+  }
+
+  .cook-style-preview.is-active {
+    box-shadow: inset 0 0 0 1px var(--border-strong);
+  }
+
+  .cook-style-preview canvas {
+    width: 100%;
+    aspect-ratio: 1;
+    border-radius: 8px;
+  }
+
+  .cook-style-preview > span {
+    overflow: hidden;
+    color: var(--muted-foreground);
+    font-size: .52rem;
+    font-weight: 650;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .cook-style-preview > svg {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    padding: 2px;
+    border-radius: 999px;
+    background: var(--foreground);
+    color: var(--background);
+  }
+
+  .cook-result-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .cook-result-meta span {
+    min-height: 24px;
+    padding-inline: 8px;
+    font-size: .58rem;
+    text-transform: capitalize;
+  }
+
+  .cook-result-actions {
+    display: flex;
+    flex-wrap: wrap;
+    grid-template-columns: none;
+  }
+
+  .cook-result-actions > button {
+    width: auto;
+    min-width: 0;
+    flex: 1 1 118px;
+  }
+}
+
+@media (max-width: 980px) {
+  .cook-result {
+    order: -1;
+  }
+
+  .cook-style-previews {
+    grid-template-columns: repeat(7, minmax(72px, 1fr));
+    overflow-x: auto;
+    padding-bottom: 3px;
+    scrollbar-width: thin;
+  }
+}
+
+@media (max-width: 760px) {
+  .cook-equation {
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    gap: 7px;
+  }
+
+  .cook-equation-equals {
+    display: none;
+  }
+
+  .cook-equation-result {
+    grid-column: 1 / -1;
+    width: min(190px, 62vw);
+    min-height: 92px;
+    justify-self: center;
+  }
+
+  .cook-equation-swap {
+    grid-column: 1 / -1;
+    justify-self: center;
+  }
+
+  .cook-picker-topline {
+    align-items: center;
+  }
+
+  .cook-recipe-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .cook-equation {
+    margin-inline: -2px;
+    padding: 8px;
+    border-radius: 15px;
+  }
+
+  .cook-equation-slot {
+    min-height: 96px;
+    padding: 8px 5px;
+  }
+
+  .cook-equation-slot > strong {
+    font-size: 2.2rem;
+  }
+
+  .cook-equation-slot > small {
+    font-size: .6rem;
+  }
+
+  .cook-equation-result {
+    grid-template-columns: 68px minmax(0, 1fr);
+    width: min(168px, 68vw);
+    min-height: 82px;
+  }
+
+  .cook-equation-result canvas {
+    width: 68px;
+    height: 68px;
+  }
+
+  .cook-picker-topline {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .cook-picker-topline > button {
+    align-self: flex-end;
+  }
+
+  .cook-category-list {
+    margin-inline: -2px;
+    width: calc(100% + 4px);
+  }
+
+  .cook-result-actions {
+    gap: 7px;
+  }
+
+  .cook-result-actions > button {
+    flex: 1 1 calc(50% - 7px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cook-equation-slot {
+    transition: none;
+  }
+}
+
+
+/* SSR fallback shown while the client-only Cook island hydrates. */
+@layer components {
+  .cook-skeleton {
+    --cook-skeleton-base: color-mix(in oklab, var(--foreground) 7%, var(--background));
+    --cook-skeleton-highlight: color-mix(in oklab, var(--foreground) 3%, var(--background));
+    pointer-events: none;
+    user-select: none;
+  }
+
+  .cook-skeleton :where(
+    .cook-skeleton-line,
+    .cook-skeleton-pill,
+    .cook-skeleton-emoji,
+    .cook-skeleton-square,
+    .cook-skeleton-circle,
+    .cook-skeleton-tabs > span,
+    .cook-skeleton-search,
+    .cook-skeleton-category-row > span,
+    .cook-skeleton-picker-card,
+    .cook-skeleton-controls > span,
+    .cook-skeleton-style-row > span,
+    .cook-skeleton-canvas,
+    .cook-skeleton-actions > span,
+    .cook-skeleton-operator
+  ) {
+    position: relative;
+    overflow: hidden;
+    background: var(--cook-skeleton-base);
+  }
+
+  .cook-skeleton :where(
+    .cook-skeleton-line,
+    .cook-skeleton-pill,
+    .cook-skeleton-emoji,
+    .cook-skeleton-square,
+    .cook-skeleton-circle,
+    .cook-skeleton-tabs > span,
+    .cook-skeleton-search,
+    .cook-skeleton-category-row > span,
+    .cook-skeleton-picker-card,
+    .cook-skeleton-controls > span,
+    .cook-skeleton-style-row > span,
+    .cook-skeleton-canvas,
+    .cook-skeleton-actions > span,
+    .cook-skeleton-operator
+  )::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      100deg,
+      transparent 15%,
+      var(--cook-skeleton-highlight) 42%,
+      transparent 70%
+    );
+    transform: translateX(-115%);
+    animation: cook-skeleton-shimmer 1.35s var(--ease-out) infinite;
+  }
+
+  .cook-skeleton-hero {
+    display: grid;
+    gap: 14px;
+    margin-bottom: 24px;
+  }
+
+  .cook-skeleton-hero-row {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 28px;
+  }
+
+  .cook-skeleton-copy {
+    display: grid;
+    width: min(760px, 100%);
+    gap: 11px;
+  }
+
+  .cook-skeleton-line {
+    display: block;
+    height: 10px;
+    border-radius: 999px;
+  }
+
+  .cook-skeleton-line.is-kicker { width: 108px; height: 8px; }
+  .cook-skeleton-line.is-title { width: min(390px, 62vw); height: clamp(44px, 6vw, 68px); border-radius: 14px; }
+  .cook-skeleton-line.is-lead { width: min(700px, 76vw); }
+  .cook-skeleton-line.is-lead-short { width: min(510px, 58vw); }
+  .cook-skeleton-line.is-label { width: 62px; height: 7px; }
+  .cook-skeleton-line.is-name { width: 78px; height: 8px; }
+  .cook-skeleton-line.is-result-label { width: 58px; height: 8px; }
+  .cook-skeleton-line.is-section-title { width: 150px; height: 15px; margin-top: 7px; }
+  .cook-skeleton-line.is-count { width: 58px; height: 7px; }
+  .cook-skeleton-line.is-hint { width: 112px; height: 7px; }
+  .cook-skeleton-line.is-note { width: 100%; height: 8px; }
+  .cook-skeleton-line.is-note-short { width: 72%; height: 8px; }
+
+  .cook-skeleton-pill {
+    display: block;
+    width: 86px;
+    height: 28px;
+    border-radius: 999px;
+  }
+
+  .cook-skeleton-pill.is-action { width: 126px; height: 40px; }
+  .cook-skeleton-pill.is-small { width: 90px; height: 30px; }
+
+  .cook-skeleton-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+  }
+
+  .cook-skeleton-equation {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(132px, 180px) auto;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 18px;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    background: var(--card);
+  }
+
+  .cook-skeleton-equation-card,
+  .cook-skeleton-result-mini {
+    min-width: 0;
+    min-height: 112px;
+    display: grid;
+    place-items: center;
+    align-content: center;
+    gap: 7px;
+    padding: 10px;
+    border: 1px solid var(--border);
+    border-radius: 15px;
+    background: var(--background);
+  }
+
+  .cook-skeleton-emoji {
+    display: block;
+    width: 46px;
+    height: 46px;
+    border-radius: 14px;
+  }
+
+  .cook-skeleton-operator {
+    width: 13px;
+    height: 13px;
+    border-radius: 4px;
+  }
+
+  .cook-skeleton-result-mini {
+    grid-template-columns: 82px minmax(0, 1fr);
+    padding: 8px;
+  }
+
+  .cook-skeleton-square {
+    display: block;
+    width: 82px;
+    height: 82px;
+    border-radius: 12px;
+  }
+
+  .cook-skeleton-circle {
+    display: block;
+    width: 32px;
+    height: 32px;
+    border-radius: 999px;
+  }
+
+  .cook-skeleton-workspace {
+    display: grid;
+    grid-template-columns: minmax(0, 1.25fr) minmax(340px, .75fr);
+    align-items: start;
+    gap: 18px;
+  }
+
+  .cook-skeleton-builder,
+  .cook-skeleton-result {
+    min-width: 0;
+    padding: 18px;
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    background: var(--background);
+    box-shadow: 0 1px 2px rgb(0 0 0 / .035);
+  }
+
+  .cook-skeleton-builder-head,
+  .cook-skeleton-result-head,
+  .cook-skeleton-grid-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .cook-skeleton-builder-head > div,
+  .cook-skeleton-result-head > div {
+    flex: 1;
+  }
+
+  .cook-skeleton-tabs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px;
+    margin-top: 18px;
+    padding: 4px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--card);
+  }
+
+  .cook-skeleton-tabs > span {
+    display: block;
+    height: 34px;
+    border-radius: 9px;
+  }
+
+  .cook-skeleton-search {
+    display: block;
+    width: 100%;
+    height: 40px;
+    margin-top: 14px;
+    border-radius: 12px;
+  }
+
+  .cook-skeleton-category-row {
+    display: flex;
+    gap: 5px;
+    margin-top: 10px;
+    overflow: hidden;
+  }
+
+  .cook-skeleton-category-row > span {
+    flex: 0 0 72px;
+    height: 30px;
+    border-radius: 999px;
+  }
+
+  .cook-skeleton-grid-heading {
+    padding: 12px 2px 8px;
+  }
+
+  .cook-skeleton-picker-grid {
+    display: grid;
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+    gap: 7px;
+  }
+
+  .cook-skeleton-picker-card {
+    min-width: 0;
+    min-height: 70px;
+    display: grid;
+    place-items: center;
+    align-content: center;
+    gap: 7px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+
+  .cook-skeleton-picker-card i,
+  .cook-skeleton-picker-card b {
+    display: block;
+    background: color-mix(in oklab, var(--foreground) 9%, transparent);
+  }
+
+  .cook-skeleton-picker-card i {
+    width: 27px;
+    height: 27px;
+    border-radius: 9px;
+  }
+
+  .cook-skeleton-picker-card b {
+    width: 62%;
+    height: 6px;
+    border-radius: 999px;
+  }
+
+  .cook-skeleton-controls {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 9px;
+    margin-top: 18px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+  }
+
+  .cook-skeleton-controls > span {
+    height: 42px;
+    border-radius: 12px;
+  }
+
+  .cook-skeleton-style-row {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 7px;
+    margin-top: 12px;
+  }
+
+  .cook-skeleton-style-row > span {
+    aspect-ratio: 1;
+    border-radius: 12px;
+  }
+
+  .cook-skeleton-result {
+    position: sticky;
+    top: 82px;
+    display: grid;
+    gap: 14px;
+  }
+
+  .cook-skeleton-canvas {
+    display: block;
+    width: 100%;
+    aspect-ratio: 1;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+  }
+
+  .cook-skeleton-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .cook-skeleton-actions > span {
+    height: 40px;
+    border-radius: 999px;
+  }
+
+  @keyframes cook-skeleton-shimmer {
+    to { transform: translateX(115%); }
+  }
+}
+
+@media (max-width: 980px) {
+  .cook-skeleton-workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .cook-skeleton-result {
+    position: static;
+    order: -1;
+    grid-template-columns: minmax(260px, .75fr) minmax(0, 1.25fr);
+  }
+
+  .cook-skeleton-result-head,
+  .cook-skeleton-canvas {
+    grid-column: 1;
+  }
+
+  .cook-skeleton-result > :not(.cook-skeleton-result-head):not(.cook-skeleton-canvas) {
+    grid-column: 2;
+  }
+
+  .cook-skeleton-style-row {
+    grid-template-columns: repeat(7, minmax(72px, 1fr));
+    overflow: hidden;
+  }
+}
+
+@media (max-width: 760px) {
+  .cook-skeleton-hero-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .cook-skeleton-equation {
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    gap: 7px;
+  }
+
+  .cook-skeleton-operator.is-equals {
+    display: none;
+  }
+
+  .cook-skeleton-result-mini {
+    grid-column: 1 / -1;
+    width: min(190px, 62vw);
+    min-height: 92px;
+    justify-self: center;
+  }
+
+  .cook-skeleton-circle {
+    grid-column: 1 / -1;
+    justify-self: center;
+  }
+
+  .cook-skeleton-picker-grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+
+  .cook-skeleton-controls {
+    grid-template-columns: 1fr;
+  }
+
+  .cook-skeleton-result {
+    grid-template-columns: 1fr;
+  }
+
+  .cook-skeleton-result > * {
+    grid-column: 1 !important;
+  }
+}
+
+@media (max-width: 520px) {
+  .cook-skeleton-picker-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .cook-skeleton-picker-card:nth-child(n + 17) {
+    display: none;
+  }
+
+  .cook-skeleton-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .cook-skeleton-line.is-title {
+    width: min(280px, 78vw);
+    height: 46px;
+  }
+
+  .cook-skeleton-line.is-lead,
+  .cook-skeleton-line.is-lead-short {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cook-skeleton :where(
+    .cook-skeleton-line,
+    .cook-skeleton-pill,
+    .cook-skeleton-emoji,
+    .cook-skeleton-square,
+    .cook-skeleton-circle,
+    .cook-skeleton-tabs > span,
+    .cook-skeleton-search,
+    .cook-skeleton-category-row > span,
+    .cook-skeleton-picker-card,
+    .cook-skeleton-controls > span,
+    .cook-skeleton-style-row > span,
+    .cook-skeleton-canvas,
+    .cook-skeleton-actions > span,
+    .cook-skeleton-operator
+  )::after {
+    animation: none;
+  }
+}

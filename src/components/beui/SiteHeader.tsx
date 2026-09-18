@@ -22,12 +22,14 @@ export default function SiteHeader({ homeUrl, emojisUrl, categoriesUrl, routePat
   const [navPreviewHref, setNavPreviewHref] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const rootRef = useRef<HTMLElement>(null);
+  const cookUrl = `${homeUrl.replace(/\/$/, '')}/cook`;
 
   const nav = useMemo(() => [
     { label: 'Home', href: homeUrl, active: routePath === '/' },
     { label: 'Browse', href: emojisUrl, active: routePath === '/emojis' || routePath.startsWith('/emoji/') },
-    { label: 'Categories', href: categoriesUrl, active: routePath === '/categories' || routePath.startsWith('/categories/') }
-  ], [homeUrl, emojisUrl, categoriesUrl, routePath]);
+    { label: 'Categories', href: categoriesUrl, active: routePath === '/categories' || routePath.startsWith('/categories/') },
+    { label: 'Cook', href: cookUrl, active: routePath === '/cook' }
+  ], [homeUrl, emojisUrl, categoriesUrl, cookUrl, routePath]);
 
   const activeNavHref = nav.find((item) => item.active)?.href ?? null;
   const highlightedNavHref = navPreviewHref ?? activeNavHref;

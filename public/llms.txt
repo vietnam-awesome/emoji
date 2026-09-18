@@ -1,6 +1,6 @@
 # ePlus Emoji
 
-> Open, searchable emoji directory and browser-based emoji editor for developers, communities, and AI agents.
+> Open, searchable emoji directory with browser-based Emoji Cook and editor tools for developers, communities, and AI agents.
 
 Canonical site: https://emoji.eplus.dev
 Repository: https://github.com/vietnam-awesome/emoji
@@ -12,6 +12,7 @@ Repository: https://github.com/vietnam-awesome/emoji
 - Browse categories: https://emoji.eplus.dev/categories
 - Category landing page pattern: https://emoji.eplus.dev/categories/{category-slug}
 - Emoji detail page pattern: https://emoji.eplus.dev/emoji/{slug}
+- Emoji Cook: https://emoji.eplus.dev/cook
 - Emoji editor: https://emoji.eplus.dev/editor
 - Static search manifest: https://emoji.eplus.dev/search/manifest.json
 - Sitemap: https://emoji.eplus.dev/sitemap.xml
@@ -20,9 +21,17 @@ Repository: https://github.com/vietnam-awesome/emoji
 
 The removed legacy `/api/emojis.json` and `/api/categories.json` endpoints are not public discovery APIs and should not be used.
 
+## Emoji Cook
+
+The `/cook` route is a client-side Unicode emoji mashup tool. Users choose two emoji ingredients, search or explore combinations, swap/randomize them, and select a composition style such as Auto, Mash together, Wear / top, Corner badge, Side by side, Surround, Inside, or Repeat pattern.
+
+Cooked output is rendered locally with the browser/device emoji font and Canvas. Users can choose transparent/light/dark backgrounds, export 512×512 PNG or WebP, copy PNG when supported, copy a shareable recipe URL, and continue editing the cooked result in `/editor` through same-tab browser session storage.
+
+Emoji Cook does not remix the site's third-party catalog artwork and should not be described as Google Emoji Kitchen or as hosting Emoji Kitchen artwork.
+
 ## Emoji editor
 
-The `/editor` route is a client-side emoji/image editor. It can open catalog emoji or user-provided PNG, WebP, JPG, GIF, and SVG files.
+The `/editor` route is a client-side emoji/image editor. It can open catalog emoji, receive cooked PNG output from `/cook`, or accept user-provided PNG, WebP, JPG, GIF, and SVG files.
 
 Supported editing includes crop/fit/fill, repositioning, square resize presets, rotation, flipping, padding, background changes, PNG/WebP export, and animated GIF editing. Animated GIF tools include play/pause, frame scrubbing, include/exclude, duplicate/delete, per-frame delay, global speed adjustment, and browser-side GIF re-encoding.
 
@@ -34,10 +43,10 @@ Deferred capabilities such as APNG frame-by-frame editing, interpolation, AI-gen
 
 Use `/emojis` for human-readable search/filtering, `/categories` for category discovery, `/categories/{category-slug}` for category overviews, and `/emoji/{slug}` for individual emoji details and hosted assets.
 
-For the build-generated search index, start from `/search/manifest.json` and follow the current manifest/shard references instead of hard-coding generated shard filenames.
+Use `/cook` when the task is to combine standard Unicode emoji into a new mashup. Use `/editor` when the task involves transforming an emoji, editing an animated GIF, or refining a cooked result.
 
-Use `/editor` when the task involves transforming an emoji or editing an animated GIF rather than only browsing or downloading it.
+For the build-generated search index, start from `/search/manifest.json` and follow the current manifest/shard references instead of hard-coding generated shard filenames.
 
 ## Rights and attribution
 
-Artwork can come from multiple upstream sources and may have different licensing terms. Do not infer redistribution rights from the directory alone. Check the relevant emoji detail/source metadata before reuse or redistribution.
+Artwork can come from multiple upstream sources and may have different licensing terms. Do not infer redistribution rights from the directory alone. Check the relevant emoji detail/source metadata before reuse or redistribution. Emoji Cook intentionally uses the user's browser/device Unicode emoji rendering rather than deriving new artwork from catalog assets.

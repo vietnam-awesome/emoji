@@ -7,17 +7,20 @@ const publicAgents = await readFile(new URL('../public/agents.md', import.meta.u
 const llms = await readFile(new URL('../public/llms.txt', import.meta.url), 'utf8');
 const staticSitemap = await readFile(new URL('../src/pages/sitemap-static.xml.js', import.meta.url), 'utf8');
 
-test('public editor stays synchronized across discovery surfaces', () => {
-  assert.match(staticSitemap, /\$\{SITE\}\/editor/);
-  assert.match(publicAgents, /https:\/\/emoji\.eplus\.dev\/editor/);
-  assert.match(llms, /https:\/\/emoji\.eplus\.dev\/editor/);
-});
+for (const route of ['editor', 'cook']) {
+  test(`public ${route} stays synchronized across discovery surfaces`, () => {
+    assert.match(staticSitemap, new RegExp(`\\$\\{SITE\\}\\/${route}`));
+    assert.match(publicAgents, new RegExp(`https:\\/\\/emoji\\.eplus\\.dev\\/${route}`));
+    assert.match(llms, new RegExp(`https:\\/\\/emoji\\.eplus\\.dev\\/${route}`));
+  });
+}
 
 test('agent instructions require public discovery docs to move together', () => {
   assert.match(repoAgents, /sitemap-static\.xml\.js/);
   assert.match(repoAgents, /public\/agents\.md/);
   assert.match(repoAgents, /public\/llms\.txt/);
   assert.match(repoAgents, /\/editor/);
+  assert.match(repoAgents, /\/cook/);
 });
 
 test('agent discovery docs do not advertise removed legacy JSON APIs', () => {
