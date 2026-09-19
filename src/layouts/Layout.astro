@@ -7,6 +7,7 @@ import FilterCompatibility from '../components/FilterCompatibility.astro';
 import Breadcrumb from '../components/Breadcrumb.astro';
 import SiteHeader from '../components/beui/SiteHeader';
 import BackToTop from '../components/beui/BackToTop';
+import EmojiQuickView from '../components/beui/EmojiQuickView.astro';
 
 interface BreadcrumbItem {
   name: string;
@@ -54,6 +55,7 @@ const homeUrl = withBase('/', base);
 const emojisUrl = withBase('/emojis', base);
 const categoriesUrl = withBase('/categories', base);
 const favoritesUrl = withBase('/favorites', base);
+const recentUrl = withBase('/recent', base);
 const animatedEmojisUrl = `${emojisUrl}?motion=yes`;
 const staticEmojisUrl = `${emojisUrl}?motion=no`;
 const faviconIcoUrl = withBase('/favicon.ico', base);
@@ -78,6 +80,7 @@ const isCategoriesIndex = routePath === '/categories';
 const isCategoryDetail = routePath.startsWith('/categories/');
 const isCategories = isCategoriesIndex || isCategoryDetail;
 const isFavorites = routePath === '/favorites';
+const isRecent = routePath === '/recent';
 const isCollectionPage = isBrowseIndex || isCategoriesIndex || isCategoryDetail;
 const pageKind = isHome
   ? 'home'
@@ -91,7 +94,9 @@ const pageKind = isHome
           ? 'category-detail'
           : isFavorites
             ? 'favorites'
-            : 'page';
+            : isRecent
+              ? 'recent'
+              : 'page';
 
 const absoluteHomeUrl = new URL(homeUrl, origin).toString();
 const absoluteBrowseUrl = new URL(emojisUrl, origin).toString();
@@ -115,6 +120,12 @@ if (isFavorites) {
   defaultBreadcrumbs.push(
     { name: 'Home', href: homeUrl },
     { name: 'My Emoji' }
+  );
+}
+if (isRecent) {
+  defaultBreadcrumbs.push(
+    { name: 'Home', href: homeUrl },
+    { name: 'Recently viewed' }
   );
 }
 if (isCategories) {
@@ -284,6 +295,7 @@ const schemaJson = JSON.stringify({
     </main>
     {isBrowseIndex && <FilterCompatibility />}
     <CatalogDownload />
+    <EmojiQuickView />
 
     <footer class="site-footer">
       <div class="shell footer-grid">
@@ -295,6 +307,7 @@ const schemaJson = JSON.stringify({
           <a href={emojisUrl}>Browse all</a>
           <a href={categoriesUrl}>Categories</a>
           <a href={favoritesUrl}>My Emoji</a>
+          <a href={recentUrl}>Recently viewed</a>
           <a href={animatedEmojisUrl}>Animated</a>
           <a href={staticEmojisUrl}>Static</a>
         </div>
@@ -309,6 +322,8 @@ const schemaJson = JSON.stringify({
 
     <script>
       import '../scripts/favorites.js';
+      import '../scripts/recent.js';
+      import '../scripts/quick-view.js';
     </script>
 
     <script is:inline>
