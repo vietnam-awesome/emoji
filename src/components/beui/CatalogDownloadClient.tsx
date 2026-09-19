@@ -1,15 +1,24 @@
 "use client";
 
-import { Download, X } from "lucide-react";
+import { Download, PackagePlus, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "../motion/button";
 
 type SelectedItem = {
   key: string;
+  slug: string;
   name: string;
   url: string;
   filename: string;
+  category: string;
+  categorySlug: string;
+  sourceLabel: string;
+  format: string;
+  animated: boolean;
+  emoji: string;
+  shortcode: string;
+  detailUrl: string;
 };
 
 const sanitizeFilename = (value: string) =>
@@ -141,7 +150,24 @@ export default function CatalogDownloadClient() {
     const name = card.dataset.downloadName || nameLink?.textContent?.trim() || image.alt || "emoji";
     const key = card.dataset.downloadKey || nameLink?.getAttribute("href") || url;
     const filename = card.dataset.downloadFilename || `${sanitizeFilename(name)}.${extensionFromUrl(url)}`;
-    return { key, name, url, filename };
+    const detailUrl = card.querySelector(".emoji-preview")?.getAttribute("href") || "";
+    const slug = card.dataset.favoriteKey || card.dataset.downloadKey || decodeURIComponent(detailUrl.split("/").filter(Boolean).at(-1) || key);
+    const format = card.dataset.favoriteFormat || extensionFromUrl(url);
+    return {
+      key,
+      slug,
+      name,
+      url,
+      filename,
+      category: card.dataset.favoriteCategory || card.dataset.category || "Other",
+      categorySlug: card.dataset.favoriteCategorySlug || card.dataset.categorySlug || "other",
+      sourceLabel: card.dataset.favoriteSource || card.dataset.sourceLabel || "",
+      format,
+      animated: (card.dataset.favoriteAnimated || card.dataset.animated) === "yes",
+      emoji: card.dataset.favoriteEmoji || "",
+      shortcode: card.dataset.favoriteShortcode || "",
+      detailUrl,
+    };
   }, []);
 
   const syncCard = useCallback((card: HTMLElement) => {
@@ -244,6 +270,18 @@ export default function CatalogDownloadClient() {
     setCount(0);
   };
 
+  useEffect(() => {
+    const onExternalClear = () => clearSelection();
+    document.addEventListener("eplus:selection-clear", onExternalClear);
+    return () => document.removeEventListener("eplus:selection-clear", onExternalClear);
+  });
+
+  const savePack = () => {
+    const items = [...selectedRef.current.values()];
+    if (!items.length || busy) return;
+    document.dispatchEvent(new CustomEvent("eplus:pack-save-request", { detail: { items } }));
+  };
+
   const downloadSelected = async () => {
     const items = [...selectedRef.current.values()];
     if (!items.length || busy) return;
@@ -326,6 +364,17 @@ export default function CatalogDownloadClient() {
             >
               <X className="size-3.5" aria-hidden="true" />
               Clear
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="emoji-selection-pack !border-0 !bg-transparent !text-background/80 !shadow-none hover:!bg-background/10 hover:!text-background disabled:!opacity-40"
+              onClick={savePack}
+              disabled={busy}
+              aria-label="Save selected emoji as a pack"
+            >
+              <PackagePlus className="size-3.5" aria-hidden="true" />
+              Pack
             </Button>
             <Button
               variant="secondary"
