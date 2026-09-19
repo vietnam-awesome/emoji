@@ -1,0 +1,81 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { withBase } from '../lib/url';
+
+const base = import.meta.env.BASE_URL;
+const browseUrl = withBase('/emojis', base);
+---
+<Layout
+  title="Recently viewed — ePlus Emoji"
+  description="Emoji you recently opened on this browser."
+  robots="noindex, follow"
+>
+  <section class="shell recent-page" data-recent-page data-base={base}>
+    <header class="favorites-header">
+      <div>
+        <p class="eyebrow">Personal history</p>
+        <h1>Recently viewed</h1>
+        <p>Your recent emoji stay only in this browser and are kept for quick access.</p>
+      </div>
+      <a class="secondary-action" href={browseUrl}>Browse emoji</a>
+    </header>
+
+    <div class="favorites-toolbar">
+      <p id="recent-summary" aria-live="polite">Loading recent emoji…</p>
+      <button class="favorites-clear" id="recent-clear" type="button" hidden>Clear history</button>
+    </div>
+
+    <div class="favorites-grid" id="recent-grid"></div>
+
+    <div class="favorites-empty" id="recent-empty" hidden>
+      <div aria-hidden="true">◷</div>
+      <h2>No recent emoji yet</h2>
+      <p>Open an emoji or use Quick View and it will appear here.</p>
+      <a class="primary-action" href={browseUrl}>Explore emoji</a>
+    </div>
+  </section>
+
+  <script>
+    import { createEmojiCard } from '../scripts/card-dom.js';
+
+    const STORAGE_KEY = 'eplus-emoji-recent-v1';
+    const root = document.querySelector('[data-recent-page]');
+    const grid = document.querySelector('#recent-grid');
+    const empty = document.querySelector('#recent-empty');
+    const summary = document.querySelector('#recent-summary');
+    const clearButton = document.querySelector('#recent-clear');
+    const base = root?.dataset.base || '/';
+    const basePrefix = base === '/' ? '' : base.replace(/\/$/, '');
+
+    const readRecent = () => {
+      try {
+        const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+        return Array.isArray(parsed) ? parsed.filter((item) => item && typeof item === 'object' && item.slug) : [];
+      } catch {
+        return [];
+      }
+    };
+
+    const render = () => {
+      if (!(grid instanceof HTMLElement)) return;
+      const records = readRecent();
+      grid.replaceChildren(...records.map((item) => createEmojiCard(item, basePrefix)));
+      if (summary) summary.textContent = records.length === 1 ? '1 recently viewed emoji' : `${records.length.toLocaleString('en-US')} recently viewed emoji`;
+      if (empty instanceof HTMLElement) empty.hidden = records.length > 0;
+      if (clearButton instanceof HTMLButtonElement) clearButton.hidden = records.length === 0;
+    };
+
+    clearButton?.addEventListener('click', () => {
+      localStorage.removeItem(STORAGE_KEY);
+      render();
+      document.dispatchEvent(new CustomEvent('eplus:recent-changed', { detail: { recent: [] } }));
+    });
+
+    document.addEventListener('eplus:recent-changed', render);
+    window.addEventListener('storage', (event) => {
+      if (event.key === STORAGE_KEY) render();
+    });
+
+    render();
+  </script>
+</Layout>
