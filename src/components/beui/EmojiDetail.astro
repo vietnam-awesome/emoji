@@ -169,6 +169,7 @@ const tagTargetUrl = (tag) => {
     data-current-hexcode={emoji.hexcode || ''}
     data-current-collection={emoji.collection || ''}
     data-current-style={emoji.style || ''}
+    data-current-image={imageUrl}
     data-current-tags={JSON.stringify((emoji.tags || []).slice(0, 16))}
     data-current-topics={JSON.stringify((emoji.topics || []).slice(0, 12))}
     data-search-root={withBase('/search', base).replace(/\/$/, '')}
@@ -178,7 +179,7 @@ const tagTargetUrl = (tag) => {
       <div>
         <p class="section-kicker">Discovery</p>
         <h2 id="similar-emoji-title">Similar emoji</h2>
-        <p>Related by Unicode identity, category, tags, collection and style.</p>
+        <p data-similar-description>Related by Unicode identity, category, tags, collection and style.</p>
       </div>
       <a href={categoryUrl}>More in {category} <span>→</span></a>
     </div>
@@ -428,6 +429,118 @@ const tagTargetUrl = (tag) => {
     topics: row.tp || []
   });
 
+  const VISUAL_CANDIDATE_LIMIT = 18;
+  const VISUAL_CONCURRENCY = 3;
+  const visualHashCache = new Map();
+
+  const loadBitmapForHash = async (url) => {
+    const response = await fetch(url, { mode: 'cors', credentials: 'omit', cache: 'force-cache' });
+    if (!response.ok) throw new Error(`Image returned HTTP ${response.status}`);
+    const blob = await response.blob();
+
+    if ('createImageBitmap' in window) {
+      return {
+        drawable: await createImageBitmap(blob),
+        cleanup(drawable) { drawable?.close?.(); }
+      };
+    }
+
+    const objectUrl = URL.createObjectURL(blob);
+    const image = new Image();
+    image.decoding = 'async';
+    image.src = objectUrl;
+    await image.decode();
+    return {
+      drawable: image,
+      cleanup() { URL.revokeObjectURL(objectUrl); }
+    };
+  };
+
+  const computeDHash = (url) => {
+    const sourceUrl = String(url || '').trim();
+    if (!sourceUrl) return Promise.resolve(null);
+    if (visualHashCache.has(sourceUrl)) return visualHashCache.get(sourceUrl);
+
+    const pending = (async () => {
+      let loaded;
+      try {
+        loaded = await loadBitmapForHash(sourceUrl);
+        const canvas = document.createElement('canvas');
+        canvas.width = 9;
+        canvas.height = 8;
+        const context = canvas.getContext('2d', { willReadFrequently: true });
+        if (!context) return null;
+        context.clearRect(0, 0, 9, 8);
+        context.drawImage(loaded.drawable, 0, 0, 9, 8);
+        const pixels = context.getImageData(0, 0, 9, 8).data;
+        let hash = '';
+        for (let y = 0; y < 8; y += 1) {
+          for (let x = 0; x < 8; x += 1) {
+            const left = (y * 9 + x) * 4;
+            const right = left + 4;
+            const leftGray = pixels[left] * .299 + pixels[left + 1] * .587 + pixels[left + 2] * .114;
+            const rightGray = pixels[right] * .299 + pixels[right + 1] * .587 + pixels[right + 2] * .114;
+            hash += leftGray > rightGray ? '1' : '0';
+          }
+        }
+        return hash;
+      } catch {
+        return null;
+      } finally {
+        loaded?.cleanup?.(loaded.drawable);
+      }
+    })();
+
+    visualHashCache.set(sourceUrl, pending);
+    return pending;
+  };
+
+  const hashDistance = (left, right) => {
+    if (!left || !right || left.length !== right.length) return null;
+    let distance = 0;
+    for (let index = 0; index < left.length; index += 1) {
+      if (left[index] !== right[index]) distance += 1;
+    }
+    return distance;
+  };
+
+  const visualBonus = (distance) => {
+    if (!Number.isFinite(distance)) return 0;
+    if (distance <= 8) return 28;
+    if (distance <= 16) return 18;
+    if (distance <= 24) return 10;
+    if (distance <= 32) return 4;
+    return 0;
+  };
+
+  const addVisualSimilarity = async (targetImage, ranked) => {
+    const targetHash = await computeDHash(targetImage);
+    if (!targetHash) return { ranked, matched: false };
+
+    const candidates = ranked.slice(0, VISUAL_CANDIDATE_LIMIT);
+    let matched = false;
+
+    for (let offset = 0; offset < candidates.length; offset += VISUAL_CONCURRENCY) {
+      const batch = candidates.slice(offset, offset + VISUAL_CONCURRENCY);
+      await Promise.all(batch.map(async (entry) => {
+        const candidateHash = await computeDHash(entry.record.image);
+        const distance = hashDistance(targetHash, candidateHash);
+        if (distance === null) return;
+        entry.visualDistance = distance;
+        entry.visualScore = visualBonus(distance);
+        if (entry.visualScore > 0) matched = true;
+      }));
+    }
+
+    ranked.sort((left, right) =>
+      (right.score + (right.visualScore || 0)) - (left.score + (left.visualScore || 0)) ||
+      (left.visualDistance ?? 65) - (right.visualDistance ?? 65) ||
+      left.record.name.localeCompare(right.record.name)
+    );
+
+    return { ranked, matched };
+  };
+
   const createSimilarCard = (emoji) => {
     const basePrefix = import.meta.env.BASE_URL === '/' ? '' : import.meta.env.BASE_URL.replace(/\/$/, '');
     const detailUrl = `${basePrefix}/emoji/${encodeURIComponent(emoji.slug)}`;
@@ -559,20 +672,30 @@ const tagTargetUrl = (tag) => {
         chunks.set(chunkIndex, await response.json());
       }));
 
-      const candidates = sampledIds
+      const ranked = sampledIds
         .map((id) => {
           const chunkIndex = Math.floor(id / manifest.chunkSize);
           const row = chunks.get(chunkIndex)?.[id % manifest.chunkSize];
           return row ? expandSimilarRecord(row) : null;
         })
         .filter(Boolean)
-        .map((record) => ({ record, score: scoreSimilar(target, record) }))
+        .map((record) => ({ record, score: scoreSimilar(target, record), visualScore: 0, visualDistance: null }))
         .filter(({ score }) => Number.isFinite(score) && score > 0)
-        .sort((left, right) => right.score - left.score || left.record.name.localeCompare(right.record.name))
-        .slice(0, 12)
-        .map(({ record }) => record);
+        .sort((left, right) => right.score - left.score || left.record.name.localeCompare(right.record.name));
 
-      if (!candidates.length) { similarSection.hidden = true; return; }
+      if (!ranked.length) { similarSection.hidden = true; return; }
+
+      const visualResult = await addVisualSimilarity(
+        similarSection.dataset.currentImage || '',
+        ranked
+      );
+      const candidates = visualResult.ranked.slice(0, 12).map(({ record }) => record);
+
+      const description = similarSection.querySelector('[data-similar-description]');
+      if (description && visualResult.matched) {
+        description.textContent = 'Ranked by metadata and visual appearance using a lightweight perceptual image match.';
+      }
+
       const fragment = document.createDocumentFragment();
       for (const record of candidates) fragment.append(createSimilarCard(record));
       similarGrid.replaceChildren(fragment);
