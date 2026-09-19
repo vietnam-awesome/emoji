@@ -442,7 +442,7 @@
   .emoji-pack-dialog-actions { display: flex; justify-content: flex-end; gap: 8px; }
   .packs-page { padding: 40px 0 82px; }
   .packs-list-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; }
-  .pack-card { overflow: hidden; border: 1px solid var(--border); border-radius: 14px; background: var(--background); }
+  .pack-card { position: relative; overflow: hidden; border: 1px solid var(--border); border-radius: 14px; background: var(--background); }
   .pack-card-main { display: flex; min-width: 0; align-items: center; gap: 12px; padding: 15px; color: inherit; text-decoration: none; }
   .pack-card-main:hover { background: var(--card); }
   .pack-card-icon { display: grid; width: 42px; height: 42px; flex: 0 0 auto; place-items: center; border-radius: 12px; background: var(--card); font-size: 1.05rem; }
@@ -450,8 +450,9 @@
   .pack-card-copy strong, .pack-card-copy small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .pack-card-copy strong { font-size: .8rem; }
   .pack-card-copy small { color: var(--muted-foreground); font-size: .61rem; }
-  .pack-card-delete { width: 100%; min-height: 34px; border: 0; border-top: 1px solid var(--border); background: transparent; color: var(--muted-foreground); font-size: .66rem; font-weight: 650; cursor: pointer; }
-  .pack-card-delete:hover { background: var(--card); color: var(--foreground); }
+  .pack-card-delete { position: absolute; top: 9px; right: 9px; z-index: 2; display: grid; width: 32px; height: 32px; place-items: center; padding: 0; border: 1px solid var(--border); border-radius: 999px; background: color-mix(in oklab,var(--background) 92%,transparent); color: var(--muted-foreground); box-shadow: 0 4px 14px rgb(0 0 0 / .08); cursor: pointer; backdrop-filter: blur(8px); transition: border-color .15s ease, background .15s ease, color .15s ease, transform .15s ease; }
+  .pack-card-delete:hover, .pack-card-delete:focus-visible { border-color: color-mix(in oklab,var(--destructive) 42%,var(--border)); background: color-mix(in oklab,var(--destructive) 10%,var(--background)); color: var(--destructive); outline: none; transform: translateY(-1px); }
+  .pack-card-delete svg { width: 15px; height: 15px; }
   .pack-detail { margin-top: 40px; padding-top: 30px; border-top: 1px solid var(--border); }
   .pack-detail-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; margin-bottom: 18px; }
   .pack-detail-head h2 { margin: 0; font-size: clamp(1.5rem,3vw,2.1rem); letter-spacing: -.035em; }

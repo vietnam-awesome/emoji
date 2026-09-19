@@ -219,3 +219,7 @@ window.eplusEmojiPacks = {
   removeItems,
   storageKey: STORAGE_KEY
 };
+
+// Let pages that subscribe after initial HTML parsing refresh from the
+// authoritative localStorage state as soon as the pack module is ready.
+queueMicrotask(() => emitChange(readPacks()));

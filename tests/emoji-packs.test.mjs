@@ -22,6 +22,13 @@ test('packs are browser-local and support create add delete and remove', async (
   assert.match(packs, /removeItems/);
 });
 
+test('packs page initializes pack storage before its first render', async () => {
+  const page = await read('src/pages/packs.astro');
+  const packs = await read('src/scripts/packs.js');
+  assert.match(page, /import '\.\.\/scripts\/packs\.js'/);
+  assert.match(packs, /queueMicrotask\(\(\) => emitChange\(readPacks\(\)\)\)/);
+});
+
 test('packs page reuses emoji cards and ZIP selection flow', async () => {
   const page = await read('src/pages/packs.astro');
   assert.match(page, /createEmojiCard/);
@@ -29,6 +36,18 @@ test('packs page reuses emoji cards and ZIP selection flow', async () => {
   assert.match(page, /Remove selected/);
   assert.match(page, /data-emoji-select/);
   assert.match(page, /noindex, follow/);
+});
+
+test('pack delete uses BEUI confirmation instead of window.confirm', async () => {
+  const page = await read('src/pages/packs.astro');
+  const confirm = await read('src/components/beui/PackDeleteConfirm.tsx');
+  assert.match(page, /PackDeleteConfirm client:load/);
+  assert.match(page, /eplus:pack-delete-request/);
+  assert.doesNotMatch(page, /window\.confirm/);
+  assert.match(confirm, /from "\.\.\/motion\/bottom-sheet"/);
+  assert.match(confirm, /from "\.\.\/motion\/button"/);
+  assert.match(confirm, /Delete pack/);
+  assert.match(confirm, /!bg-destructive/);
 });
 
 test('pack dialog is wired globally', async () => {

@@ -1,5 +1,6 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import PackDeleteConfirm from '../components/beui/PackDeleteConfirm';
 import { withBase } from '../lib/url';
 
 const base = import.meta.env.BASE_URL;
@@ -25,6 +26,7 @@ const favoritesUrl = withBase('/favorites', base);
     </header>
 
     <div class="packs-list-grid" id="packs-list"></div>
+    <PackDeleteConfirm client:load />
 
     <div class="favorites-empty" id="packs-empty" hidden>
       <div aria-hidden="true">▦</div>
@@ -50,6 +52,7 @@ const favoritesUrl = withBase('/favorites', base);
   </section>
 
   <script>
+    import '../scripts/packs.js';
     import { createEmojiCard } from '../scripts/card-dom.js';
 
     const root = document.querySelector('[data-packs-page]');
@@ -106,16 +109,13 @@ const favoritesUrl = withBase('/favorites', base);
       const remove = document.createElement('button');
       remove.type = 'button';
       remove.className = 'pack-card-delete';
-      remove.textContent = 'Delete';
+      remove.dataset.beuiTooltip = `Delete ${pack.name}`;
+      remove.setAttribute('aria-label', `Delete ${pack.name}`);
+      remove.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3m-8 0 1 13h8l1-13M10 11v5m4-5v5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="sr-only">Delete</span>';
       remove.addEventListener('click', () => {
-        if (!window.confirm(`Delete “${pack.name}”?`)) return;
-        window.eplusEmojiPacks?.delete?.(pack.id);
-        if (currentPackId() === pack.id) {
-          const url = new URL(window.location.href);
-          url.searchParams.delete('pack');
-          history.replaceState({}, '', `${url.pathname}${url.search}`);
-        }
-        render();
+        document.dispatchEvent(new CustomEvent('eplus:pack-delete-request', {
+          detail: { id: pack.id, name: pack.name, count: pack.items.length }
+        }));
       });
 
       article.append(link, remove);
