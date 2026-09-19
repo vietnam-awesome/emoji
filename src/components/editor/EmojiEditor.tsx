@@ -67,6 +67,13 @@ interface Props {
 
 const PRESETS = [32, 64, 128, 256, 512];
 const GIF_SPEEDS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2, 3];
+const GIF_COLOR_OPTIONS = [256, 128, 64, 32];
+const PLATFORM_PRESETS = [
+  { label: 'Discord', size: 128 },
+  { label: 'Slack', size: 128 },
+  { label: 'Twitch', size: 112 },
+  { label: 'Telegram', size: 100 },
+];
 const MAX_GIF_DECODE_PIXELS = 18_000_000;
 const EDITOR_HANDOFF_KEY = 'eplus-emoji-editor-handoff';
 const EDITOR_HANDOFF_NAME_KEY = 'eplus-emoji-editor-handoff-name';
@@ -163,6 +170,7 @@ export default function EmojiEditor({ browseUrl }: Props) {
   const initialGifFramesRef = useRef<GifTimelineFrame[]>([]);
   const currentFrameIdRef = useRef<string | null>(null);
   const gifSpeedRef = useRef(1);
+  const gifColorsRef = useRef(256);
   const gestureRef = useRef<HistorySnapshot | null>(null);
   const dragRef = useRef<{ pointerId: number; x: number; y: number; settings: Settings } | null>(null);
 
@@ -181,6 +189,7 @@ export default function EmojiEditor({ browseUrl }: Props) {
   const [currentFrameId, setCurrentFrameId] = useState<string | null>(null);
   const [playing, setPlaying] = useState(false);
   const [gifSpeed, setGifSpeed] = useState(1);
+  const [gifColors, setGifColors] = useState(256);
 
   const replace = useCallback((next: Settings) => {
     settingsRef.current = next;
@@ -202,6 +211,12 @@ export default function EmojiEditor({ browseUrl }: Props) {
     setGifSpeed(next);
   }, []);
 
+  const replaceGifColors = useCallback((next: number) => {
+    const clean = GIF_COLOR_OPTIONS.includes(next) ? next : 256;
+    gifColorsRef.current = clean;
+    setGifColors(clean);
+  }, []);
+
   const snapshot = useCallback((): HistorySnapshot => ({
     settings: { ...settingsRef.current },
     frames: cloneFrames(gifFramesRef.current),
@@ -220,7 +235,7 @@ export default function EmojiEditor({ browseUrl }: Props) {
     replaceFrames(cloneFrames(next.frames));
     replaceCurrentFrameId(next.currentFrameId);
     replaceGifSpeed(next.gifSpeed);
-  }, [replace, replaceFrames, replaceCurrentFrameId, replaceGifSpeed]);
+  }, [replace, replaceFrames, replaceCurrentFrameId, replaceGifSpeed, replaceGifColors]);
 
   const commit = useCallback((patch: Partial<Settings>) => {
     const current = settingsRef.current;
@@ -271,6 +286,7 @@ export default function EmojiEditor({ browseUrl }: Props) {
     replaceFrames(restoredFrames);
     replaceCurrentFrameId(restoredFrames[0]?.id ?? null);
     replaceGifSpeed(1);
+    replaceGifColors(256);
     setPlaying(Boolean(source.animated));
     setFormat(source.animated ? 'gif' : 'png');
   };
@@ -313,6 +329,7 @@ export default function EmojiEditor({ browseUrl }: Props) {
     });
     replaceCurrentFrameId(frames[0]?.id ?? null);
     replaceGifSpeed(1);
+    replaceGifColors(256);
     setPlaying(animated);
     setFormat(animated ? 'gif' : 'png');
     if (animatedHint && !animated && !isGif) {
@@ -321,7 +338,7 @@ export default function EmojiEditor({ browseUrl }: Props) {
     replace(DEFAULTS);
     setPast([]);
     setFuture([]);
-  }, [replace, replaceFrames, replaceCurrentFrameId, replaceGifSpeed]);
+  }, [replace, replaceFrames, replaceCurrentFrameId, replaceGifSpeed, replaceGifColors]);
 
   const loadRemote = useCallback(async (url: string, name: string, animated: boolean) => {
     setLoading(true);
@@ -510,7 +527,7 @@ export default function EmojiEditor({ browseUrl }: Props) {
       const context = canvas.getContext('2d', { willReadFrequently: true });
       if (!context) throw new Error('Canvas is unavailable in this browser.');
       const pixels = context.getImageData(0, 0, size, size).data;
-      const palette = quantize(pixels, 256, transparentBackground
+      const palette = quantize(pixels, gifColorsRef.current, transparentBackground
         ? { format: 'rgba4444', oneBitAlpha: true }
         : { format: 'rgb565' });
       const indexed = applyPalette(pixels, palette, paletteFormat);
@@ -676,6 +693,25 @@ export default function EmojiEditor({ browseUrl }: Props) {
     if (gifSpeedRef.current === next) return;
     pushHistory();
     replaceGifSpeed(next);
+  };
+
+  const reverseGifFrames = () => {
+    const frames = gifFramesRef.current;
+    if (frames.length <= 1) return;
+    pushHistory();
+    const next = [...frames].reverse();
+    replaceFrames(next);
+    const currentId = currentFrameIdRef.current;
+    if (!next.some((frame) => frame.id === currentId)) {
+      replaceCurrentFrameId(next.find((frame) => frame.enabled)?.id ?? next[0]?.id ?? null);
+    }
+    setPlaying(false);
+    setStatus('Reversed GIF frame order.');
+  };
+
+  const changeGifColors = (next: number) => {
+    replaceGifColors(next);
+    setStatus(next < 256 ? `GIF palette set to ${next} colors for a smaller export.` : 'GIF palette restored to maximum quality.');
   };
 
   const pointerDown = (event: ReactPointerEvent<HTMLCanvasElement>) => {
@@ -846,7 +882,20 @@ export default function EmojiEditor({ browseUrl }: Props) {
                   </SelectContent>
                 </Select>
               </div>
-              <small className="editor-animation-help">Frame selection, delay, duplicate and delete controls are available in the timeline under the preview.</small>
+              <div className="editor-animation-speed editor-animation-speed-full">
+                <span>GIF palette</span>
+                <Select value={String(gifColors)} onValueChange={(value) => changeGifColors(Number(value))} className="editor-beui-select">
+                  <SelectTrigger className="editor-beui-select-trigger"><SelectValue /></SelectTrigger>
+                  <SelectContent className="editor-beui-select-content">
+                    {GIF_COLOR_OPTIONS.map((colors) => <SelectItem key={colors} value={String(colors)}>{colors} colors{colors === 256 ? ' · best quality' : colors === 128 ? ' · balanced' : ' · smaller file'}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="editor-animation-tools">
+                <button type="button" onClick={reverseGifFrames}>Reverse frames</button>
+                <button type="button" onClick={() => changeGifColors(64)}>Optimize smaller</button>
+              </div>
+              <small className="editor-animation-help">Lower palettes reduce GIF size. Frame selection, delay, duplicate and delete controls remain available in the timeline.</small>
             </section>
           )}
 
@@ -873,7 +922,14 @@ export default function EmojiEditor({ browseUrl }: Props) {
           <section className="editor-control-group">
             <div className="editor-control-heading"><strong>Canvas size</strong><small>Export dimensions</small></div>
             <div className="editor-size-presets">{PRESETS.map((size) => <button key={size} type="button" className={settings.size === size ? 'is-active' : ''} onClick={() => commit({ size })}>{size}</button>)}</div>
-            <small className="editor-control-help">Export uses the full square canvas, including transparent space around the image.</small>
+            <div className="editor-platform-presets" aria-label="Platform size presets">
+              {PLATFORM_PRESETS.map((preset) => (
+                <button key={preset.label} type="button" className={settings.size === preset.size ? 'is-active' : ''} onClick={() => commit({ size: preset.size })}>
+                  <strong>{preset.label}</strong><span>{preset.size}px</span>
+                </button>
+              ))}
+            </div>
+            <small className="editor-control-help">Export uses the full square canvas. Telegram animated custom emoji uses WebM; this editor exports its 100px preset as a static frame unless you choose GIF for other platforms.</small>
           </section>
 
           <section className="editor-control-group">
