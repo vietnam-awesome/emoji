@@ -38,6 +38,18 @@ test('packs page reuses emoji cards and ZIP selection flow', async () => {
   assert.match(page, /noindex, follow/);
 });
 
+test('pack delete uses BEUI confirmation instead of window.confirm', async () => {
+  const page = await read('src/pages/packs.astro');
+  const confirm = await read('src/components/beui/PackDeleteConfirm.tsx');
+  assert.match(page, /PackDeleteConfirm client:load/);
+  assert.match(page, /eplus:pack-delete-request/);
+  assert.doesNotMatch(page, /window\.confirm/);
+  assert.match(confirm, /from "\.\.\/motion\/bottom-sheet"/);
+  assert.match(confirm, /from "\.\.\/motion\/button"/);
+  assert.match(confirm, /Delete pack/);
+  assert.match(confirm, /!bg-destructive/);
+});
+
 test('pack dialog is wired globally', async () => {
   const layout = await read('src/layouts/Layout.astro');
   const dialog = await read('src/components/beui/EmojiPackDialog.astro');
