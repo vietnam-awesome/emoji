@@ -32,7 +32,7 @@ export default function SiteHeader({ homeUrl, emojisUrl, categoriesUrl, routePat
     { label: 'Browse', href: emojisUrl, active: routePath === '/emojis' || routePath.startsWith('/emoji/') },
     { label: 'Categories', href: categoriesUrl, active: routePath === '/categories' || routePath.startsWith('/categories/') },
     { label: 'Cook', href: cookUrl, active: routePath === '/cook' },
-    { label: 'My Emoji', href: favoritesUrl, active: routePath === '/favorites', count: favoriteCount }
+    { label: 'My Emoji', href: favoritesUrl, active: ['/favorites', '/recent', '/packs'].includes(routePath), count: favoriteCount }
   ], [homeUrl, emojisUrl, categoriesUrl, cookUrl, favoritesUrl, routePath, favoriteCount]);
 
   const activeNavHref = nav.find((item) => item.active)?.href ?? null;
