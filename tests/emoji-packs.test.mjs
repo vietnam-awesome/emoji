@@ -22,6 +22,13 @@ test('packs are browser-local and support create add delete and remove', async (
   assert.match(packs, /removeItems/);
 });
 
+test('packs page initializes pack storage before its first render', async () => {
+  const page = await read('src/pages/packs.astro');
+  const packs = await read('src/scripts/packs.js');
+  assert.match(page, /import '\.\.\/scripts\/packs\.js'/);
+  assert.match(packs, /queueMicrotask\(\(\) => emitChange\(readPacks\(\)\)\)/);
+});
+
 test('packs page reuses emoji cards and ZIP selection flow', async () => {
   const page = await read('src/pages/packs.astro');
   assert.match(page, /createEmojiCard/);
