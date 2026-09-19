@@ -62,6 +62,70 @@
   line-height: 1.5;
 }
 
+.editor-animation-tools {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.editor-animation-tools button {
+  min-height: 34px;
+  padding: 0 9px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--background);
+  color: var(--foreground);
+  font-size: .64rem;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.editor-animation-tools button:hover {
+  border-color: var(--border-strong);
+  background: var(--card);
+}
+
+.editor-platform-presets {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+  margin-top: 8px;
+}
+
+.editor-platform-presets button {
+  display: flex;
+  min-width: 0;
+  min-height: 38px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 9px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--background);
+  color: var(--foreground);
+  cursor: pointer;
+}
+
+.editor-platform-presets button:hover,
+.editor-platform-presets button.is-active {
+  border-color: var(--border-strong);
+  background: var(--card);
+}
+
+.editor-platform-presets strong {
+  overflow: hidden;
+  font-size: .64rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.editor-platform-presets span {
+  flex: 0 0 auto;
+  color: var(--muted-foreground);
+  font-size: .58rem;
+}
+
 @media (max-width: 920px) {
   .editor-animation-group {
     z-index: 8;
