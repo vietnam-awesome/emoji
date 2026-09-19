@@ -1,0 +1,47 @@
+---
+---
+<dialog class="emoji-quick-view" id="emoji-quick-view" aria-labelledby="emoji-quick-view-title">
+  <div class="emoji-quick-view-shell">
+    <button class="emoji-quick-view-close" type="button" data-quick-view-close aria-label="Close quick view">×</button>
+
+    <div class="emoji-quick-view-preview">
+      <span class="emoji-quick-view-canvas">
+        <img data-quick-view-image alt="" />
+      </span>
+      <span class="emoji-quick-view-motion" data-quick-view-motion hidden>GIF</span>
+    </div>
+
+    <div class="emoji-quick-view-content">
+      <p class="eyebrow" data-quick-view-source>Emoji</p>
+      <h2 id="emoji-quick-view-title" data-quick-view-name>Quick view</h2>
+      <div class="emoji-quick-view-meta">
+        <span data-quick-view-category>Other</span>
+        <span data-quick-view-format>PNG</span>
+      </div>
+
+      <div class="emoji-quick-view-actions">
+        <a class="primary-action" data-quick-view-download href="#" download>Download</a>
+        <button class="secondary-action emoji-quick-view-favorite" type="button" data-favorite-action aria-pressed="false" data-beui-tooltip="Save to My Emoji" aria-label="Save to My Emoji">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span class="sr-only" data-favorite-label>Save to My Emoji</span>
+        </button>
+        <a class="secondary-action" data-quick-view-details href="#">Open details</a>
+      </div>
+
+      <section class="emoji-quick-view-export" aria-labelledby="emoji-quick-view-export-title">
+        <div>
+          <p class="section-kicker">Platform export</p>
+          <h3 id="emoji-quick-view-export-title">Ready-to-upload sizes</h3>
+        </div>
+        <div class="emoji-quick-view-export-grid">
+          <button type="button" data-export-preset="discord"><strong>Discord</strong><span>128×128 PNG</span></button>
+          <button type="button" data-export-preset="slack"><strong>Slack</strong><span>128×128 PNG</span></button>
+          <button type="button" data-export-preset="twitch"><strong>Twitch</strong><span>112×112 PNG</span></button>
+          <button type="button" data-export-preset="telegram"><strong>Telegram</strong><span>100×100 PNG</span></button>
+        </div>
+        <p class="emoji-quick-view-export-note" data-quick-view-export-note>Static exports preserve transparency and fit the image inside a square canvas.</p>
+        <p class="emoji-quick-view-status" data-quick-view-status aria-live="polite"></p>
+      </section>
+    </div>
+  </div>
+</dialog>
