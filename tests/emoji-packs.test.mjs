@@ -8,7 +8,7 @@ test('selection bar can save selected emoji into packs', async () => {
   const selection = await read('src/components/beui/CatalogDownloadClient.tsx');
   assert.match(selection, /eplus:pack-save-request/);
   assert.match(selection, /PackagePlus/);
-  assert.match(selection, />Pack</);
+  assert.match(selection, /Save selected emoji as a pack/);
   assert.match(selection, /eplus:selection-clear/);
 });
 
