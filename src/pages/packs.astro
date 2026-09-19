@@ -1,0 +1,185 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { withBase } from '../lib/url';
+
+const base = import.meta.env.BASE_URL;
+const browseUrl = withBase('/emojis', base);
+const favoritesUrl = withBase('/favorites', base);
+---
+<Layout
+  title="Emoji Packs — ePlus Emoji"
+  description="Create and manage browser-local emoji packs for quick ZIP downloads."
+  robots="noindex, follow"
+>
+  <section class="shell packs-page" data-packs-page data-base={base}>
+    <header class="favorites-header">
+      <div>
+        <p class="eyebrow">Personal collections</p>
+        <h1>Emoji Packs</h1>
+        <p>Group selected emoji into reusable packs, reopen them later, then select all and download a ZIP.</p>
+      </div>
+      <div class="favorites-header-actions">
+        <a class="secondary-action" href={favoritesUrl}>My Emoji</a>
+        <a class="primary-action" href={browseUrl}>Build a pack</a>
+      </div>
+    </header>
+
+    <div class="packs-list-grid" id="packs-list"></div>
+
+    <div class="favorites-empty" id="packs-empty" hidden>
+      <div aria-hidden="true">▦</div>
+      <h2>No packs yet</h2>
+      <p>Select emoji while browsing, then use “Pack” in the selection bar.</p>
+      <a class="primary-action" href={browseUrl}>Browse emoji</a>
+    </div>
+
+    <section class="pack-detail" id="pack-detail" hidden aria-labelledby="pack-detail-title">
+      <div class="pack-detail-head">
+        <div>
+          <p class="section-kicker">Pack contents</p>
+          <h2 id="pack-detail-title"></h2>
+          <p id="pack-detail-summary"></p>
+        </div>
+        <div class="pack-detail-actions">
+          <button class="secondary-action" id="pack-select-all" type="button">Select all</button>
+          <button class="secondary-action" id="pack-remove-selected" type="button" disabled>Remove selected</button>
+        </div>
+      </div>
+      <div class="favorites-grid" id="pack-items-grid"></div>
+    </section>
+  </section>
+
+  <script>
+    import { createEmojiCard } from '../scripts/card-dom.js';
+
+    const root = document.querySelector('[data-packs-page]');
+    const list = document.querySelector('#packs-list');
+    const empty = document.querySelector('#packs-empty');
+    const detail = document.querySelector('#pack-detail');
+    const detailTitle = document.querySelector('#pack-detail-title');
+    const detailSummary = document.querySelector('#pack-detail-summary');
+    const itemsGrid = document.querySelector('#pack-items-grid');
+    const selectAllButton = document.querySelector('#pack-select-all');
+    const removeSelectedButton = document.querySelector('#pack-remove-selected');
+    const base = root?.dataset.base || '/';
+    const basePrefix = base === '/' ? '' : base.replace(/\/$/, '');
+    const selected = new Set();
+
+    const readPacks = () => window.eplusEmojiPacks?.read?.() || [];
+    const currentPackId = () => new URLSearchParams(window.location.search).get('pack');
+
+    const formatDate = (timestamp) => {
+      try {
+        return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(new Date(timestamp));
+      } catch {
+        return '';
+      }
+    };
+
+    const packUrl = (id) => {
+      const url = new URL(window.location.href);
+      url.searchParams.set('pack', id);
+      return `${url.pathname}${url.search}`;
+    };
+
+    const createPackCard = (pack) => {
+      const article = document.createElement('article');
+      article.className = 'pack-card';
+
+      const link = document.createElement('a');
+      link.className = 'pack-card-main';
+      link.href = packUrl(pack.id);
+
+      const icon = document.createElement('span');
+      icon.className = 'pack-card-icon';
+      icon.textContent = '▦';
+
+      const copy = document.createElement('span');
+      copy.className = 'pack-card-copy';
+      const name = document.createElement('strong');
+      name.textContent = pack.name;
+      const meta = document.createElement('small');
+      meta.textContent = `${pack.items.length} emoji · updated ${formatDate(pack.updatedAt)}`;
+      copy.append(name, meta);
+      link.append(icon, copy);
+
+      const remove = document.createElement('button');
+      remove.type = 'button';
+      remove.className = 'pack-card-delete';
+      remove.textContent = 'Delete';
+      remove.addEventListener('click', () => {
+        if (!window.confirm(`Delete “${pack.name}”?`)) return;
+        window.eplusEmojiPacks?.delete?.(pack.id);
+        if (currentPackId() === pack.id) {
+          const url = new URL(window.location.href);
+          url.searchParams.delete('pack');
+          history.replaceState({}, '', `${url.pathname}${url.search}`);
+        }
+        render();
+      });
+
+      article.append(link, remove);
+      return article;
+    };
+
+    const renderDetail = (packs) => {
+      const id = currentPackId();
+      const pack = packs.find((item) => item.id === id);
+      selected.clear();
+      if (removeSelectedButton instanceof HTMLButtonElement) removeSelectedButton.disabled = true;
+
+      if (!pack || !(detail instanceof HTMLElement) || !(itemsGrid instanceof HTMLElement)) {
+        if (detail instanceof HTMLElement) detail.hidden = true;
+        itemsGrid?.replaceChildren();
+        return;
+      }
+
+      detail.hidden = false;
+      if (detailTitle) detailTitle.textContent = pack.name;
+      if (detailSummary) detailSummary.textContent = `${pack.items.length} emoji · select items to download or remove them from this pack.`;
+      itemsGrid.replaceChildren(...pack.items.map((item) => createEmojiCard(item, basePrefix)));
+    };
+
+    const render = () => {
+      if (!(list instanceof HTMLElement)) return;
+      const packs = readPacks();
+      list.replaceChildren(...packs.map(createPackCard));
+      if (empty instanceof HTMLElement) empty.hidden = packs.length > 0;
+      renderDetail(packs);
+    };
+
+    document.addEventListener('change', (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLInputElement) || !target.matches('#pack-items-grid [data-emoji-select]')) return;
+      const card = target.closest('.emoji-card[data-emoji-card]');
+      const slug = card?.dataset.downloadKey;
+      if (!slug) return;
+      if (target.checked) selected.add(slug);
+      else selected.delete(slug);
+      if (removeSelectedButton instanceof HTMLButtonElement) removeSelectedButton.disabled = selected.size === 0;
+    });
+
+    selectAllButton?.addEventListener('click', () => {
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        const inputs = itemsGrid?.querySelectorAll('[data-emoji-select]') || [];
+        for (const input of inputs) {
+          if (!(input instanceof HTMLInputElement) || input.checked) continue;
+          input.checked = true;
+          input.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+      }));
+    });
+
+    removeSelectedButton?.addEventListener('click', () => {
+      const id = currentPackId();
+      if (!id || !selected.size) return;
+      window.eplusEmojiPacks?.removeItems?.(id, [...selected]);
+      document.dispatchEvent(new CustomEvent('eplus:selection-clear'));
+      render();
+    });
+
+    document.addEventListener('eplus:packs-changed', render);
+    window.addEventListener('popstate', render);
+    render();
+  </script>
+</Layout>

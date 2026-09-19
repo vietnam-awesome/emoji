@@ -1,0 +1,33 @@
+---
+---
+<dialog class="emoji-pack-dialog" id="emoji-pack-dialog" aria-labelledby="emoji-pack-dialog-title">
+  <form class="emoji-pack-dialog-shell" method="dialog" data-pack-dialog-form>
+    <div class="emoji-pack-dialog-head">
+      <div>
+        <p class="eyebrow">Personal collection</p>
+        <h2 id="emoji-pack-dialog-title">Save emoji pack</h2>
+        <p data-pack-dialog-count>0 emoji selected</p>
+      </div>
+      <button class="emoji-pack-dialog-close" type="button" data-pack-dialog-close aria-label="Close pack dialog">×</button>
+    </div>
+
+    <label class="emoji-pack-field">
+      <span>Destination</span>
+      <select data-pack-target>
+        <option value="new">Create a new pack</option>
+      </select>
+    </label>
+
+    <label class="emoji-pack-field" data-pack-name-field>
+      <span>Pack name</span>
+      <input data-pack-name type="text" maxlength="60" autocomplete="off" placeholder="e.g. Work reactions" />
+    </label>
+
+    <p class="emoji-pack-dialog-status" data-pack-dialog-status aria-live="polite"></p>
+
+    <div class="emoji-pack-dialog-actions">
+      <button class="secondary-action" type="button" data-pack-dialog-cancel>Cancel</button>
+      <button class="primary-action" type="submit" data-pack-dialog-save>Save pack</button>
+    </div>
+  </form>
+</dialog>

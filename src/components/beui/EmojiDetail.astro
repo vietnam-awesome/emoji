@@ -36,7 +36,21 @@ const tagTargetUrl = (tag) => {
   return `${browseUrl}?q=${encodeURIComponent(tag)}`;
 };
 ---
-<section class="shell detail-page">
+<section
+  class="shell detail-page"
+  data-recent-emoji
+  data-recent-slug={emoji.slug}
+  data-recent-name={emoji.name}
+  data-recent-image={imageUrl}
+  data-recent-category={category}
+  data-recent-category-slug={categorySlug}
+  data-recent-source={emoji.sourceLabel}
+  data-recent-format={emoji.format || ''}
+  data-recent-animated={emoji.animated ? 'yes' : 'no'}
+  data-recent-native={emoji.emoji || ''}
+  data-recent-shortcode={emoji.shortcode || ''}
+  data-recent-detail-url={withBase(`/emoji/${emoji.slug}`, base)}
+>
   <div class="detail-grid">
     <aside class="detail-preview" aria-label={`${emoji.name} preview`}>
       <div class="detail-preview-head">

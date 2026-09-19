@@ -114,7 +114,7 @@ const compact = variant === 'compact';
     </>
   )}
 
-  <a class="emoji-preview is-image-loading" href={detailUrl} aria-label={`Open ${emoji.name}`}>
+  <a class="emoji-preview is-image-loading" href={detailUrl} data-quick-view-trigger aria-label={`Quick view ${emoji.name}`}>
     <img src={imageUrl} alt={emoji.name} loading={compact ? 'eager' : 'lazy'} width="128" height="128" />
     {emoji.animated && <span class="card-motion-badge">GIF</span>}
   </a>
