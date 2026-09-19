@@ -392,6 +392,39 @@
   .detail-random-shuffle:hover, .detail-random-shuffle:focus-visible { border-color: var(--border-strong); background: var(--card); color: var(--foreground); outline: none; transform: rotate(12deg); }
   .detail-random-shuffle svg { width: 16px; height: 16px; }
 
+
+  /* Quick view */
+  .emoji-quick-view { width: min(920px,94vw); max-width: none; max-height: min(88vh,760px); padding: 0; overflow: hidden; border: 1px solid var(--border-strong); border-radius: 20px; background: var(--background); color: var(--foreground); box-shadow: 0 26px 90px rgb(0 0 0 / .3); }
+  .emoji-quick-view::backdrop { background: rgb(0 0 0 / .56); backdrop-filter: blur(4px); }
+  .emoji-quick-view-shell { position: relative; display: grid; grid-template-columns: minmax(280px,.9fr) minmax(0,1.1fr); min-height: 430px; }
+  .emoji-quick-view-close { position: absolute; top: 10px; right: 10px; z-index: 5; display: grid; width: 36px; height: 36px; place-items: center; padding: 0; border: 1px solid var(--border); border-radius: 999px; background: color-mix(in oklab,var(--background) 90%,transparent); color: var(--foreground); font-size: 1.2rem; cursor: pointer; backdrop-filter: blur(8px); }
+  .emoji-quick-view-preview { position: relative; display: grid; min-height: 430px; place-items: center; padding: 34px; border-right: 1px solid var(--border); background: var(--card); }
+  .emoji-quick-view-canvas { display: grid; width: min(100%,300px); aspect-ratio: 1; place-items: center; padding: 28px; border: 1px solid var(--border); border-radius: 18px; background-color: var(--background); background-image: linear-gradient(45deg,color-mix(in srgb,var(--border) 42%,transparent) 25%,transparent 25%),linear-gradient(-45deg,color-mix(in srgb,var(--border) 42%,transparent) 25%,transparent 25%),linear-gradient(45deg,transparent 75%,color-mix(in srgb,var(--border) 42%,transparent) 75%),linear-gradient(-45deg,transparent 75%,color-mix(in srgb,var(--border) 42%,transparent) 75%); background-size: 18px 18px; background-position: 0 0,0 9px,9px -9px,-9px 0; }
+  .emoji-quick-view-canvas img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 12px 20px rgb(0 0 0 / .09)); }
+  .emoji-quick-view-motion { position: absolute; left: 18px; bottom: 18px; padding: 5px 8px; border-radius: 999px; background: var(--primary); color: var(--primary-foreground); font-size: .56rem; font-weight: 800; letter-spacing: .08em; }
+  .emoji-quick-view-content { min-width: 0; overflow: auto; padding: 42px 34px 30px; }
+  .emoji-quick-view-content h2 { margin: 0; font-size: clamp(1.8rem,4vw,2.65rem); line-height: 1; letter-spacing: -.045em; overflow-wrap: anywhere; }
+  .emoji-quick-view-meta { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 14px; }
+  .emoji-quick-view-meta span { padding: 5px 8px; border-radius: 999px; background: var(--card); color: var(--muted-foreground); font-size: .66rem; font-weight: 650; }
+  .emoji-quick-view-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 22px; }
+  .emoji-quick-view-favorite { flex: 0 0 40px; width: 40px; min-width: 40px; padding: 0; }
+  .emoji-quick-view-favorite svg { width: 16px; height: 16px; }
+  .emoji-quick-view-favorite.is-favorite { border-color: var(--primary); background: var(--primary); color: var(--primary-foreground); }
+  .emoji-quick-view-favorite.is-favorite path { fill: currentColor; }
+  .emoji-quick-view-export { margin-top: 28px; padding-top: 24px; border-top: 1px solid var(--border); }
+  .emoji-quick-view-export h3 { margin: 0; font-size: 1rem; letter-spacing: -.02em; }
+  .emoji-quick-view-export-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; margin-top: 12px; }
+  .emoji-quick-view-export-grid button { display: grid; min-width: 0; gap: 3px; padding: 11px 12px; border: 1px solid var(--border); border-radius: 12px; background: var(--background); color: var(--foreground); text-align: left; cursor: pointer; }
+  .emoji-quick-view-export-grid button:hover:not(:disabled) { border-color: var(--border-strong); background: var(--card); }
+  .emoji-quick-view-export-grid button:disabled { opacity: .45; cursor: not-allowed; }
+  .emoji-quick-view-export-grid strong { font-size: .72rem; }
+  .emoji-quick-view-export-grid span { color: var(--muted-foreground); font-size: .61rem; }
+  .emoji-quick-view-export-note, .emoji-quick-view-status { margin: 10px 0 0; color: var(--muted-foreground); font-size: .66rem; line-height: 1.5; }
+  .emoji-quick-view-status { min-height: 1em; color: var(--foreground); font-weight: 600; }
+
+  /* Recently viewed */
+  .recent-page { padding: 40px 0 82px; }
+
   /* Favorites */
   .favorites-page { padding: 40px 0 82px; }
   .favorites-header { display: flex; align-items: end; justify-content: space-between; gap: 28px; margin-bottom: 26px; }
@@ -490,7 +523,7 @@
   .developer-actions a { flex: 1; }
   .home-search-meta { display: none; }
   .home-search-item { grid-template-columns: 48px minmax(0,1fr); }
-  .catalog-page, .categories-page, .category-detail-page, .favorites-page { padding-top: 28px; }
+  .catalog-page, .categories-page, .category-detail-page, .favorites-page, .recent-page { padding-top: 28px; }
   .catalog-controls { position: relative; top: auto; padding: 0; border: 0; background: transparent; box-shadow: none; backdrop-filter: none; }
   .beui-filter-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
   .catalog-page .emoji-grid, .category-detail-page .emoji-grid, .catalog-skeleton-grid, .detail-similar-grid, .detail-random-grid, .favorites-grid { grid-template-columns: repeat(3,minmax(0,1fr)); gap: 8px; }
@@ -503,6 +536,12 @@
 }
 
 @media (max-width:680px) {
+  .emoji-quick-view { width: 96vw; max-height: 90vh; }
+  .emoji-quick-view-shell { grid-template-columns: 1fr; }
+  .emoji-quick-view-preview { min-height: 240px; padding: 24px; border-right: 0; border-bottom: 1px solid var(--border); }
+  .emoji-quick-view-canvas { width: min(72vw,230px); padding: 22px; }
+  .emoji-quick-view-content { padding: 26px 18px 22px; }
+  .emoji-quick-view-export-grid { grid-template-columns: 1fr 1fr; }
   .emoji-card[data-emoji-card] .emoji-preview { padding: 12px; }
   .emoji-card[data-emoji-card] .card-motion-badge { top: auto; right: 8px; bottom: 8px; z-index: 3; padding: 2px 5px; }
   .emoji-card[data-emoji-card] .emoji-preview img { width: 65px; height: 65px; }
