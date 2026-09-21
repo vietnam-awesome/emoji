@@ -57,3 +57,15 @@ test('selection bar batch-exports static emoji for platform presets without flat
   assert.match(selection, /skipped to preserve animation/);
   assert.match(selection, /Creating ZIP/);
 });
+
+
+test('batch export platform selector shows a readable platform label and size', async () => {
+  const selection = await read('src/components/beui/CatalogDownloadClient.tsx');
+  const css = await read('src/styles/beui.css');
+  assert.match(selection, /emoji-selection-platform-value/);
+  assert.match(selection, /PLATFORM_PRESETS\[platform\]\.label/);
+  assert.match(selection, /PLATFORM_PRESETS\[platform\]\.size/);
+  assert.doesNotMatch(selection, /<SelectValue placeholder="Platform"/);
+  assert.match(css, /\.emoji-selection-platform \{ min-height: 40px; width: 156px/);
+  assert.match(css, /\.emoji-selection-platform-value strong/);
+});
