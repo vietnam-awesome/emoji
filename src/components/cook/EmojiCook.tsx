@@ -5,6 +5,7 @@ import {
   Check,
   Copy,
   Download,
+  Heart,
   Link2,
   Pencil,
   Search,
@@ -39,6 +40,15 @@ type CookBackground = 'transparent' | 'light' | 'dark';
 type ExportFormat = 'png' | 'webp';
 type IngredientSlot = 'first' | 'second';
 
+type SavedRecipe = {
+  id: string;
+  first: string;
+  second: string;
+  strategy: CookStrategy;
+  background: CookBackground;
+  savedAt: number;
+};
+
 interface Props {
   editorUrl: string;
 }
@@ -46,6 +56,10 @@ interface Props {
 const CANVAS_SIZE = 512;
 const EDITOR_HANDOFF_KEY = 'eplus-emoji-editor-handoff';
 const EDITOR_HANDOFF_NAME_KEY = 'eplus-emoji-editor-handoff-name';
+const KITCHEN_RECENT_KEY = 'eplus-emoji-kitchen-recipes-v1';
+const KITCHEN_FAVORITES_KEY = 'eplus-emoji-kitchen-favorites-v1';
+const KITCHEN_RECENT_LIMIT = 16;
+const KITCHEN_FAVORITES_LIMIT = 24;
 const EMOJI_FONT = '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif';
 
 const EMOJI_POOL: CookEmoji[] = [
@@ -325,6 +339,38 @@ function canvasBlob(canvas: HTMLCanvasElement, format: ExportFormat) {
   });
 }
 
+const recipeIdentity = (
+  first: CookEmoji,
+  second: CookEmoji,
+  strategy: CookStrategy,
+  background: CookBackground,
+) => `${first.emoji}|${second.emoji}|${strategy}|${background}`;
+
+const readRecipeStorage = (key: string): SavedRecipe[] => {
+  if (typeof window === 'undefined') return [];
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(key) || '[]');
+    return Array.isArray(parsed)
+      ? parsed.filter((item) =>
+          item &&
+          typeof item.id === 'string' &&
+          typeof item.first === 'string' &&
+          typeof item.second === 'string'
+        )
+      : [];
+  } catch {
+    return [];
+  }
+};
+
+const writeRecipeStorage = (key: string, recipes: SavedRecipe[]) => {
+  try {
+    window.localStorage.setItem(key, JSON.stringify(recipes));
+  } catch {
+    // Keep Kitchen usable when storage is unavailable or full.
+  }
+};
+
 function RecipePreview({
   first,
   second,
@@ -359,6 +405,8 @@ export default function EmojiCook({ editorUrl }: Props) {
   const [status, setStatus] = useState('');
   const [error, setError] = useState('');
   const [initialized, setInitialized] = useState(false);
+  const [recentRecipes, setRecentRecipes] = useState<SavedRecipe[]>([]);
+  const [favoriteRecipes, setFavoriteRecipes] = useState<SavedRecipe[]>([]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -370,6 +418,8 @@ export default function EmojiCook({ editorUrl }: Props) {
     if (querySecond) setSecond(querySecond);
     if (queryStrategy && STRATEGIES.some((item) => item.value === queryStrategy)) setStrategy(queryStrategy);
     if (queryBackground && BACKGROUNDS.some((item) => item.value === queryBackground)) setBackground(queryBackground);
+    setRecentRecipes(readRecipeStorage(KITCHEN_RECENT_KEY));
+    setFavoriteRecipes(readRecipeStorage(KITCHEN_FAVORITES_KEY));
     setInitialized(true);
   }, []);
 
@@ -393,6 +443,20 @@ export default function EmojiCook({ editorUrl }: Props) {
     if (background === 'transparent') url.searchParams.delete('bg');
     else url.searchParams.set('bg', background);
     window.history.replaceState({}, '', url);
+
+    const recipe: SavedRecipe = {
+      id: recipeIdentity(first, second, strategy, background),
+      first: first.emoji,
+      second: second.emoji,
+      strategy,
+      background,
+      savedAt: Date.now(),
+    };
+    setRecentRecipes((current) => {
+      const next = [recipe, ...current.filter((item) => item.id !== recipe.id)].slice(0, KITCHEN_RECENT_LIMIT);
+      writeRecipeStorage(KITCHEN_RECENT_KEY, next);
+      return next;
+    });
   }, [initialized, first, second, strategy, background]);
 
   const filteredEmoji = useMemo(() => {
@@ -524,6 +588,45 @@ export default function EmojiCook({ editorUrl }: Props) {
     } catch {
       setError('The cooked emoji could not be handed off to the editor. Download it and upload it there instead.');
     }
+  };
+
+  const currentRecipeId = recipeIdentity(first, second, strategy, background);
+  const currentRecipeFavorite = favoriteRecipes.some((item) => item.id === currentRecipeId);
+
+  const toggleFavoriteRecipe = () => {
+    const recipe: SavedRecipe = {
+      id: currentRecipeId,
+      first: first.emoji,
+      second: second.emoji,
+      strategy,
+      background,
+      savedAt: Date.now(),
+    };
+    setFavoriteRecipes((current) => {
+      const exists = current.some((item) => item.id === recipe.id);
+      const next = exists
+        ? current.filter((item) => item.id !== recipe.id)
+        : [recipe, ...current].slice(0, KITCHEN_FAVORITES_LIMIT);
+      writeRecipeStorage(KITCHEN_FAVORITES_KEY, next);
+      return next;
+    });
+    setError('');
+    setStatus(currentRecipeFavorite ? 'Removed from favorite recipes.' : 'Saved to favorite recipes.');
+  };
+
+  const applySavedRecipe = (recipe: SavedRecipe) => {
+    const savedFirst = findEmoji(recipe.first);
+    const savedSecond = findEmoji(recipe.second);
+    if (!savedFirst || !savedSecond) return;
+    setFirst(savedFirst);
+    setSecond(savedSecond);
+    setStrategy(STRATEGIES.some((item) => item.value === recipe.strategy) ? recipe.strategy : 'auto');
+    setBackground(BACKGROUNDS.some((item) => item.value === recipe.background) ? recipe.background : 'transparent');
+    setActiveSlot('second');
+    setTab('pick');
+    setError('');
+    setStatus('Saved recipe restored.');
+    document.querySelector('.cook-result')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
   const applyExplore = (item: CookEmoji) => {
@@ -797,6 +900,15 @@ export default function EmojiCook({ editorUrl }: Props) {
                 : <Link2 className="size-4" aria-hidden="true" />}
               Share
             </Button>
+            <Button
+              variant={currentRecipeFavorite ? 'secondary' : 'ghost'}
+              size="md"
+              onClick={toggleFavoriteRecipe}
+              aria-pressed={currentRecipeFavorite}
+            >
+              <Heart className="size-4" aria-hidden="true" fill={currentRecipeFavorite ? 'currentColor' : 'none'} />
+              {currentRecipeFavorite ? 'Favorited' : 'Favorite'}
+            </Button>
           </div>
 
           {status ? <p className="cook-status" role="status">{status}</p> : null}
@@ -807,6 +919,77 @@ export default function EmojiCook({ editorUrl }: Props) {
           </p>
         </aside>
       </div>
+
+      {(favoriteRecipes.length > 0 || recentRecipes.length > 0) ? (
+        <section className="cook-saved-library" aria-labelledby="cook-saved-title">
+          <div className="cook-saved-heading">
+            <div>
+              <span className="section-kicker">Your Kitchen</span>
+              <h2 id="cook-saved-title">Saved recipes</h2>
+              <p>Favorite combinations stay pinned; recent recipes keep your latest mixes ready to reopen.</p>
+            </div>
+          </div>
+
+          {favoriteRecipes.length > 0 ? (
+            <div className="cook-saved-group">
+              <h3>Favorites</h3>
+              <div className="cook-saved-grid">
+                {favoriteRecipes.slice(0, 8).map((recipe) => {
+                  const savedFirst = findEmoji(recipe.first) ?? EMOJI_POOL[0];
+                  const savedSecond = findEmoji(recipe.second) ?? EMOJI_POOL[1];
+                  return (
+                    <PressableCard
+                      key={`favorite-${recipe.id}`}
+                      className="cook-saved-card"
+                      onClick={() => applySavedRecipe(recipe)}
+                      aria-label={`Restore ${savedFirst.label} and ${savedSecond.label}`}
+                    >
+                      <RecipePreview
+                        first={savedFirst}
+                        second={savedSecond}
+                        strategy={recipe.strategy}
+                        background={recipe.background}
+                      />
+                      <strong>{savedFirst.emoji} + {savedSecond.emoji}</strong>
+                      <span>{recipe.strategy === 'auto' ? 'Auto' : recipe.strategy} · {recipe.background}</span>
+                    </PressableCard>
+                  );
+                })}
+              </div>
+            </div>
+          ) : null}
+
+          {recentRecipes.length > 0 ? (
+            <div className="cook-saved-group">
+              <h3>Recent recipes</h3>
+              <div className="cook-saved-grid">
+                {recentRecipes.slice(0, 8).map((recipe) => {
+                  const savedFirst = findEmoji(recipe.first) ?? EMOJI_POOL[0];
+                  const savedSecond = findEmoji(recipe.second) ?? EMOJI_POOL[1];
+                  return (
+                    <PressableCard
+                      key={`recent-${recipe.id}`}
+                      className="cook-saved-card"
+                      onClick={() => applySavedRecipe(recipe)}
+                      aria-label={`Restore ${savedFirst.label} and ${savedSecond.label}`}
+                    >
+                      <RecipePreview
+                        first={savedFirst}
+                        second={savedSecond}
+                        strategy={recipe.strategy}
+                        background={recipe.background}
+                      />
+                      <strong>{savedFirst.emoji} + {savedSecond.emoji}</strong>
+                      <span>{recipe.strategy === 'auto' ? 'Auto' : recipe.strategy} · {recipe.background}</span>
+                    </PressableCard>
+                  );
+                })}
+              </div>
+            </div>
+          ) : null}
+        </section>
+      ) : null}
+
       <TooltipLayer />
     </div>
   );
