@@ -106,9 +106,30 @@ test('Sheet Cutter supports selecting many detected and manual crop boxes at onc
   assert.match(client, /setManualRegions\(\(regions\) => \[\.\.\.regions, rect\]\)/);
   assert.match(client, /Select all/);
   assert.match(client, /Save selected \{selectedRegionIndexes\.length\}/);
-  assert.match(client, /aria-pressed=\{selected\}/);
+  assert.match(client, /aria-checked=\{selected\}/);
   assert.match(client, /is-manual/);
   assert.match(styles, /\.cutter-detected-region\.is-selected/);
   assert.match(styles, /\.cutter-detected-region\.is-manual/);
   assert.match(styles, /\.cutter-multi-actions/);
+});
+
+
+test('Sheet Cutter can resize a focused crop box without changing the rest', async () => {
+  const [client, styles] = await Promise.all([
+    read('src/components/cutter/EmojiSheetCutter.tsx'),
+    read('src/styles/cutter.css'),
+  ]);
+
+  assert.match(client, /focusedRegionIndex/);
+  assert.match(client, /updateRegionAt/);
+  assert.match(client, /resizedRect/);
+  assert.match(client, /beginResize/);
+  assert.match(client, /moveResize/);
+  assert.match(client, /finishResize/);
+  assert.match(client, /Resize crop from \$\{corner\}/);
+  assert.match(client, /Click a box to edit\/resize it/);
+  assert.match(styles, /\.cutter-detected-region\.is-focused/);
+  assert.match(styles, /\.cutter-handle--nw/);
+  assert.match(styles, /pointer-events: auto/);
+  assert.match(styles, /touch-action: none/);
 });
