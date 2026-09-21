@@ -535,7 +535,7 @@ export default function CatalogDownloadClient() {
               className="emoji-selection-export !border-0 !bg-background/10 !text-background !shadow-none hover:!bg-background/20 disabled:!opacity-40"
               onClick={downloadPlatformBatch}
               disabled={busy}
-              title="Resize selected static emoji and download them as a platform-ready PNG ZIP"
+              data-beui-tooltip="Resize selected static emoji and download them as a platform-ready PNG ZIP"
             >
               <ImageDown className="size-3.5" aria-hidden="true" />
               {busy ? progress || "Preparing…" : `Export ${PLATFORM_PRESETS[platform].label}`}
