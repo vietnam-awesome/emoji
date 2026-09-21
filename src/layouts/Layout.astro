@@ -58,6 +58,9 @@ const categoriesUrl = withBase('/categories', base);
 const favoritesUrl = withBase('/favorites', base);
 const recentUrl = withBase('/recent', base);
 const packsUrl = withBase('/packs', base);
+const kitchenUrl = withBase('/kitchen', base);
+const editorUrl = withBase('/editor', base);
+const cutterUrl = withBase('/cutter', base);
 const animatedEmojisUrl = `${emojisUrl}?motion=yes`;
 const staticEmojisUrl = `${emojisUrl}?motion=no`;
 const faviconIcoUrl = withBase('/favicon.ico', base);
@@ -321,6 +324,9 @@ const schemaJson = JSON.stringify({
           <a href={favoritesUrl}>My Emoji</a>
           <a href={recentUrl}>Recently viewed</a>
           <a href={packsUrl}>Emoji Packs</a>
+          <a href={kitchenUrl}>Kitchen</a>
+          <a href={editorUrl}>Editor</a>
+          <a href={cutterUrl}>Sheet Cutter</a>
           <a href={animatedEmojisUrl}>Animated</a>
           <a href={staticEmojisUrl}>Static</a>
         </div>

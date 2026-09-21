@@ -1,0 +1,36 @@
+---
+import Layout from '../layouts/Layout.astro';
+import EmojiSheetCutter from '../components/cutter/EmojiSheetCutter';
+import { withBase } from '../lib/url';
+import '../styles/cutter.css';
+
+const base = import.meta.env.BASE_URL;
+const homeUrl = withBase('/', base);
+const editorUrl = withBase('/editor', base);
+const libraryManifestUrl = 'https://raw.githubusercontent.com/vietnam-awesome/emoji/data/public/cutter/library.json';
+---
+<Layout
+  title="Emoji Sheet Cutter — Crop emoji sheets into individual PNGs"
+  description="Upload or paste an emoji sheet, manually crop each emoji in your browser, preview the cuts, then download individual PNGs or a ZIP. Source images stay on your device."
+  keywords={['emoji sheet cutter', 'emoji cropper', 'crop emoji sheet', 'split emoji image', 'emoji PNG cutter', 'emoji sprite cutter', 'emoji crop tool']}
+  breadcrumbs={[
+    { name: 'Home', href: homeUrl },
+    { name: 'Emoji Sheet Cutter' }
+  ]}
+>
+  <section class="shell">
+    <EmojiSheetCutter editorUrl={editorUrl} libraryManifestUrl={libraryManifestUrl} client:only="react">
+      <div class="cutter-page cutter-skeleton" slot="fallback" aria-hidden="true">
+        <div class="cutter-skeleton-hero">
+          <span></span><span></span><span></span>
+        </div>
+        <div class="cutter-skeleton-workspace">
+          <div class="cutter-skeleton-stage"></div>
+          <div class="cutter-skeleton-controls">
+            <span></span><span></span><span></span>
+          </div>
+        </div>
+      </div>
+    </EmojiSheetCutter>
+  </section>
+</Layout>

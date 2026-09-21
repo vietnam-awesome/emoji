@@ -28,6 +28,7 @@ export function GET() {
     { loc: `${SITE}/categories`, changefreq: 'weekly', priority: '0.8' },
     { loc: `${SITE}/kitchen`, changefreq: 'monthly', priority: '0.8' },
     { loc: `${SITE}/editor`, changefreq: 'monthly', priority: '0.8' },
+    { loc: `${SITE}/cutter`, changefreq: 'monthly', priority: '0.8' },
     ...categories.map((category) => ({
       loc: `${SITE}/categories/${category.slug}`,
       changefreq: 'weekly',

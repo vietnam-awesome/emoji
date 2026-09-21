@@ -25,6 +25,7 @@ export default function SiteHeader({ homeUrl, emojisUrl, categoriesUrl, routePat
   const rootRef = useRef<HTMLElement>(null);
   const rootUrl = homeUrl.replace(/\/$/, '');
   const kitchenUrl = `${rootUrl}/kitchen`;
+  const cutterUrl = `${rootUrl}/cutter`;
   const favoritesUrl = `${rootUrl}/favorites`;
 
   const nav = useMemo(() => [
@@ -32,8 +33,9 @@ export default function SiteHeader({ homeUrl, emojisUrl, categoriesUrl, routePat
     { label: 'Browse', href: emojisUrl, active: routePath === '/emojis' || routePath.startsWith('/emoji/') },
     { label: 'Categories', href: categoriesUrl, active: routePath === '/categories' || routePath.startsWith('/categories/') },
     { label: 'Kitchen', href: kitchenUrl, active: routePath === '/kitchen' },
+    { label: 'Cutter', href: cutterUrl, active: routePath === '/cutter' },
     { label: 'My Emoji', href: favoritesUrl, active: ['/favorites', '/recent', '/packs'].includes(routePath), count: favoriteCount }
-  ], [homeUrl, emojisUrl, categoriesUrl, kitchenUrl, favoritesUrl, routePath, favoriteCount]);
+  ], [homeUrl, emojisUrl, categoriesUrl, kitchenUrl, cutterUrl, favoritesUrl, routePath, favoriteCount]);
 
   const activeNavHref = nav.find((item) => item.active)?.href ?? null;
   const highlightedNavHref = navPreviewHref ?? activeNavHref;
