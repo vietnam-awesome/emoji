@@ -108,8 +108,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: node ../app/scripts/sync.mjs --source="$SYNC_SOURCE" --limit="$SYNC_LIMIT"
 
-      - name: Verify index
+      - name: Verify licensed metadata and checked-out assets
         working-directory: data
+        env:
+          VERIFY_DATA_ASSET_PREFIXES: '/emojis/openmoji/,/emojis/twemoji/,/emojis/noto/'
         run: node ../app/scripts/verify-data.mjs
 
       - name: Shard emoji index for Git
