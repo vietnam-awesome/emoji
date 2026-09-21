@@ -495,8 +495,12 @@
   .emoji-selection-summary { display: flex; align-items: baseline; gap: 6px; font-size: .78rem; }
   .emoji-selection-summary strong { font-size: .92rem; }
   .emoji-selection-actions { display: flex; align-items: center; justify-content: flex-end; gap: 7px; flex-wrap: wrap; }
-  .emoji-selection-platform { min-height: 34px; width: 118px; border-color: color-mix(in oklab,var(--background) 24%,transparent) !important; background: color-mix(in oklab,var(--background) 10%,transparent) !important; color: var(--background) !important; font-size: .72rem; }
-  .emoji-selection-platform svg { color: var(--background) !important; }
+  .emoji-selection-platform { min-height: 40px; width: 156px; padding-inline: 12px !important; border-color: color-mix(in oklab,var(--background) 34%,transparent) !important; background: color-mix(in oklab,var(--background) 15%,transparent) !important; color: var(--background) !important; box-shadow: inset 0 1px 0 color-mix(in oklab,var(--background) 10%,transparent); }
+  .emoji-selection-platform:hover, .emoji-selection-platform:focus-visible { border-color: color-mix(in oklab,var(--background) 54%,transparent) !important; background: color-mix(in oklab,var(--background) 21%,transparent) !important; }
+  .emoji-selection-platform-value { display: flex; min-width: 0; align-items: baseline; gap: 6px; color: var(--background) !important; line-height: 1; }
+  .emoji-selection-platform-value strong { color: var(--background) !important; font-size: .8rem; font-weight: 700; letter-spacing: -.01em; }
+  .emoji-selection-platform-value small { color: color-mix(in oklab,var(--background) 68%,transparent) !important; font-size: .65rem; font-weight: 600; }
+  .emoji-selection-platform svg { width: 16px; height: 16px; flex: 0 0 auto; color: var(--background) !important; opacity: .9; }
   .emoji-selection-export { white-space: nowrap; }
   .emoji-selection-clear, .emoji-selection-download { min-height: 34px; border-radius: 999px; font: inherit; font-size: .74rem; font-weight: 650; cursor: pointer; }
   .emoji-selection-clear { padding: 0 10px; border: 0; background: transparent; color: color-mix(in oklab,var(--background) 76%,transparent); }
@@ -610,7 +614,10 @@
   .emoji-selection-bar { min-width: 0; width: calc(100vw - 20px); gap: 8px; padding-left: 10px; }
   .emoji-selection-summary { display: none; }
   .emoji-selection-actions { width: 100%; justify-content: center; gap: 4px; }
-  .emoji-selection-platform { width: 104px; }
+  .emoji-selection-platform { width: 138px; min-width: 138px; min-height: 38px; padding-inline: 10px !important; }
+  .emoji-selection-platform-value { gap: 5px; }
+  .emoji-selection-platform-value strong { font-size: .76rem; }
+  .emoji-selection-platform-value small { font-size: .61rem; }
   .emoji-selection-export { padding-inline: 8px !important; }
   .emoji-selection-actions { gap: 3px; }
   .emoji-selection-pack { padding-inline: 8px !important; }
