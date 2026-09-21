@@ -4,7 +4,7 @@ Canonical site: https://emoji.eplus.dev
 
 ## Purpose
 
-ePlus Emoji is a searchable directory of static and animated emoji assets with source, attribution, license, category, and duplicate-detection metadata. It also provides browser-based tools for editing emoji and combining standard Unicode emoji into locally rendered mashups.
+ePlus Emoji is a searchable directory of static and animated emoji assets with source, attribution, license, category, and duplicate-detection metadata. It also provides browser-based tools for editing emoji, combining standard Unicode emoji into locally rendered mashups, and cutting larger emoji sheets into individual PNG files.
 
 ## Preferred discovery endpoints
 
@@ -24,6 +24,7 @@ The site does not expose the removed legacy `/api/emojis.json` or `/api/categori
 - Emoji detail page: https://emoji.eplus.dev/emoji/{slug}
 - Emoji Kitchen: https://emoji.eplus.dev/kitchen
 - Emoji editor: https://emoji.eplus.dev/editor
+- Emoji Sheet Cutter: https://emoji.eplus.dev/cutter
 
 ## Emoji Kitchen capabilities
 
@@ -69,14 +70,35 @@ Editing is client-side. The editor does not require uploading the user's source 
 
 Do not claim support for deferred features such as APNG frame-by-frame editing, interpolation, AI-generated in-between frames, onion skin, or arbitrary non-square output unless those capabilities are added later.
 
+## Emoji Sheet Cutter capabilities
+
+Use `/cutter` when a user has one or more larger images containing multiple emoji and wants to manually extract individual emoji images.
+
+Current Sheet Cutter capabilities include:
+
+- upload multiple local image sheets or paste an image from the clipboard
+- switch between uploaded sheets without sending source images to a server
+- draw a manual crop rectangle directly on the source image
+- optionally lock the crop to a square
+- show an adjustable row/column grid guide
+- zoom the source image for precise selection
+- export the original crop size or normalize a crop to 64, 128, 256, or 512 square PNG
+- keep multiple saved crops in the current browser session
+- copy or download individual PNG crops
+- download all saved crops as a browser-generated ZIP
+- hand a saved crop to `/editor` through same-tab browser session storage
+
+Source images and crop processing stay in the browser. Do not describe `/cutter` as uploading source sheets to ePlus Emoji servers.
+
 ## Recommended agent workflow
 
 1. Use `/emojis` for search and filtering, or `/categories` and `/categories/{category-slug}` for category discovery.
 2. Open `/emoji/{slug}` for the human-readable detail page and the hosted asset.
 3. Use `/kitchen` when the user wants to combine standard Unicode emoji into a new mashup without using third-party catalog artwork.
-4. Use `/editor` when the user's goal is to crop, resize, transform, edit an animated GIF, or continue editing a result created by `/kitchen`.
-5. When inspecting the generated static search index, begin with `/search/manifest.json` and follow the current manifest/shard references instead of hard-coding generated shard names.
-6. Preserve and surface per-item license, attribution, and source information when presenting or redistributing catalog artwork.
+4. Use `/cutter` when the user has an emoji sheet/collage and wants to manually extract individual emoji PNGs.
+5. Use `/editor` when the user's goal is to crop, resize, transform, edit an animated GIF, or continue editing a result created by `/kitchen` or `/cutter`.
+6. When inspecting the generated static search index, begin with `/search/manifest.json` and follow the current manifest/shard references instead of hard-coding generated shard names.
+7. Preserve and surface per-item license, attribution, and source information when presenting or redistributing catalog artwork.
 
 ## Search index notes
 
@@ -84,7 +106,7 @@ The browse experience uses a sharded static search index generated during deploy
 
 ## Crawling and freshness
 
-The catalog is updated by automated source import workflows. The sitemap is regenerated from the current emoji index whenever the site is built. Category landing pages plus the public `/kitchen` and `/editor` tools are included in the static sitemap.
+The catalog is updated by automated source import workflows. The sitemap is regenerated from the current emoji index whenever the site is built. Category landing pages plus the public `/kitchen`, `/editor`, and `/cutter` tools are included in the static sitemap.
 
 ## Rights and attribution
 
