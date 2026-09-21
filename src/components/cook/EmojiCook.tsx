@@ -497,7 +497,7 @@ export default function EmojiCook({ editorUrl }: Props) {
     try {
       if (navigator.share) {
         await navigator.share({
-          title: `${first.emoji} + ${second.emoji} · Emoji Cook`,
+          title: `${first.emoji} + ${second.emoji} · Emoji Kitchen`,
           text: `Cook ${first.label} with ${second.label}`,
           url: window.location.href,
         });
@@ -541,7 +541,7 @@ export default function EmojiCook({ editorUrl }: Props) {
         <p className="eyebrow">Emoji playground</p>
         <div className="cook-hero-row">
           <div>
-            <h1>Cook emoji</h1>
+            <h1>Emoji Kitchen</h1>
             <p>Choose two emoji and get an instant mashup. Pick a different style only when you want a variation.</p>
           </div>
           <Button variant="secondary" size="md" ripple onClick={randomize}>
@@ -549,7 +549,7 @@ export default function EmojiCook({ editorUrl }: Props) {
             Surprise me
           </Button>
         </div>
-        <div className="cook-hero-meta" aria-label="Emoji Cook capabilities">
+        <div className="cook-hero-meta" aria-label="Emoji Kitchen capabilities">
           <span>No upload</span>
           <span>Instant preview</span>
           <span>PNG + WebP</span>
@@ -624,7 +624,7 @@ export default function EmojiCook({ editorUrl }: Props) {
           </div>
 
           <Tabs value={tab} onValueChange={setTab} variant="segment" className="cook-tabs">
-            <TabsList aria-label="Emoji Cook mode" className="cook-tabs-list">
+            <TabsList aria-label="Emoji Kitchen mode" className="cook-tabs-list">
               <TabsTrigger value="pick">Choose emoji</TabsTrigger>
               <TabsTrigger value="explore">Combos</TabsTrigger>
             </TabsList>
