@@ -96,3 +96,16 @@ test('Cook renders an SSR skeleton while the client-only island hydrates', () =>
   assert.match(cookCss, /\.cook-skeleton-picker-grid/);
   assert.match(cookCss, /prefers-reduced-motion/);
 });
+
+
+test('Kitchen keeps recent and favorite recipes in browser-local storage', () => {
+  assert.match(cookClient, /eplus-emoji-kitchen-recipes-v1/);
+  assert.match(cookClient, /eplus-emoji-kitchen-favorites-v1/);
+  assert.match(cookClient, /KITCHEN_RECENT_LIMIT = 16/);
+  assert.match(cookClient, /KITCHEN_FAVORITES_LIMIT = 24/);
+  assert.match(cookClient, /toggleFavoriteRecipe/);
+  assert.match(cookClient, /applySavedRecipe/);
+  assert.match(cookClient, /Recent recipes/);
+  assert.match(cookClient, /Favorites/);
+  assert.match(cookCss, /\.cook-saved-grid/);
+});
