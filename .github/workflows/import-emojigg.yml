@@ -121,49 +121,75 @@ jobs:
             --empty-page-stop=3 \
             --concurrency=8
 
-      - name: Verify emoji index
-        working-directory: data
-        run: node ../app/scripts/verify-data.mjs
-
-      - name: Shard emoji index for Git
+      - name: Shard import checkpoint
         working-directory: data
         run: node ../app/scripts/emoji-store.mjs shard
 
-      - name: Commit imported data
-        id: import_commit
+      - name: Commit and push import checkpoint
+        id: checkpoint
         working-directory: data
+        env:
+          IMPORT_BRANCH: ${{ steps.review_branch.outputs.name }}
         shell: bash
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A src/data public/emojis/community/emojigg
+
           if git diff --cached --quiet; then
             echo "No Emoji.gg updates found."
             echo "created=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          git commit -m "chore(data): import Emoji.gg catalog"
-          echo "created=true" >> "$GITHUB_OUTPUT"
 
-      - name: Push review branch
-        if: steps.import_commit.outputs.created == 'true'
+          git commit -m "chore(data): checkpoint Emoji.gg import"
+          git push --set-upstream origin "HEAD:$IMPORT_BRANCH"
+          echo "created=true" >> "$GITHUB_OUTPUT"
+          echo "Checkpoint pushed before verification."
+
+      - name: Hydrate checkpoint for verification
+        if: steps.checkpoint.outputs.created == 'true'
+        working-directory: data
+        run: node ../app/scripts/emoji-store.mjs hydrate
+
+      - name: Verify emoji metadata
+        if: steps.checkpoint.outputs.created == 'true'
+        working-directory: data
+        env:
+          VERIFY_DATA_SKIP_ASSETS: '1'
+        run: node ../app/scripts/verify-data.mjs
+
+      - name: Shard verified catalog
+        if: steps.checkpoint.outputs.created == 'true'
+        working-directory: data
+        run: node ../app/scripts/emoji-store.mjs shard
+
+      - name: Commit verified data
+        if: steps.checkpoint.outputs.created == 'true'
         working-directory: data
         env:
           IMPORT_BRANCH: ${{ steps.review_branch.outputs.name }}
+        shell: bash
         run: |
           set -euo pipefail
-          git push --set-upstream origin "HEAD:$IMPORT_BRANCH"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A src/data public/emojis/community/emojigg
+          if ! git diff --cached --quiet; then
+            git commit -m "chore(data): finalize verified Emoji.gg import"
+          fi
+          git push origin "HEAD:$IMPORT_BRANCH"
 
       - name: Open review pull request
-        if: steps.import_commit.outputs.created == 'true'
+        if: steps.checkpoint.outputs.created == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           IMPORT_BRANCH: ${{ steps.review_branch.outputs.name }}
         shell: bash
         run: |
           set -euo pipefail
-          printf -v pr_body 'Automated Emoji.gg import candidate from Actions run `%s`.\n\nReview the assets and catalog diff. Merge this PR into `data` only after approval. Production deployment starts automatically after the merge.' "$GITHUB_RUN_ID"
+          printf -v pr_body 'Automated Emoji.gg import candidate from Actions run `%s`.\n\nThe import checkpoint was pushed before metadata verification, so a later verification failure does not discard the downloaded assets. Review the assets and catalog diff. Merge this PR into `data` only after approval. Production deployment starts automatically after the merge.' "$GITHUB_RUN_ID"
           pr_url="$(gh pr create \
             --repo "$GITHUB_REPOSITORY" \
             --base "$DATA_BRANCH" \
