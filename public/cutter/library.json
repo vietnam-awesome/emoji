@@ -1,5 +1,22 @@
 {
   "version": 1,
   "updated_at": "2026-09-21",
-  "sheets": []
+  "sheets": [
+    {
+      "id": "starter-faces",
+      "name": "Faces & reactions",
+      "image": "./sheets/starter-faces.svg",
+      "description": "16 reaction emoji on a clean 4×4 practice sheet.",
+      "source": "ePlus Emoji",
+      "tags": ["faces", "reactions", "demo"]
+    },
+    {
+      "id": "starter-work-tech",
+      "name": "Work & tech",
+      "image": "./sheets/starter-work-tech.svg",
+      "description": "16 work and developer emoji on a clean 4×4 practice sheet.",
+      "source": "ePlus Emoji",
+      "tags": ["work", "tech", "demo"]
+    }
+  ]
 }
