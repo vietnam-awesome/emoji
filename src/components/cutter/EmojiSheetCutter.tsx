@@ -1064,7 +1064,7 @@ export default function EmojiSheetCutter({ editorUrl, libraryManifestUrl }: Prop
             </aside>
           </div>
         </>
-      )}
+      ) : null}
 
       {status ? <p className="cutter-status" role="status">{status}</p> : null}
       {error ? <p className="cutter-error" role="alert">{error}</p> : null}
