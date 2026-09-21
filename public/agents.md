@@ -79,8 +79,10 @@ Current Sheet Cutter capabilities include:
 - browse built-in starter sheets plus shared sheet assets published from the repository `data` branch
 - upload multiple local image sheets or paste an image from the clipboard
 - switch between uploaded sheets without sending source images to a server
-- draw a manual crop rectangle directly on the source image
-- optionally lock the crop to a square
+- automatically detect separated emoji regions when a sheet opens and present them as selectable crop boxes
+- save all detected emoji in one action, or review a detected box individually
+- draw a manual crop rectangle when auto-detection needs correction
+- optionally lock manual crops to a square
 - show an adjustable row/column grid guide
 - zoom the source image for precise selection
 - export the original crop size or normalize a crop to 64, 128, 256, or 512 square PNG
