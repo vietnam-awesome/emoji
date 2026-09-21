@@ -7,6 +7,7 @@ import {
   Download,
   Grid3X3,
   ImagePlus,
+  Images,
   Pencil,
   Scissors,
   Trash2,
@@ -21,6 +22,23 @@ type Sheet = {
   id: string;
   name: string;
   url: string;
+  origin: "local" | "library";
+  source?: string;
+};
+
+type LibrarySheet = {
+  id: string;
+  name: string;
+  image: string;
+  thumbnail?: string;
+  description?: string;
+  source?: string;
+  tags?: string[];
+};
+
+type LibraryManifest = {
+  version?: number;
+  sheets?: LibrarySheet[];
 };
 
 type CropRect = {
@@ -42,10 +60,43 @@ type SavedCrop = {
 
 interface Props {
   editorUrl: string;
+  libraryManifestUrl: string;
 }
 
 const EDITOR_HANDOFF_KEY = "eplus-emoji-editor-handoff";
 const EDITOR_HANDOFF_NAME_KEY = "eplus-emoji-editor-handoff-name";
+
+const createStarterSheet = (title: string, emoji: string[]) => {
+  const width = 1024;
+  const cell = 256;
+  const labels = emoji.slice(0, 16).map((value, index) => {
+    const x = (index % 4) * cell + cell / 2;
+    const y = Math.floor(index / 4) * cell + cell / 2 + 12;
+    return `<text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="middle" font-size="128" font-family="Apple Color Emoji,Segoe UI Emoji,Noto Color Emoji,sans-serif">${value}</text>`;
+  }).join("");
+
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${width}" viewBox="0 0 ${width} ${width}"><rect width="100%" height="100%" rx="48" fill="#f8f8f8"/><g opacity=".08" stroke="#111"><path d="M256 0v1024M512 0v1024M768 0v1024M0 256h1024M0 512h1024M0 768h1024"/></g>${labels}<title>${title}</title></svg>`;
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+};
+
+const BUILT_IN_LIBRARY: LibrarySheet[] = [
+  {
+    id: "starter-faces",
+    name: "Faces & reactions",
+    image: createStarterSheet("Faces & reactions", ["😀","😂","🤣","😊","😎","😍","🥰","🤩","😭","😡","🥳","🤔","🫡","😴","🤯","👀"]),
+    description: "A 4×4 practice sheet for testing manual emoji crops.",
+    source: "Built-in demo",
+    tags: ["faces", "reactions", "demo"],
+  },
+  {
+    id: "starter-work-tech",
+    name: "Work & tech",
+    image: createStarterSheet("Work & tech", ["💻","⌨️","🖥️","📱","⚙️","🛠️","🚀","🔥","✅","❌","💡","📌","📦","🔧","🧪","🎯"]),
+    description: "A 4×4 practice sheet with work and developer reactions.",
+    source: "Built-in demo",
+    tags: ["work", "tech", "demo"],
+  },
+];
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 
@@ -176,12 +227,15 @@ const blobToDataUrl = (blob: Blob) =>
     reader.readAsDataURL(blob);
   });
 
-export default function EmojiSheetCutter({ editorUrl }: Props) {
+export default function EmojiSheetCutter({ editorUrl, libraryManifestUrl }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
   const objectUrlsRef = useRef(new Set<string>());
   const dragRef = useRef<{ pointerId: number; startX: number; startY: number } | null>(null);
 
+  const [sourceMode, setSourceMode] = useState<"library" | "upload">("library");
+  const [librarySheets, setLibrarySheets] = useState<LibrarySheet[]>(BUILT_IN_LIBRARY);
+  const [libraryStatus, setLibraryStatus] = useState<"loading" | "ready" | "error">("loading");
   const [sheets, setSheets] = useState<Sheet[]>([]);
   const [activeSheetId, setActiveSheetId] = useState("");
   const [selection, setSelection] = useState<CropRect | null>(null);
@@ -202,6 +256,58 @@ export default function EmojiSheetCutter({ editorUrl }: Props) {
     () => sheets.find((sheet) => sheet.id === activeSheetId) || sheets[0] || null,
     [sheets, activeSheetId],
   );
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadLibrary = async () => {
+      setLibraryStatus("loading");
+      try {
+        const response = await fetch(libraryManifestUrl, { cache: "no-store" });
+        if (!response.ok) throw new Error(`Library manifest returned HTTP ${response.status}`);
+        const manifest = await response.json() as LibraryManifest;
+        const remoteSheets = Array.isArray(manifest?.sheets)
+          ? manifest.sheets
+              .filter((sheet) => sheet && sheet.id && sheet.name && sheet.image)
+              .map((sheet) => {
+                const resolveAsset = (value?: string) => {
+                  if (!value) return undefined;
+                  try {
+                    return new URL(value, libraryManifestUrl).toString();
+                  } catch {
+                    return value;
+                  }
+                };
+                return {
+                  ...sheet,
+                  image: resolveAsset(sheet.image) || sheet.image,
+                  thumbnail: resolveAsset(sheet.thumbnail),
+                };
+              })
+          : [];
+
+        if (!cancelled) {
+          const builtInIds = new Set(BUILT_IN_LIBRARY.map((sheet) => sheet.id));
+          setLibrarySheets([
+            ...BUILT_IN_LIBRARY,
+            ...remoteSheets.filter((sheet) => !builtInIds.has(sheet.id)),
+          ]);
+          setLibraryStatus("ready");
+        }
+      } catch (reason) {
+        if (!cancelled) {
+          setLibrarySheets(BUILT_IN_LIBRARY);
+          setLibraryStatus("error");
+          console.warn("Could not load shared Cutter library", reason);
+        }
+      }
+    };
+
+    loadLibrary();
+    return () => {
+      cancelled = true;
+    };
+  }, [libraryManifestUrl]);
 
   useEffect(() => {
     return () => {
@@ -229,16 +335,43 @@ export default function EmojiSheetCutter({ editorUrl }: Props) {
       return;
     }
 
-    const incoming = images.map((file, index) => ({
+    const incoming: Sheet[] = images.map((file, index) => ({
       id: `${Date.now()}-${index}-${Math.random().toString(36).slice(2)}`,
       name: file.name || `emoji-sheet-${sheets.length + index + 1}.png`,
       url: makeObjectUrl(file),
+      origin: "local",
+      source: "Your upload",
     }));
 
+    setSourceMode("upload");
     setSheets((current) => [...current, ...incoming]);
     setActiveSheetId((current) => current || incoming[0].id);
     setError("");
     setStatus(`Added ${incoming.length} sheet${incoming.length === 1 ? "" : "s"}. Draw a box around one emoji to start.`);
+  };
+
+  const addLibrarySheet = (item: LibrarySheet) => {
+    const id = `library:${item.id}`;
+    setSheets((current) => {
+      if (current.some((sheet) => sheet.id === id)) return current;
+      return [
+        ...current,
+        {
+          id,
+          name: item.name,
+          url: item.image,
+          origin: "library",
+          source: item.source || "Shared library",
+        },
+      ];
+    });
+    setActiveSheetId(id);
+    setSelection(null);
+    setError("");
+    setStatus(`Opened ${item.name} from the shared library. Draw a box around an emoji to start cutting.`);
+    window.requestAnimationFrame(() => {
+      document.querySelector(".cutter-workspace")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
   };
 
   useEffect(() => {
@@ -282,7 +415,7 @@ export default function EmojiSheetCutter({ editorUrl }: Props) {
 
   const removeSheet = (id: string) => {
     const sheet = sheets.find((item) => item.id === id);
-    if (sheet) {
+    if (sheet?.origin === "local") {
       URL.revokeObjectURL(sheet.url);
       objectUrlsRef.current.delete(sheet.url);
     }
@@ -297,6 +430,7 @@ export default function EmojiSheetCutter({ editorUrl }: Props) {
 
   const clearSheets = () => {
     for (const sheet of sheets) {
+      if (sheet.origin !== "local") continue;
       URL.revokeObjectURL(sheet.url);
       objectUrlsRef.current.delete(sheet.url);
     }
@@ -566,8 +700,8 @@ export default function EmojiSheetCutter({ editorUrl }: Props) {
           <p className="eyebrow">Browser tool</p>
           <h1>Emoji Sheet Cutter</h1>
           <p>
-            Upload or paste an emoji sheet, draw a crop box around each emoji, then save clean PNGs one by one.
-            Nothing is uploaded to a server.
+            Choose a shared sheet from the Library, or upload/paste your own image. Draw a crop box around each emoji,
+            then save clean PNGs one by one. Your own uploads stay in the browser.
           </p>
         </div>
         <div className="cutter-hero-actions">
@@ -600,36 +734,103 @@ export default function EmojiSheetCutter({ editorUrl }: Props) {
         </div>
       </header>
 
-      {!sheets.length ? (
-        <button
-          type="button"
-          className={`cutter-dropzone${dragOver ? " is-dragover" : ""}`}
-          onClick={() => fileInputRef.current?.click()}
-          onDragEnter={(event) => {
-            event.preventDefault();
-            setDragOver(true);
-          }}
-          onDragOver={(event) => {
-            event.preventDefault();
-            setDragOver(true);
-          }}
-          onDragLeave={(event) => {
-            if (!event.currentTarget.contains(event.relatedTarget as Node)) setDragOver(false);
-          }}
-          onDrop={(event) => {
-            event.preventDefault();
-            setDragOver(false);
-            if (event.dataTransfer.files.length) addFiles(event.dataTransfer.files);
-          }}
-        >
-          <span className="cutter-dropzone-icon" aria-hidden="true"><ImagePlus /></span>
-          <strong>Drop emoji sheets here</strong>
-          <span>PNG, JPG, WebP or other browser-readable image files</span>
-          <small>You can also copy an image from ChatGPT and press Ctrl/Cmd+V.</small>
-        </button>
-      ) : (
+      <section className="cutter-source-panel" aria-labelledby="cutter-source-title">
+        <div className="cutter-source-heading">
+          <div>
+            <p className="section-kicker">Source</p>
+            <h2 id="cutter-source-title">Choose a sheet</h2>
+            <p>Start from the shared library or bring your own image.</p>
+          </div>
+          <div className="cutter-source-tabs" role="tablist" aria-label="Sheet source">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={sourceMode === "library"}
+              className={sourceMode === "library" ? "is-active" : ""}
+              onClick={() => setSourceMode("library")}
+            >
+              <Images aria-hidden="true" />
+              Library
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={sourceMode === "upload"}
+              className={sourceMode === "upload" ? "is-active" : ""}
+              onClick={() => setSourceMode("upload")}
+            >
+              <Upload aria-hidden="true" />
+              Upload / Paste
+            </button>
+          </div>
+        </div>
+
+        {sourceMode === "library" ? (
+          <div className="cutter-library-panel" role="tabpanel">
+            <div className="cutter-library-meta">
+              <span>
+                {libraryStatus === "loading"
+                  ? "Loading shared library…"
+                  : libraryStatus === "error"
+                    ? "Shared library unavailable — built-in sheets are still ready."
+                    : `${librarySheets.length} sheet${librarySheets.length === 1 ? "" : "s"} available`}
+              </span>
+              <small>Shared assets are read from the repository data branch.</small>
+            </div>
+            <div className="cutter-library-grid">
+              {librarySheets.map((item) => (
+                <button
+                  type="button"
+                  key={item.id}
+                  className="cutter-library-card"
+                  onClick={() => addLibrarySheet(item)}
+                >
+                  <span className="cutter-library-preview">
+                    <img src={item.thumbnail || item.image} alt="" loading="lazy" />
+                  </span>
+                  <span className="cutter-library-copy">
+                    <strong>{item.name}</strong>
+                    <span>{item.description || "Shared emoji sheet ready to cut."}</span>
+                    <small>{item.source || "Shared library"}</small>
+                  </span>
+                  <span className="cutter-library-use">Use sheet</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <button
+            type="button"
+            className={`cutter-dropzone${dragOver ? " is-dragover" : ""}${sheets.length ? " is-compact" : ""}`}
+            onClick={() => fileInputRef.current?.click()}
+            onDragEnter={(event) => {
+              event.preventDefault();
+              setDragOver(true);
+            }}
+            onDragOver={(event) => {
+              event.preventDefault();
+              setDragOver(true);
+            }}
+            onDragLeave={(event) => {
+              if (!event.currentTarget.contains(event.relatedTarget as Node)) setDragOver(false);
+            }}
+            onDrop={(event) => {
+              event.preventDefault();
+              setDragOver(false);
+              if (event.dataTransfer.files.length) addFiles(event.dataTransfer.files);
+            }}
+          >
+            <span className="cutter-dropzone-icon" aria-hidden="true"><ImagePlus /></span>
+            <strong>Drop emoji sheets here</strong>
+            <span>PNG, JPG, WebP or other browser-readable image files</span>
+            <small>You can also copy an image from ChatGPT and press Ctrl/Cmd+V.</small>
+          </button>
+        )}
+      </section>
+
+      {sheets.length > 0 ? (
         <>
-          <div className="cutter-sheet-strip" aria-label="Uploaded sheets">
+          <div className="cutter-sheet-strip" aria-label="Working sheets">
             <div className="cutter-sheet-list">
               {sheets.map((sheet, index) => (
                 <div className="cutter-sheet-item" key={sheet.id}>
@@ -642,7 +843,7 @@ export default function EmojiSheetCutter({ editorUrl }: Props) {
                     <img src={sheet.url} alt="" />
                     <span>
                       <strong>Sheet {index + 1}</strong>
-                      <small>{sheet.name}</small>
+                      <small>{sheet.source || sheet.name}</small>
                     </span>
                   </button>
                   <button
@@ -715,8 +916,13 @@ export default function EmojiSheetCutter({ editorUrl }: Props) {
                     <img
                       ref={imageRef}
                       src={activeSheet.url}
+                      crossOrigin={activeSheet.origin === "library" && !activeSheet.url.startsWith("data:") ? "anonymous" : undefined}
                       alt={`Crop source ${activeSheet.name}`}
                       draggable={false}
+                      onError={() => {
+                        setStatus("");
+                        setError("This shared sheet could not be loaded for cropping. Try another library sheet or upload the image directly.");
+                      }}
                       onLoad={(event) => {
                         setDimensions({
                           width: event.currentTarget.naturalWidth,
