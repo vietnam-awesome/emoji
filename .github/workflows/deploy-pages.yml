@@ -139,6 +139,12 @@ jobs:
           if [ "$bytes" -gt 1073741824 ]; then
             echo "::warning::Pages output is above GitHub Pages' officially supported 1 GiB site size."
           fi
+          if [ "$bytes" -ge 10737418240 ]; then
+            echo "::error::Pages output is at or above the 10 GiB deployment limit."
+            echo "Largest dist paths:"
+            du -h -d 2 dist | sort -h | tail -30
+            exit 1
+          fi
 
       - name: Configure Pages
         uses: actions/configure-pages@v6
