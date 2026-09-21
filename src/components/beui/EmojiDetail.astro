@@ -156,31 +156,12 @@ const tagTargetUrl = (tag) => {
 
   <section
     class="detail-variants detail-similar"
-    aria-labelledby="emoji-variants-title"
     data-variant-section
     data-current-slug={emoji.slug}
     data-current-hexcode={emoji.hexcode || ''}
     data-search-root={withBase('/search', base).replace(/\/$/, '')}
     hidden
-  >
-    <div class="section-heading-modern">
-      <div>
-        <p class="section-kicker">Same Unicode</p>
-        <h2 id="emoji-variants-title">Other versions</h2>
-        <p>Compare the same Unicode emoji across available artwork sources and licenses.</p>
-      </div>
-      <span class="detail-variant-hex">{emoji.hexcode}</span>
-    </div>
-    <div class="detail-similar-grid" data-variant-grid>
-      {Array.from({ length: 4 }).map(() => (
-        <div class="detail-client-card-skeleton" aria-hidden="true">
-          <span class="detail-client-card-skeleton-media"></span>
-          <span class="detail-client-card-skeleton-line detail-client-card-skeleton-line--title"></span>
-          <span class="detail-client-card-skeleton-line detail-client-card-skeleton-line--meta"></span>
-        </div>
-      ))}
-    </div>
-  </section>
+  ></section>
 
   <section
     class="detail-similar"
@@ -211,15 +192,7 @@ const tagTargetUrl = (tag) => {
       </div>
       <a href={categoryUrl}>More in {category} <span>→</span></a>
     </div>
-    <div class="detail-similar-grid" data-similar-grid>
-      {Array.from({ length: 6 }).map(() => (
-        <div class="detail-client-card-skeleton" aria-hidden="true">
-          <span class="detail-client-card-skeleton-media"></span>
-          <span class="detail-client-card-skeleton-line detail-client-card-skeleton-line--title"></span>
-          <span class="detail-client-card-skeleton-line detail-client-card-skeleton-line--meta"></span>
-        </div>
-      ))}
-    </div>
+    <div class="detail-similar-grid" data-similar-grid></div>
   </section>
 
   <section
@@ -240,15 +213,7 @@ const tagTargetUrl = (tag) => {
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 3h5v5M4 20l6.5-6.5M21 16v5h-5M14.5 10.5 21 4M4 4l16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
     </div>
-    <div class="detail-random-grid" data-random-grid>
-      {Array.from({ length: 6 }).map(() => (
-        <div class="detail-client-card-skeleton" aria-hidden="true">
-          <span class="detail-client-card-skeleton-media"></span>
-          <span class="detail-client-card-skeleton-line detail-client-card-skeleton-line--title"></span>
-          <span class="detail-client-card-skeleton-line detail-client-card-skeleton-line--meta"></span>
-        </div>
-      ))}
-    </div>
+    <div class="detail-random-grid" data-random-grid></div>
   </section>
 </section>
 
@@ -858,29 +823,4 @@ const tagTargetUrl = (tag) => {
     }
   }
 
-  .detail-client-card-skeleton {
-    overflow: hidden;
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    background: var(--background);
-  }
-  .detail-client-card-skeleton-media {
-    display: block;
-    aspect-ratio: 1/.88;
-    border-bottom: 1px solid var(--border);
-  }
-  .detail-client-card-skeleton-line {
-    display: block;
-    height: 10px;
-    margin-inline: 10px;
-    border-radius: 999px;
-  }
-  .detail-client-card-skeleton-line--title { width: 58%; margin-top: 12px; }
-  .detail-client-card-skeleton-line--meta { width: 76%; margin-top: 10px; margin-bottom: 12px; }
-  .detail-client-card-skeleton-media,
-  .detail-client-card-skeleton-line {
-    background: linear-gradient(100deg, color-mix(in oklab,var(--card) 88%,var(--background)) 20%, color-mix(in oklab,var(--foreground) 9%,var(--card)) 42%, color-mix(in oklab,var(--card) 88%,var(--background)) 64%);
-    background-size: 220% 100%;
-    animation: beui-skeleton-shimmer 1.15s ease-in-out infinite;
-  }
 </style>
