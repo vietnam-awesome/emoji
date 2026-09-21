@@ -1,5 +1,5 @@
 .cutter-page {
-  padding: 20px 0 84px;
+  padding: 10px 0 72px;
 }
 
 .cutter-hero {
@@ -7,7 +7,7 @@
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 18px 28px;
   align-items: end;
-  padding: 20px 0 26px;
+  padding: 10px 0 18px;
 }
 
 .cutter-hero > div:first-child {
@@ -16,16 +16,16 @@
 
 .cutter-hero h1 {
   margin: 0;
-  font-size: clamp(2.25rem, 5vw, 4.1rem);
+  font-size: clamp(2rem, 4vw, 3.35rem);
   line-height: .98;
   letter-spacing: -.055em;
 }
 
 .cutter-hero > div:first-child > p:last-child {
   max-width: 720px;
-  margin: 12px 0 0;
+  margin: 9px 0 0;
   color: var(--muted-foreground);
-  font-size: .92rem;
+  font-size: .84rem;
   line-height: 1.65;
 }
 
@@ -54,8 +54,8 @@
 }
 
 .cutter-source-panel {
-  margin-bottom: 18px;
-  padding: 14px;
+  margin-bottom: 10px;
+  padding: 12px;
   border: 1px solid var(--border);
   border-radius: 18px;
   background: var(--background);
@@ -146,13 +146,13 @@
 
 .cutter-library-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
 }
 
 .cutter-library-card {
   display: grid;
-  grid-template-columns: 84px minmax(0, 1fr);
+  grid-template-columns: 72px minmax(0, 1fr);
   min-width: 0;
   gap: 11px;
   padding: 8px;
@@ -175,7 +175,7 @@
 
 .cutter-library-preview {
   display: grid;
-  width: 84px;
+  width: 72px;
   aspect-ratio: 1;
   place-items: center;
   overflow: hidden;
@@ -236,6 +236,34 @@
   color: var(--background);
   font-size: .62rem;
   font-weight: 750;
+}
+
+.cutter-library-empty {
+  grid-column: 1 / -1;
+  display: grid;
+  min-height: 150px;
+  place-items: center;
+  align-content: center;
+  gap: 6px;
+  padding: 20px;
+  border: 1px dashed var(--border-strong);
+  border-radius: 13px;
+  color: var(--muted-foreground);
+  text-align: center;
+}
+
+.cutter-library-empty svg {
+  width: 24px;
+  height: 24px;
+}
+
+.cutter-library-empty strong {
+  color: var(--foreground);
+  font-size: .76rem;
+}
+
+.cutter-library-empty span {
+  font-size: .64rem;
 }
 
 .cutter-dropzone {
@@ -531,7 +559,7 @@
   position: relative;
   overflow: auto;
   display: grid;
-  min-height: 540px;
+  min-height: 500px;
   max-height: 72vh;
   place-items: start center;
   padding: 22px;
@@ -561,6 +589,43 @@
   pointer-events: none;
 }
 
+.cutter-detected-region {
+  position: absolute;
+  z-index: 3;
+  padding: 0;
+  border: 1.5px solid color-mix(in oklab, var(--foreground) 55%, transparent);
+  border-radius: 8px;
+  background: color-mix(in oklab, var(--background) 5%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--background) 70%, transparent);
+  cursor: pointer;
+  transition: border-color .12s ease, background .12s ease, box-shadow .12s ease;
+}
+
+.cutter-detected-region:hover,
+.cutter-detected-region.is-selected {
+  z-index: 5;
+  border-color: var(--foreground);
+  background: color-mix(in oklab, var(--background) 12%, transparent);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--foreground) 20%, transparent);
+}
+
+.cutter-detected-region > span {
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  display: grid;
+  min-width: 20px;
+  height: 20px;
+  place-items: center;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--foreground);
+  color: var(--background);
+  font-size: .56rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
 .cutter-grid-guide {
   position: absolute;
   inset: 0;
@@ -572,12 +637,11 @@
 
 .cutter-selection {
   position: absolute;
-  z-index: 4;
-  border: 2px solid white;
-  background: rgb(255 255 255 / .08);
-  box-shadow:
-    0 0 0 1px rgb(0 0 0 / .78),
-    0 0 0 9999px rgb(0 0 0 / .38);
+  z-index: 6;
+  border: 2px solid var(--foreground);
+  border-radius: 8px;
+  background: color-mix(in oklab, var(--background) 6%, transparent);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--background) 72%, transparent);
   pointer-events: none;
 }
 
@@ -729,6 +793,11 @@
 .cutter-field select:focus {
   border-color: var(--border-strong);
   box-shadow: 0 0 0 3px color-mix(in oklab, var(--foreground) 7%, transparent);
+}
+
+.cutter-toggle--inline {
+  width: max-content;
+  max-width: 100%;
 }
 
 .cutter-selection-info {
