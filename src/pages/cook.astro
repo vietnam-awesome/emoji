@@ -1,24 +1,25 @@
 ---
-import Layout from '../layouts/Layout.astro';
-import EmojiCook from '../components/cook/EmojiCook';
-import CookSkeleton from '../components/cook/CookSkeleton.astro';
 import { withBase } from '../lib/url';
-import '../styles/cook.css';
 
 const base = import.meta.env.BASE_URL;
-const homeUrl = withBase('/', base);
-const editorUrl = withBase('/editor', base);
+const kitchenUrl = withBase('/kitchen', base);
 ---
-<Layout
-  title="Cook emoji — Mix two emoji into a custom mashup"
-  description="Mix two Unicode emoji into a custom mashup directly in your browser. Try different recipe styles, export PNG or WebP, share a recipe link, or continue editing the result in the emoji editor."
-  keywords={['emoji cook', 'emoji mashup', 'combine emoji', 'emoji mixer', 'emoji maker', 'custom emoji', 'emoji generator']}
-  breadcrumbs={[
-    { name: 'Home', href: homeUrl },
-    { name: 'Cook emoji' }
-  ]}
->
-  <EmojiCook editorUrl={editorUrl} client:only="react">
-    <CookSkeleton slot="fallback" />
-  </EmojiCook>
-</Layout>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="robots" content="noindex,follow" />
+    <meta http-equiv="refresh" content={`0;url=${kitchenUrl}`} />
+    <link rel="canonical" href="https://emoji.eplus.dev/kitchen" />
+    <title>Emoji Kitchen</title>
+  </head>
+  <body>
+    <p>Moved to <a href={kitchenUrl}>Emoji Kitchen</a>.</p>
+    <script is:inline define:vars={{ kitchenUrl }}>
+      const target = new URL(kitchenUrl, window.location.origin);
+      target.search = window.location.search;
+      target.hash = window.location.hash;
+      window.location.replace(target.toString());
+    </script>
+  </body>
+</html>
