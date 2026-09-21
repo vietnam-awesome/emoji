@@ -140,6 +140,23 @@ jobs:
             echo "::warning::Pages output is above GitHub Pages' officially supported 1 GiB site size."
           fi
 
+          soft_limit=$((9 * 1024 * 1024 * 1024))
+          hard_limit=$((10 * 1024 * 1024 * 1024))
+          if [ "$bytes" -gt "$soft_limit" ]; then
+            {
+              echo ""
+              echo "#### Largest top-level output directories"
+              echo "~~~text"
+              du -h -d 1 dist | sort -hr | head -20
+              echo "~~~"
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "::warning::Pages output is above 9 GiB and close to the deployment hard limit."
+          fi
+          if [ "$bytes" -ge "$hard_limit" ]; then
+            echo "::error::Pages output is ${bytes} bytes, at or above the 10 GiB deployment limit. Reduce generated HTML/assets before upload."
+            exit 1
+          fi
+
       - name: Configure Pages
         uses: actions/configure-pages@v6
 
