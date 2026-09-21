@@ -7,6 +7,7 @@ import '../styles/cutter.css';
 const base = import.meta.env.BASE_URL;
 const homeUrl = withBase('/', base);
 const editorUrl = withBase('/editor', base);
+const libraryManifestUrl = 'https://raw.githubusercontent.com/vietnam-awesome/emoji/data/public/cutter/library.json';
 ---
 <Layout
   title="Emoji Sheet Cutter — Crop emoji sheets into individual PNGs"
@@ -18,7 +19,7 @@ const editorUrl = withBase('/editor', base);
   ]}
 >
   <section class="shell">
-    <EmojiSheetCutter editorUrl={editorUrl} client:only="react">
+    <EmojiSheetCutter editorUrl={editorUrl} libraryManifestUrl={libraryManifestUrl} client:only="react">
       <div class="cutter-page cutter-skeleton" slot="fallback" aria-hidden="true">
         <div class="cutter-skeleton-hero">
           <span></span><span></span><span></span>
