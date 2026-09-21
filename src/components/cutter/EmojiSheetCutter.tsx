@@ -835,9 +835,7 @@ export default function EmojiSheetCutter({ editorUrl, libraryManifestUrl }: Prop
       event.currentTarget.releasePointerCapture(event.pointerId);
     }
     resizeRef.current = null;
-    const region = allRegions[resize.index];
     setStatus(`Resized crop ${resize.index + 1}. Save the selected set when ready.`);
-    if (region) setSelection(region);
   };
 
   const onPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
