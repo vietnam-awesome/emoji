@@ -1391,3 +1391,80 @@
     animation: none;
   }
 }
+
+
+/* Saved Kitchen recipes */
+.cook-saved-library {
+  margin-top: 32px;
+  padding-top: 28px;
+  border-top: 1px solid var(--border);
+}
+
+.cook-saved-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.cook-saved-heading h2,
+.cook-saved-group h3 {
+  margin: 0;
+}
+
+.cook-saved-heading p {
+  margin: 6px 0 0;
+  color: var(--muted-foreground);
+}
+
+.cook-saved-group + .cook-saved-group {
+  margin-top: 24px;
+}
+
+.cook-saved-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.cook-saved-card {
+  min-width: 0;
+  padding: 12px;
+  display: grid;
+  gap: 8px;
+  text-align: left;
+}
+
+.cook-saved-card canvas {
+  width: 100%;
+  aspect-ratio: 1;
+  height: auto;
+  border-radius: 12px;
+  background: var(--muted);
+}
+
+.cook-saved-card strong,
+.cook-saved-card span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cook-saved-card span {
+  font-size: 0.78rem;
+  color: var(--muted-foreground);
+}
+
+@media (max-width: 760px) {
+  .cook-saved-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 420px) {
+  .cook-saved-grid {
+    grid-template-columns: 1fr;
+  }
+}

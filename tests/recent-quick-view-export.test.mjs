@@ -42,3 +42,30 @@ test('layout loads quick view and recent history globally', async () => {
   assert.match(layout, /quick-view\.js/);
   assert.match(layout, /Recently viewed/);
 });
+
+
+test('selection bar batch-exports static emoji for platform presets without flattening animation', async () => {
+  const selection = await read('src/components/beui/CatalogDownloadClient.tsx');
+  assert.match(selection, /PLATFORM_PRESETS/);
+  assert.match(selection, /discord: \{ label: "Discord", size: 128/);
+  assert.match(selection, /slack: \{ label: "Slack", size: 128/);
+  assert.match(selection, /twitch: \{ label: "Twitch", size: 112/);
+  assert.match(selection, /telegram: \{ label: "Telegram", size: 100/);
+  assert.match(selection, /renderPlatformPng/);
+  assert.match(selection, /downloadPlatformBatch/);
+  assert.match(selection, /animatedSkipped/);
+  assert.match(selection, /skipped to preserve animation/);
+  assert.match(selection, /Creating ZIP/);
+});
+
+
+test('batch export platform selector shows a readable platform label and size', async () => {
+  const selection = await read('src/components/beui/CatalogDownloadClient.tsx');
+  const css = await read('src/styles/beui.css');
+  assert.match(selection, /emoji-selection-platform-value/);
+  assert.match(selection, /PLATFORM_PRESETS\[platform\]\.label/);
+  assert.match(selection, /PLATFORM_PRESETS\[platform\]\.size/);
+  assert.doesNotMatch(selection, /<SelectValue placeholder="Platform"/);
+  assert.match(css, /\.emoji-selection-platform \{ min-height: 40px; width: 156px/);
+  assert.match(css, /\.emoji-selection-platform-value strong/);
+});
