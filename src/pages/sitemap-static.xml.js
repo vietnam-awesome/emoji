@@ -26,7 +26,7 @@ export function GET() {
     { loc: `${SITE}/`, changefreq: 'daily', priority: '1.0' },
     { loc: `${SITE}/emojis`, changefreq: 'daily', priority: '0.9' },
     { loc: `${SITE}/categories`, changefreq: 'weekly', priority: '0.8' },
-    { loc: `${SITE}/cook`, changefreq: 'monthly', priority: '0.8' },
+    { loc: `${SITE}/kitchen`, changefreq: 'monthly', priority: '0.8' },
     { loc: `${SITE}/editor`, changefreq: 'monthly', priority: '0.8' },
     ...categories.map((category) => ({
       loc: `${SITE}/categories/${category.slug}`,
