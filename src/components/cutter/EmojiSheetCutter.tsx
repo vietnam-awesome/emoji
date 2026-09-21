@@ -9,6 +9,7 @@ import {
   ImagePlus,
   Images,
   Pencil,
+  ScanLine,
   Scissors,
   Trash2,
   Upload,
@@ -24,6 +25,7 @@ type Sheet = {
   url: string;
   origin: "local" | "library";
   source?: string;
+  revokeOnRemove?: boolean;
 };
 
 type LibrarySheet = {
@@ -66,37 +68,207 @@ interface Props {
 const EDITOR_HANDOFF_KEY = "eplus-emoji-editor-handoff";
 const EDITOR_HANDOFF_NAME_KEY = "eplus-emoji-editor-handoff-name";
 
-const createStarterSheet = (title: string, emoji: string[]) => {
-  const width = 1024;
-  const cell = 256;
-  const labels = emoji.slice(0, 16).map((value, index) => {
-    const x = (index % 4) * cell + cell / 2;
-    const y = Math.floor(index / 4) * cell + cell / 2 + 12;
-    return `<text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="middle" font-size="128" font-family="Apple Color Emoji,Segoe UI Emoji,Noto Color Emoji,sans-serif">${value}</text>`;
-  }).join("");
+const DETECT_MAX_DIMENSION = 640;
 
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${width}" viewBox="0 0 ${width} ${width}"><rect width="100%" height="100%" rx="48" fill="#f8f8f8"/><g opacity=".08" stroke="#111"><path d="M256 0v1024M512 0v1024M768 0v1024M0 256h1024M0 512h1024M0 768h1024"/></g>${labels}<title>${title}</title></svg>`;
-  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+const findRuns = (values: number[], threshold: number, maxGap: number) => {
+  const raw: Array<[number, number]> = [];
+  let start = -1;
+
+  for (let index = 0; index < values.length; index += 1) {
+    if (values[index] >= threshold) {
+      if (start < 0) start = index;
+    } else if (start >= 0) {
+      raw.push([start, index - 1]);
+      start = -1;
+    }
+  }
+  if (start >= 0) raw.push([start, values.length - 1]);
+
+  if (!raw.length) return raw;
+  const merged: Array<[number, number]> = [raw[0]];
+  for (const run of raw.slice(1)) {
+    const previous = merged[merged.length - 1];
+    if (run[0] - previous[1] - 1 <= maxGap) previous[1] = run[1];
+    else merged.push(run);
+  }
+  return merged;
 };
 
-const BUILT_IN_LIBRARY: LibrarySheet[] = [
-  {
-    id: "starter-faces",
-    name: "Faces & reactions",
-    image: createStarterSheet("Faces & reactions", ["😀","😂","🤣","😊","😎","😍","🥰","🤩","😭","😡","🥳","🤔","🫡","😴","🤯","👀"]),
-    description: "A 4×4 practice sheet for testing manual emoji crops.",
-    source: "Built-in demo",
-    tags: ["faces", "reactions", "demo"],
-  },
-  {
-    id: "starter-work-tech",
-    name: "Work & tech",
-    image: createStarterSheet("Work & tech", ["💻","⌨️","🖥️","📱","⚙️","🛠️","🚀","🔥","✅","❌","💡","📌","📦","🔧","🧪","🎯"]),
-    description: "A 4×4 practice sheet with work and developer reactions.",
-    source: "Built-in demo",
-    tags: ["work", "tech", "demo"],
-  },
-];
+const detectEmojiRegions = (image: HTMLImageElement): CropRect[] => {
+  const naturalWidth = image.naturalWidth;
+  const naturalHeight = image.naturalHeight;
+  if (!naturalWidth || !naturalHeight) return [];
+
+  const scale = Math.min(1, DETECT_MAX_DIMENSION / Math.max(naturalWidth, naturalHeight));
+  const width = Math.max(1, Math.round(naturalWidth * scale));
+  const height = Math.max(1, Math.round(naturalHeight * scale));
+
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const context = canvas.getContext("2d", { willReadFrequently: true });
+  if (!context) return [];
+  context.clearRect(0, 0, width, height);
+  context.drawImage(image, 0, 0, width, height);
+
+  const pixels = context.getImageData(0, 0, width, height).data;
+  const border = Math.max(2, Math.round(Math.min(width, height) * 0.025));
+  let bgR = 0;
+  let bgG = 0;
+  let bgB = 0;
+  let bgCount = 0;
+  let transparentBorder = 0;
+  let borderCount = 0;
+
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      if (x >= border && x < width - border && y >= border && y < height - border) continue;
+      const offset = (y * width + x) * 4;
+      const alpha = pixels[offset + 3];
+      borderCount += 1;
+      if (alpha < 80) {
+        transparentBorder += 1;
+        continue;
+      }
+      bgR += pixels[offset];
+      bgG += pixels[offset + 1];
+      bgB += pixels[offset + 2];
+      bgCount += 1;
+    }
+  }
+
+  const transparentBackground = borderCount > 0 && transparentBorder / borderCount > 0.18;
+  const baseR = bgCount ? bgR / bgCount : 255;
+  const baseG = bgCount ? bgG / bgCount : 255;
+  const baseB = bgCount ? bgB / bgCount : 255;
+  const mask = new Uint8Array(width * height);
+
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const pixelIndex = y * width + x;
+      const offset = pixelIndex * 4;
+      const alpha = pixels[offset + 3];
+      if (alpha < 28) continue;
+
+      if (transparentBackground) {
+        mask[pixelIndex] = alpha > 42 ? 1 : 0;
+        continue;
+      }
+
+      const dr = pixels[offset] - baseR;
+      const dg = pixels[offset + 1] - baseG;
+      const db = pixels[offset + 2] - baseB;
+      const distance = Math.sqrt(dr * dr + dg * dg + db * db);
+      mask[pixelIndex] = distance > 34 ? 1 : 0;
+    }
+  }
+
+  const rowOccupancy = new Array<number>(height).fill(0);
+  for (let y = 0; y < height; y += 1) {
+    let count = 0;
+    for (let x = 0; x < width; x += 1) count += mask[y * width + x];
+    rowOccupancy[y] = count;
+  }
+
+  const rowRuns = findRuns(
+    rowOccupancy,
+    Math.max(2, Math.round(width * 0.008)),
+    Math.max(2, Math.round(height * 0.025)),
+  );
+
+  const candidates: CropRect[] = [];
+  for (const [rowStart, rowEnd] of rowRuns) {
+    const bandHeight = rowEnd - rowStart + 1;
+    if (bandHeight < height * 0.04) continue;
+
+    const columnOccupancy = new Array<number>(width).fill(0);
+    for (let x = 0; x < width; x += 1) {
+      let count = 0;
+      for (let y = rowStart; y <= rowEnd; y += 1) count += mask[y * width + x];
+      columnOccupancy[x] = count;
+    }
+
+    const columnRuns = findRuns(
+      columnOccupancy,
+      Math.max(1, Math.round(bandHeight * 0.018)),
+      Math.max(2, Math.round(width * 0.018)),
+    );
+
+    for (const [columnStart, columnEnd] of columnRuns) {
+      let minX = columnEnd;
+      let maxX = columnStart;
+      let minY = rowEnd;
+      let maxY = rowStart;
+      let pixelsFound = 0;
+
+      for (let y = rowStart; y <= rowEnd; y += 1) {
+        for (let x = columnStart; x <= columnEnd; x += 1) {
+          if (!mask[y * width + x]) continue;
+          pixelsFound += 1;
+          minX = Math.min(minX, x);
+          maxX = Math.max(maxX, x);
+          minY = Math.min(minY, y);
+          maxY = Math.max(maxY, y);
+        }
+      }
+
+      if (pixelsFound < width * height * 0.001) continue;
+      const boxWidth = maxX - minX + 1;
+      const boxHeight = maxY - minY + 1;
+      if (boxWidth < width * 0.035 || boxHeight < height * 0.035) continue;
+
+      const padding = Math.max(4, Math.round(Math.max(boxWidth, boxHeight) * 0.08));
+      let left = Math.max(0, minX - padding);
+      let top = Math.max(0, minY - padding);
+      let right = Math.min(width - 1, maxX + padding);
+      let bottom = Math.min(height - 1, maxY + padding);
+
+      const paddedWidth = right - left + 1;
+      const paddedHeight = bottom - top + 1;
+      const squareSize = Math.min(Math.max(paddedWidth, paddedHeight), width, height);
+      const centerX = (left + right) / 2;
+      const centerY = (top + bottom) / 2;
+      left = clamp(Math.round(centerX - squareSize / 2), 0, width - squareSize);
+      top = clamp(Math.round(centerY - squareSize / 2), 0, height - squareSize);
+      right = left + squareSize;
+      bottom = top + squareSize;
+
+      candidates.push({
+        x: left / scale,
+        y: top / scale,
+        width: (right - left) / scale,
+        height: (bottom - top) / scale,
+      });
+    }
+  }
+
+  const filtered = candidates
+    .filter((box) => box.width * box.height < naturalWidth * naturalHeight * 0.32)
+    .sort((a, b) => {
+      const rowTolerance = Math.max(a.height, b.height) * 0.45;
+      const aCenterY = a.y + a.height / 2;
+      const bCenterY = b.y + b.height / 2;
+      if (Math.abs(aCenterY - bCenterY) > rowTolerance) return aCenterY - bCenterY;
+      return a.x - b.x;
+    });
+
+  const deduped: CropRect[] = [];
+  for (const box of filtered) {
+    const duplicate = deduped.some((existing) => {
+      const left = Math.max(existing.x, box.x);
+      const top = Math.max(existing.y, box.y);
+      const right = Math.min(existing.x + existing.width, box.x + box.width);
+      const bottom = Math.min(existing.y + existing.height, box.y + box.height);
+      if (right <= left || bottom <= top) return false;
+      const intersection = (right - left) * (bottom - top);
+      const smaller = Math.min(existing.width * existing.height, box.width * box.height);
+      return intersection / smaller > 0.78;
+    });
+    if (!duplicate) deduped.push(box);
+  }
+
+  return deduped.slice(0, 64);
+};
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 
@@ -234,11 +406,14 @@ export default function EmojiSheetCutter({ editorUrl, libraryManifestUrl }: Prop
   const dragRef = useRef<{ pointerId: number; startX: number; startY: number } | null>(null);
 
   const [sourceMode, setSourceMode] = useState<"library" | "upload">("library");
-  const [librarySheets, setLibrarySheets] = useState<LibrarySheet[]>(BUILT_IN_LIBRARY);
+  const [librarySheets, setLibrarySheets] = useState<LibrarySheet[]>([]);
   const [libraryStatus, setLibraryStatus] = useState<"loading" | "ready" | "error">("loading");
   const [sheets, setSheets] = useState<Sheet[]>([]);
   const [activeSheetId, setActiveSheetId] = useState("");
   const [selection, setSelection] = useState<CropRect | null>(null);
+  const [detectedRegions, setDetectedRegions] = useState<CropRect[]>([]);
+  const [selectedDetectedIndex, setSelectedDetectedIndex] = useState(-1);
+  const [detecting, setDetecting] = useState(false);
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
   const [squareLock, setSquareLock] = useState(true);
   const [showGrid, setShowGrid] = useState(false);
@@ -287,16 +462,12 @@ export default function EmojiSheetCutter({ editorUrl, libraryManifestUrl }: Prop
           : [];
 
         if (!cancelled) {
-          const builtInIds = new Set(BUILT_IN_LIBRARY.map((sheet) => sheet.id));
-          setLibrarySheets([
-            ...BUILT_IN_LIBRARY,
-            ...remoteSheets.filter((sheet) => !builtInIds.has(sheet.id)),
-          ]);
+          setLibrarySheets(remoteSheets);
           setLibraryStatus("ready");
         }
       } catch (reason) {
         if (!cancelled) {
-          setLibrarySheets(BUILT_IN_LIBRARY);
+          setLibrarySheets([]);
           setLibraryStatus("error");
           console.warn("Could not load shared Cutter library", reason);
         }
@@ -318,6 +489,8 @@ export default function EmojiSheetCutter({ editorUrl, libraryManifestUrl }: Prop
 
   useEffect(() => {
     setSelection(null);
+    setDetectedRegions([]);
+    setSelectedDetectedIndex(-1);
     setDimensions({ width: 0, height: 0 });
     setZoom(100);
   }, [activeSheet?.id]);
@@ -341,6 +514,7 @@ export default function EmojiSheetCutter({ editorUrl, libraryManifestUrl }: Prop
       url: makeObjectUrl(file),
       origin: "local",
       source: "Your upload",
+      revokeOnRemove: true,
     }));
 
     setSourceMode("upload");
@@ -350,28 +524,47 @@ export default function EmojiSheetCutter({ editorUrl, libraryManifestUrl }: Prop
     setStatus(`Added ${incoming.length} sheet${incoming.length === 1 ? "" : "s"}. Draw a box around one emoji to start.`);
   };
 
-  const addLibrarySheet = (item: LibrarySheet) => {
+  const addLibrarySheet = async (item: LibrarySheet) => {
     const id = `library:${item.id}`;
-    setSheets((current) => {
-      if (current.some((sheet) => sheet.id === id)) return current;
-      return [
-        ...current,
-        {
-          id,
-          name: item.name,
-          url: item.image,
-          origin: "library",
-          source: item.source || "Shared library",
-        },
-      ];
-    });
-    setActiveSheetId(id);
-    setSelection(null);
-    setError("");
-    setStatus(`Opened ${item.name} from the shared library. Draw a box around an emoji to start cutting.`);
-    window.requestAnimationFrame(() => {
-      document.querySelector(".cutter-workspace")?.scrollIntoView({ behavior: "smooth", block: "start" });
-    });
+    const existing = sheets.find((sheet) => sheet.id === id);
+    if (existing) {
+      setActiveSheetId(id);
+      setSelection(null);
+      setError("");
+      window.requestAnimationFrame(() => {
+        document.querySelector(".cutter-workspace")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+      return;
+    }
+
+    try {
+      setStatus(`Opening ${item.name}…`);
+      setError("");
+      const response = await fetch(item.image);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const blob = await response.blob();
+      const localUrl = makeObjectUrl(blob);
+      const sheet: Sheet = {
+        id,
+        name: item.name,
+        url: localUrl,
+        origin: "library",
+        source: item.source || "Shared library",
+        revokeOnRemove: true,
+      };
+      setSheets((current) => [...current, sheet]);
+      setActiveSheetId(id);
+      setSelection(null);
+      setStatus(`Opened ${item.name}. Detecting emoji automatically…`);
+      window.requestAnimationFrame(() => {
+        document.querySelector(".cutter-workspace")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    } catch (reason) {
+      setStatus("");
+      setError(reason instanceof Error
+        ? `Could not open ${item.name}: ${reason.message}. You can still upload the sheet directly.`
+        : `Could not open ${item.name}.`);
+    }
   };
 
   useEffect(() => {
@@ -415,7 +608,7 @@ export default function EmojiSheetCutter({ editorUrl, libraryManifestUrl }: Prop
 
   const removeSheet = (id: string) => {
     const sheet = sheets.find((item) => item.id === id);
-    if (sheet?.origin === "local") {
+    if (sheet?.revokeOnRemove) {
       URL.revokeObjectURL(sheet.url);
       objectUrlsRef.current.delete(sheet.url);
     }
@@ -430,7 +623,7 @@ export default function EmojiSheetCutter({ editorUrl, libraryManifestUrl }: Prop
 
   const clearSheets = () => {
     for (const sheet of sheets) {
-      if (sheet.origin !== "local") continue;
+      if (!sheet.revokeOnRemove) continue;
       URL.revokeObjectURL(sheet.url);
       objectUrlsRef.current.delete(sheet.url);
     }
@@ -439,6 +632,45 @@ export default function EmojiSheetCutter({ editorUrl, libraryManifestUrl }: Prop
     setSelection(null);
     setDimensions({ width: 0, height: 0 });
     setStatus("");
+  };
+
+  const runAutoDetect = (image = imageRef.current) => {
+    if (!image || !image.naturalWidth || !image.naturalHeight) return;
+    setDetecting(true);
+    setError("");
+
+    window.requestAnimationFrame(() => {
+      try {
+        const regions = detectEmojiRegions(image);
+        setDetectedRegions(regions);
+        setSelectedDetectedIndex(regions.length ? 0 : -1);
+        setSelection(regions[0] || null);
+        if (regions.length) {
+          setCropName("emoji-01");
+          setStatus(`Auto-detected ${regions.length} emoji. Click any box to review it, or save all detected crops.`);
+        } else {
+          setStatus("Auto-detect could not find clear separated emoji. You can still drag a crop box manually.");
+        }
+      } catch (reason) {
+        setDetectedRegions([]);
+        setSelectedDetectedIndex(-1);
+        setStatus("");
+        setError(reason instanceof Error
+          ? `Auto-detect could not analyze this sheet: ${reason.message}`
+          : "Auto-detect could not analyze this sheet.");
+      } finally {
+        setDetecting(false);
+      }
+    });
+  };
+
+  const chooseDetectedRegion = (index: number) => {
+    const region = detectedRegions[index];
+    if (!region) return;
+    setSelectedDetectedIndex(index);
+    setSelection(region);
+    setCropName(`emoji-${String(index + 1).padStart(2, "0")}`);
+    setError("");
   };
 
   const pointerPosition = (event: React.PointerEvent<HTMLDivElement>) => {
@@ -459,6 +691,7 @@ export default function EmojiSheetCutter({ editorUrl, libraryManifestUrl }: Prop
     event.preventDefault();
     event.currentTarget.setPointerCapture(event.pointerId);
     dragRef.current = { pointerId: event.pointerId, startX: point.x, startY: point.y };
+    setSelectedDetectedIndex(-1);
     setSelection({ x: point.x, y: point.y, width: 0, height: 0 });
     setStatus("");
     setError("");
@@ -515,14 +748,14 @@ export default function EmojiSheetCutter({ editorUrl, libraryManifestUrl }: Prop
       }
     : undefined;
 
-  const createCropBlob = async () => {
+  const createCropBlob = async (rect = selection) => {
     const image = imageRef.current;
-    if (!image || !selection) throw new Error("Draw a crop box first.");
+    if (!image || !rect) throw new Error("Choose or draw a crop box first.");
 
-    const sourceX = Math.round(selection.x);
-    const sourceY = Math.round(selection.y);
-    const sourceWidth = Math.max(1, Math.round(selection.width));
-    const sourceHeight = Math.max(1, Math.round(selection.height));
+    const sourceX = Math.round(rect.x);
+    const sourceY = Math.round(rect.y);
+    const sourceWidth = Math.max(1, Math.round(rect.width));
+    const sourceHeight = Math.max(1, Math.round(rect.height));
     const requested = outputSize === "original" ? 0 : Number(outputSize);
 
     const canvas = document.createElement("canvas");
@@ -603,6 +836,33 @@ export default function EmojiSheetCutter({ editorUrl, libraryManifestUrl }: Prop
     } catch (reason) {
       setStatus("");
       setError(reason instanceof Error ? reason.message : "Could not create the crop.");
+    }
+  };
+
+  const saveAllDetected = async () => {
+    if (!activeSheet || !detectedRegions.length) return;
+    try {
+      setStatus(`Preparing ${detectedRegions.length} detected emoji…`);
+      const created: SavedCrop[] = [];
+      for (let index = 0; index < detectedRegions.length; index += 1) {
+        const result = await createCropBlob(detectedRegions[index]);
+        const name = `emoji-${String(index + 1).padStart(2, "0")}`;
+        created.push({
+          id: `${Date.now()}-${index}-${Math.random().toString(36).slice(2)}`,
+          name,
+          sourceName: activeSheet.name,
+          url: makeObjectUrl(result.blob),
+          blob: result.blob,
+          width: result.width,
+          height: result.height,
+        });
+      }
+      setCrops((current) => [...current, ...created]);
+      setStatus(`Saved all ${created.length} detected emoji. Review them below or download the ZIP.`);
+      setError("");
+    } catch (reason) {
+      setStatus("");
+      setError(reason instanceof Error ? reason.message : "Could not save all detected crops.");
     }
   };
 
@@ -727,8 +987,8 @@ export default function EmojiSheetCutter({ editorUrl, libraryManifestUrl }: Prop
         </div>
         <div className="cutter-hero-meta" aria-label="Emoji Sheet Cutter capabilities">
           <span>Multi-image</span>
-          <span>Manual crop</span>
-          <span>Square lock</span>
+          <span>Auto detect</span>
+          <span>Manual fallback</span>
           <span>PNG + ZIP</span>
           <span>100% local</span>
         </div>
@@ -772,12 +1032,19 @@ export default function EmojiSheetCutter({ editorUrl, libraryManifestUrl }: Prop
                 {libraryStatus === "loading"
                   ? "Loading shared library…"
                   : libraryStatus === "error"
-                    ? "Shared library unavailable — built-in sheets are still ready."
+                    ? "Shared library unavailable — upload/paste still works."
                     : `${librarySheets.length} sheet${librarySheets.length === 1 ? "" : "s"} available`}
               </span>
               <small>Shared assets are read from the repository data branch.</small>
             </div>
             <div className="cutter-library-grid">
+              {librarySheets.length === 0 && libraryStatus !== "loading" ? (
+                <div className="cutter-library-empty">
+                  <Images aria-hidden="true" />
+                  <strong>No shared sheets yet</strong>
+                  <span>Switch to Upload / Paste to use your own image.</span>
+                </div>
+              ) : null}
               {librarySheets.map((item) => (
                 <button
                   type="button"
@@ -875,14 +1142,19 @@ export default function EmojiSheetCutter({ editorUrl, libraryManifestUrl }: Prop
                   </span>
                 </div>
                 <div className="cutter-stage-toolbar-actions">
-                  <label className="cutter-toggle">
-                    <input type="checkbox" checked={squareLock} onChange={(event) => setSquareLock(event.target.checked)} />
-                    <span>Square lock</span>
-                  </label>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => runAutoDetect()}
+                    disabled={detecting || !dimensions.width}
+                  >
+                    <ScanLine className="size-3.5" aria-hidden="true" />
+                    {detecting ? "Detecting…" : "Detect again"}
+                  </Button>
                   <label className="cutter-toggle">
                     <input type="checkbox" checked={showGrid} onChange={(event) => setShowGrid(event.target.checked)} />
                     <Grid3X3 aria-hidden="true" />
-                    <span>Grid</span>
+                    <span>Grid guide</span>
                   </label>
                 </div>
               </div>
@@ -924,14 +1196,37 @@ export default function EmojiSheetCutter({ editorUrl, libraryManifestUrl }: Prop
                         setError("This shared sheet could not be loaded for cropping. Try another library sheet or upload the image directly.");
                       }}
                       onLoad={(event) => {
+                        const image = event.currentTarget;
                         setDimensions({
-                          width: event.currentTarget.naturalWidth,
-                          height: event.currentTarget.naturalHeight,
+                          width: image.naturalWidth,
+                          height: image.naturalHeight,
                         });
+                        window.requestAnimationFrame(() => runAutoDetect(image));
                       }}
                     />
                   )}
                   {showGrid ? <span className="cutter-grid-guide" style={gridStyle} aria-hidden="true" /> : null}
+                  {detectedRegions.map((region, index) => (
+                    <button
+                      type="button"
+                      key={`detected-${index}`}
+                      className={`cutter-detected-region${selectedDetectedIndex === index ? " is-selected" : ""}`}
+                      style={{
+                        left: `${(region.x / dimensions.width) * 100}%`,
+                        top: `${(region.y / dimensions.height) * 100}%`,
+                        width: `${(region.width / dimensions.width) * 100}%`,
+                        height: `${(region.height / dimensions.height) * 100}%`,
+                      }}
+                      onPointerDown={(event) => event.stopPropagation()}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        chooseDetectedRegion(index);
+                      }}
+                      aria-label={`Select detected emoji ${index + 1}`}
+                    >
+                      <span>{index + 1}</span>
+                    </button>
+                  ))}
                   {selection && selectionStyle ? (
                     <span className="cutter-selection" style={selectionStyle} aria-hidden="true">
                       <span className="cutter-selection-label">
@@ -959,7 +1254,7 @@ export default function EmojiSheetCutter({ editorUrl, libraryManifestUrl }: Prop
                   />
                   <strong>{zoom}%</strong>
                 </label>
-                <p>Drag directly on the image to create or replace the crop box.</p>
+                <p>{detectedRegions.length ? `${detectedRegions.length} emoji detected · click a box to review` : "Drag on the image for manual crop fallback."}</p>
               </div>
             </section>
 
@@ -968,10 +1263,22 @@ export default function EmojiSheetCutter({ editorUrl, libraryManifestUrl }: Prop
                 <div className="cutter-control-heading">
                   <span className="cutter-step">1</span>
                   <div>
-                    <h2>Select one emoji</h2>
-                    <p>Draw around the emoji. Keep Square lock on for standard emoji exports.</p>
+                    <h2>{detectedRegions.length ? `${detectedRegions.length} emoji detected` : "Select one emoji"}</h2>
+                    <p>{detectedRegions.length ? "Click a detected box to review or adjust it manually." : "Auto-detect runs when the image opens. Manual drag remains available as fallback."}</p>
                   </div>
                 </div>
+
+                {detectedRegions.length > 0 ? (
+                  <Button variant="primary" size="md" ripple onClick={saveAllDetected}>
+                    <Scissors className="size-4" aria-hidden="true" />
+                    Save all {detectedRegions.length}
+                  </Button>
+                ) : null}
+
+                <label className="cutter-toggle cutter-toggle--inline">
+                  <input type="checkbox" checked={squareLock} onChange={(event) => setSquareLock(event.target.checked)} />
+                  <span>Square manual crop</span>
+                </label>
 
                 {showGrid ? (
                   <div className="cutter-grid-controls">
