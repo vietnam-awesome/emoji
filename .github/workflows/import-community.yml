@@ -133,8 +133,10 @@ jobs:
             node ../app/scripts/import-community.mjs --source=discadia --limit="$IMPORT_LIMIT" --concurrency=4
           fi
 
-      - name: Verify emoji index
+      - name: Verify community metadata and checked-out assets
         working-directory: data
+        env:
+          VERIFY_DATA_ASSET_PREFIXES: '/emojis/community/slackmojis/,/emojis/community/discadia/'
         run: node ../app/scripts/verify-data.mjs
 
       - name: Shard emoji index for Git
