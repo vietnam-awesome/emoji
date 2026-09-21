@@ -26,3 +26,11 @@ test('emoji detail exposes other source versions without adding per-page build w
   assert.match(client, /section\.replaceChildren\(heading, grid\)/);
   assert.match(client, /section\.hidden = false/);
 });
+
+
+test('hidden detail discovery grids stay empty in static HTML', async () => {
+  const detail = await read('src/components/beui/EmojiDetail.astro');
+  assert.match(detail, /<div class="detail-similar-grid" data-similar-grid><\/div>/);
+  assert.match(detail, /<div class="detail-random-grid" data-random-grid><\/div>/);
+  assert.doesNotMatch(detail, /Array\.from\(\{ length: 6 \}\)/);
+});
