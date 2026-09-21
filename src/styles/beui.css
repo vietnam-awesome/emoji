@@ -494,7 +494,10 @@
   .emoji-selection-bar { position: fixed; left: 50%; bottom: 22px; z-index: 60; display: flex; min-width: min(520px,calc(100vw - 32px)); align-items: center; justify-content: space-between; gap: 24px; padding: 10px 10px 10px 16px; border: 1px solid color-mix(in oklab,var(--background) 14%,transparent); border-radius: 16px; background: color-mix(in oklab,var(--foreground) 94%,transparent); color: var(--background); box-shadow: 0 20px 54px rgb(0 0 0 / .22); transform: translateX(-50%); backdrop-filter: blur(14px); }
   .emoji-selection-summary { display: flex; align-items: baseline; gap: 6px; font-size: .78rem; }
   .emoji-selection-summary strong { font-size: .92rem; }
-  .emoji-selection-actions { display: flex; align-items: center; gap: 7px; }
+  .emoji-selection-actions { display: flex; align-items: center; justify-content: flex-end; gap: 7px; flex-wrap: wrap; }
+  .emoji-selection-platform { min-height: 34px; width: 118px; border-color: color-mix(in oklab,var(--background) 24%,transparent) !important; background: color-mix(in oklab,var(--background) 10%,transparent) !important; color: var(--background) !important; font-size: .72rem; }
+  .emoji-selection-platform svg { color: var(--background) !important; }
+  .emoji-selection-export { white-space: nowrap; }
   .emoji-selection-clear, .emoji-selection-download { min-height: 34px; border-radius: 999px; font: inherit; font-size: .74rem; font-weight: 650; cursor: pointer; }
   .emoji-selection-clear { padding: 0 10px; border: 0; background: transparent; color: color-mix(in oklab,var(--background) 76%,transparent); }
   .emoji-selection-clear:hover { color: var(--background); }
@@ -604,6 +607,11 @@
 
 @media (max-width:560px) {
   .packs-list-grid { grid-template-columns: 1fr; }
+  .emoji-selection-bar { min-width: 0; width: calc(100vw - 20px); gap: 8px; padding-left: 10px; }
+  .emoji-selection-summary { display: none; }
+  .emoji-selection-actions { width: 100%; justify-content: center; gap: 4px; }
+  .emoji-selection-platform { width: 104px; }
+  .emoji-selection-export { padding-inline: 8px !important; }
   .emoji-selection-actions { gap: 3px; }
   .emoji-selection-pack { padding-inline: 8px !important; }
   .hero-library-grid { grid-template-columns: repeat(3,minmax(0,1fr)); }
