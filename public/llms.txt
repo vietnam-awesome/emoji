@@ -42,7 +42,7 @@ Deferred capabilities such as APNG frame-by-frame editing, interpolation, AI-gen
 
 ## Emoji Sheet Cutter
 
-The `/cutter` route is a client-side tool for extracting individual emoji PNGs from larger emoji sheets or image collages. Users can start from built-in/shared library sheets published from the repository `data` branch, upload multiple local sheets, or paste an image from the clipboard. They can draw manual crop rectangles, optionally lock crops to a square, use a row/column grid guide, zoom for precision, and save multiple crops in one session.
+The `/cutter` route is a client-side tool for extracting individual emoji PNGs from larger emoji sheets or image collages. Users can start from built-in/shared library sheets published from the repository `data` branch, upload multiple local sheets, or paste an image from the clipboard. The Cutter automatically detects separated emoji regions when a sheet opens, lets users select/review detected boxes or save all detections at once, and keeps manual crop rectangles as a fallback. Users can optionally lock manual crops to a square, use a row/column grid guide, zoom for precision, and save multiple crops in one session.
 
 Saved crops can keep their original dimensions or be normalized to 64, 128, 256, or 512 square PNGs. Users can copy or download each crop, download all crops as a browser-generated ZIP, or continue editing a crop in `/editor` through same-tab session storage.
 
