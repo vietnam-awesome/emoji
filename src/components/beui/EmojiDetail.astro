@@ -50,6 +50,7 @@ const tagTargetUrl = (tag) => {
   data-recent-native={emoji.emoji || ''}
   data-recent-shortcode={emoji.shortcode || ''}
   data-recent-detail-url={withBase(`/emoji/${emoji.slug}`, base)}
+  data-variant-hexcode={emoji.hexcode || ''}
 >
   <div class="detail-grid">
     <aside class="detail-preview" aria-label={`${emoji.name} preview`}>
@@ -153,34 +154,6 @@ const tagTargetUrl = (tag) => {
       </dl>
     </div>
   </div>
-
-  <section
-    class="detail-variants detail-similar"
-    aria-labelledby="emoji-variants-title"
-    data-variant-section
-    data-current-slug={emoji.slug}
-    data-current-hexcode={emoji.hexcode || ''}
-    data-search-root={withBase('/search', base).replace(/\/$/, '')}
-    hidden
-  >
-    <div class="section-heading-modern">
-      <div>
-        <p class="section-kicker">Same Unicode</p>
-        <h2 id="emoji-variants-title">Other versions</h2>
-        <p>Compare the same Unicode emoji across available artwork sources and licenses.</p>
-      </div>
-      <span class="detail-variant-hex">{emoji.hexcode}</span>
-    </div>
-    <div class="detail-similar-grid" data-variant-grid>
-      {Array.from({ length: 4 }).map(() => (
-        <div class="detail-client-card-skeleton" aria-hidden="true">
-          <span class="detail-client-card-skeleton-media"></span>
-          <span class="detail-client-card-skeleton-line detail-client-card-skeleton-line--title"></span>
-          <span class="detail-client-card-skeleton-line detail-client-card-skeleton-line--meta"></span>
-        </div>
-      ))}
-    </div>
-  </section>
 
   <section
     class="detail-similar"
