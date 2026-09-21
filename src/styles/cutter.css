@@ -630,7 +630,13 @@
   border-style: dashed;
 }
 
-.cutter-detected-region > span {
+.cutter-detected-region.is-focused {
+  z-index: 6;
+  outline: 2px solid color-mix(in oklab, var(--foreground) 72%, transparent);
+  outline-offset: 3px;
+}
+
+.cutter-region-toggle {
   position: absolute;
   top: 5px;
   left: 5px;
@@ -658,7 +664,7 @@
 
 .cutter-selection {
   position: absolute;
-  z-index: 6;
+  z-index: 7;
   border: 2px solid var(--foreground);
   border-radius: 8px;
   background: color-mix(in oklab, var(--background) 6%, transparent);
@@ -681,17 +687,21 @@
 
 .cutter-handle {
   position: absolute;
-  width: 8px;
-  height: 8px;
-  border: 1px solid rgb(0 0 0 / .65);
-  border-radius: 2px;
-  background: white;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 2px solid var(--foreground);
+  border-radius: 999px;
+  background: var(--background);
+  box-shadow: 0 2px 8px rgb(0 0 0 / .22);
+  pointer-events: auto;
+  touch-action: none;
 }
 
-.cutter-handle--nw { top: -5px; left: -5px; }
-.cutter-handle--ne { top: -5px; right: -5px; }
-.cutter-handle--sw { bottom: -5px; left: -5px; }
-.cutter-handle--se { right: -5px; bottom: -5px; }
+.cutter-handle--nw { top: -10px; left: -10px; cursor: nwse-resize; }
+.cutter-handle--ne { top: -10px; right: -10px; cursor: nesw-resize; }
+.cutter-handle--sw { bottom: -10px; left: -10px; cursor: nesw-resize; }
+.cutter-handle--se { right: -10px; bottom: -10px; cursor: nwse-resize; }
 
 .cutter-stage-footer {
   min-height: 50px;
@@ -1167,6 +1177,18 @@
   .cutter-results-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
+}
+
+@media (pointer: coarse) {
+  .cutter-handle {
+    width: 24px;
+    height: 24px;
+  }
+
+  .cutter-handle--nw { top: -13px; left: -13px; }
+  .cutter-handle--ne { top: -13px; right: -13px; }
+  .cutter-handle--sw { bottom: -13px; left: -13px; }
+  .cutter-handle--se { right: -13px; bottom: -13px; }
 }
 
 @media (max-width: 520px) {
