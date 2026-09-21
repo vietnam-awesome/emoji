@@ -1,0 +1,893 @@
+.cutter-page {
+  padding: 20px 0 84px;
+}
+
+.cutter-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18px 28px;
+  align-items: end;
+  padding: 20px 0 26px;
+}
+
+.cutter-hero > div:first-child {
+  max-width: 780px;
+}
+
+.cutter-hero h1 {
+  margin: 0;
+  font-size: clamp(2.25rem, 5vw, 4.1rem);
+  line-height: .98;
+  letter-spacing: -.055em;
+}
+
+.cutter-hero > div:first-child > p:last-child {
+  max-width: 720px;
+  margin: 12px 0 0;
+  color: var(--muted-foreground);
+  font-size: .92rem;
+  line-height: 1.65;
+}
+
+.cutter-hero-actions,
+.cutter-results-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cutter-hero-meta {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.cutter-hero-meta span {
+  padding: 5px 9px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--muted-foreground);
+  font-size: .64rem;
+  font-weight: 650;
+}
+
+.cutter-dropzone {
+  display: grid;
+  width: 100%;
+  min-height: 360px;
+  place-items: center;
+  align-content: center;
+  gap: 9px;
+  padding: 42px 24px;
+  border: 1px dashed var(--border-strong);
+  border-radius: 20px;
+  background:
+    linear-gradient(135deg, color-mix(in oklab, var(--card) 78%, transparent), transparent),
+    var(--background);
+  color: var(--foreground);
+  text-align: center;
+  cursor: pointer;
+  transition: border-color .16s ease, background .16s ease, transform .16s ease;
+}
+
+.cutter-dropzone:hover,
+.cutter-dropzone.is-dragover {
+  border-color: var(--foreground);
+  background: color-mix(in oklab, var(--card) 86%, var(--background));
+}
+
+.cutter-dropzone.is-dragover {
+  transform: scale(.997);
+}
+
+.cutter-dropzone-icon {
+  display: grid;
+  width: 68px;
+  height: 68px;
+  place-items: center;
+  margin-bottom: 8px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--card);
+  box-shadow: 0 10px 32px rgb(0 0 0 / .07);
+}
+
+.cutter-dropzone-icon svg {
+  width: 28px;
+  height: 28px;
+}
+
+.cutter-dropzone strong {
+  font-size: 1.15rem;
+  letter-spacing: -.025em;
+}
+
+.cutter-dropzone > span:not(.cutter-dropzone-icon),
+.cutter-dropzone small {
+  color: var(--muted-foreground);
+}
+
+.cutter-dropzone > span:not(.cutter-dropzone-icon) {
+  font-size: .8rem;
+}
+
+.cutter-dropzone small {
+  font-size: .68rem;
+}
+
+.cutter-sheet-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+
+.cutter-sheet-list {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 3px 1px;
+  scrollbar-width: thin;
+}
+
+.cutter-sheet-item {
+  position: relative;
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 4px;
+}
+
+.cutter-sheet-chip {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  width: 184px;
+  min-height: 52px;
+  align-items: center;
+  gap: 9px;
+  padding: 5px 34px 5px 5px;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  background: var(--background);
+  color: var(--foreground);
+  text-align: left;
+  cursor: pointer;
+}
+
+.cutter-sheet-chip:hover,
+.cutter-sheet-chip.is-active {
+  border-color: var(--border-strong);
+  background: var(--card);
+}
+
+.cutter-sheet-chip.is-active {
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--foreground) 8%, transparent);
+}
+
+.cutter-sheet-chip img {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: 9px;
+  background: var(--card);
+}
+
+.cutter-sheet-chip > span {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.cutter-sheet-chip strong,
+.cutter-sheet-chip small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cutter-sheet-chip strong {
+  font-size: .72rem;
+}
+
+.cutter-sheet-chip small {
+  color: var(--muted-foreground);
+  font-size: .56rem;
+}
+
+.cutter-sheet-remove {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  z-index: 2;
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted-foreground);
+  transform: translateY(-50%);
+  cursor: pointer;
+}
+
+.cutter-sheet-remove:hover,
+.cutter-sheet-remove:focus-visible {
+  background: var(--muted);
+  color: var(--foreground);
+  outline: none;
+}
+
+.cutter-sheet-remove svg {
+  width: 13px;
+  height: 13px;
+}
+
+.cutter-text-action {
+  flex: 0 0 auto;
+  padding: 7px 9px;
+  border: 0;
+  background: transparent;
+  color: var(--muted-foreground);
+  font-size: .68rem;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.cutter-text-action:hover {
+  color: var(--foreground);
+}
+
+.cutter-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 330px;
+  gap: 14px;
+  align-items: start;
+}
+
+.cutter-stage-column,
+.cutter-controls {
+  min-width: 0;
+}
+
+.cutter-stage-column {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--background);
+}
+
+.cutter-stage-toolbar,
+.cutter-stage-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 11px 13px;
+}
+
+.cutter-stage-toolbar {
+  border-bottom: 1px solid var(--border);
+}
+
+.cutter-stage-toolbar > div:first-child {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.cutter-stage-toolbar strong,
+.cutter-stage-toolbar span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cutter-stage-toolbar strong {
+  font-size: .76rem;
+}
+
+.cutter-stage-toolbar span,
+.cutter-stage-footer p {
+  color: var(--muted-foreground);
+  font-size: .62rem;
+}
+
+.cutter-stage-toolbar-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 7px;
+}
+
+.cutter-toggle {
+  display: inline-flex;
+  min-height: 32px;
+  align-items: center;
+  gap: 6px;
+  padding: 0 9px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--muted-foreground);
+  font-size: .64rem;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.cutter-toggle:has(input:checked) {
+  border-color: var(--foreground);
+  background: var(--foreground);
+  color: var(--background);
+}
+
+.cutter-toggle input {
+  width: 13px;
+  height: 13px;
+  accent-color: currentColor;
+}
+
+.cutter-toggle svg {
+  width: 13px;
+  height: 13px;
+}
+
+.cutter-stage {
+  position: relative;
+  overflow: auto;
+  display: grid;
+  min-height: 540px;
+  max-height: 72vh;
+  place-items: start center;
+  padding: 22px;
+  background-color: color-mix(in oklab, var(--card) 82%, var(--background));
+  background-image:
+    linear-gradient(45deg, color-mix(in oklab, var(--border) 38%, transparent) 25%, transparent 25%),
+    linear-gradient(-45deg, color-mix(in oklab, var(--border) 38%, transparent) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, color-mix(in oklab, var(--border) 38%, transparent) 75%),
+    linear-gradient(-45deg, transparent 75%, color-mix(in oklab, var(--border) 38%, transparent) 75%);
+  background-size: 18px 18px;
+  background-position: 0 0, 0 9px, 9px -9px, -9px 0;
+}
+
+.cutter-image-wrap {
+  position: relative;
+  flex: 0 0 auto;
+  max-width: none;
+  cursor: crosshair;
+  user-select: none;
+  box-shadow: 0 18px 50px rgb(0 0 0 / .12);
+}
+
+.cutter-image-wrap img {
+  display: block;
+  width: 100%;
+  height: auto;
+  pointer-events: none;
+}
+
+.cutter-grid-guide {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / .5);
+  mix-blend-mode: difference;
+}
+
+.cutter-selection {
+  position: absolute;
+  z-index: 4;
+  border: 2px solid white;
+  background: rgb(255 255 255 / .08);
+  box-shadow:
+    0 0 0 1px rgb(0 0 0 / .78),
+    0 0 0 9999px rgb(0 0 0 / .38);
+  pointer-events: none;
+}
+
+.cutter-selection-label {
+  position: absolute;
+  left: -2px;
+  bottom: calc(100% + 7px);
+  padding: 4px 7px;
+  border-radius: 7px;
+  background: rgb(0 0 0 / .82);
+  color: white;
+  font-size: .58rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.cutter-handle {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border: 1px solid rgb(0 0 0 / .65);
+  border-radius: 2px;
+  background: white;
+}
+
+.cutter-handle--nw { top: -5px; left: -5px; }
+.cutter-handle--ne { top: -5px; right: -5px; }
+.cutter-handle--sw { bottom: -5px; left: -5px; }
+.cutter-handle--se { right: -5px; bottom: -5px; }
+
+.cutter-stage-footer {
+  min-height: 50px;
+  border-top: 1px solid var(--border);
+}
+
+.cutter-stage-footer p {
+  margin: 0;
+  text-align: right;
+}
+
+.cutter-zoom {
+  display: flex;
+  min-width: 250px;
+  align-items: center;
+  gap: 9px;
+}
+
+.cutter-zoom > span {
+  color: var(--muted-foreground);
+  font-size: .62rem;
+  font-weight: 650;
+}
+
+.cutter-zoom input {
+  min-width: 130px;
+  accent-color: var(--foreground);
+}
+
+.cutter-zoom strong {
+  width: 42px;
+  color: var(--foreground);
+  font-size: .64rem;
+  text-align: right;
+}
+
+.cutter-controls {
+  position: sticky;
+  top: 78px;
+  display: grid;
+  gap: 10px;
+}
+
+.cutter-control-card {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--background);
+}
+
+.cutter-control-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.cutter-step {
+  display: grid;
+  width: 27px;
+  height: 27px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 9px;
+  background: var(--foreground);
+  color: var(--background);
+  font-size: .65rem;
+  font-weight: 800;
+}
+
+.cutter-control-heading h2 {
+  margin: 0;
+  font-size: .92rem;
+  letter-spacing: -.025em;
+}
+
+.cutter-control-heading p,
+.cutter-help-card p {
+  margin: 5px 0 0;
+  color: var(--muted-foreground);
+  font-size: .66rem;
+  line-height: 1.5;
+}
+
+.cutter-grid-controls {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.cutter-grid-controls label,
+.cutter-field {
+  display: grid;
+  gap: 6px;
+}
+
+.cutter-grid-controls span,
+.cutter-field > span {
+  color: var(--muted-foreground);
+  font-size: .61rem;
+  font-weight: 650;
+}
+
+.cutter-grid-controls input,
+.cutter-field select {
+  width: 100%;
+  min-height: 38px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--background);
+  color: var(--foreground);
+  font: inherit;
+  font-size: .7rem;
+  outline: none;
+}
+
+.cutter-grid-controls input:focus,
+.cutter-field select:focus {
+  border-color: var(--border-strong);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--foreground) 7%, transparent);
+}
+
+.cutter-selection-info {
+  display: flex;
+  min-height: 42px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 11px;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: var(--card);
+}
+
+.cutter-selection-info span {
+  color: var(--muted-foreground);
+  font-size: .62rem;
+}
+
+.cutter-selection-info strong {
+  font-size: .68rem;
+}
+
+.cutter-help-card {
+  grid-template-columns: 34px minmax(0, 1fr);
+  align-items: start;
+  background: var(--foreground);
+  color: var(--background);
+}
+
+.cutter-help-card > svg {
+  width: 22px;
+  height: 22px;
+}
+
+.cutter-help-card p {
+  color: color-mix(in oklab, var(--background) 66%, transparent);
+}
+
+.cutter-status,
+.cutter-error {
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border-radius: 11px;
+  font-size: .7rem;
+  font-weight: 600;
+}
+
+.cutter-status {
+  background: var(--card);
+  color: var(--foreground);
+}
+
+.cutter-error {
+  background: color-mix(in oklab, var(--destructive) 9%, var(--background));
+  color: var(--destructive);
+}
+
+.cutter-results {
+  margin-top: 44px;
+  padding-top: 32px;
+  border-top: 1px solid var(--border);
+}
+
+.cutter-results-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 16px;
+}
+
+.cutter-results-heading h2 {
+  margin: 0;
+  font-size: clamp(1.55rem, 3vw, 2.2rem);
+  letter-spacing: -.035em;
+}
+
+.cutter-results-heading > div:first-child > p:last-child {
+  margin: 7px 0 0;
+  color: var(--muted-foreground);
+  font-size: .76rem;
+}
+
+.cutter-results-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.cutter-result-card {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 15px;
+  background: var(--background);
+}
+
+.cutter-result-preview {
+  display: grid;
+  aspect-ratio: 1;
+  place-items: center;
+  padding: 14px;
+  border-bottom: 1px solid var(--border);
+  background-color: var(--card);
+  background-image:
+    linear-gradient(45deg, color-mix(in oklab, var(--border) 34%, transparent) 25%, transparent 25%),
+    linear-gradient(-45deg, color-mix(in oklab, var(--border) 34%, transparent) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, color-mix(in oklab, var(--border) 34%, transparent) 75%),
+    linear-gradient(-45deg, transparent 75%, color-mix(in oklab, var(--border) 34%, transparent) 75%);
+  background-size: 16px 16px;
+  background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+}
+
+.cutter-result-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 16px rgb(0 0 0 / .08));
+}
+
+.cutter-result-body {
+  display: grid;
+  gap: 4px;
+  padding: 10px;
+}
+
+.cutter-result-body > strong,
+.cutter-result-body > span,
+.cutter-result-body > small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cutter-result-body > strong {
+  font-size: .72rem;
+}
+
+.cutter-result-body > span,
+.cutter-result-body > small {
+  color: var(--muted-foreground);
+}
+
+.cutter-result-body > span {
+  font-size: .59rem;
+}
+
+.cutter-result-body > small {
+  font-size: .53rem;
+}
+
+.cutter-result-actions {
+  display: flex;
+  gap: 5px;
+  margin-top: 6px;
+}
+
+.cutter-result-actions > button {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+}
+
+.cutter-skeleton {
+  padding-top: 28px;
+}
+
+.cutter-skeleton-hero {
+  display: grid;
+  gap: 10px;
+  width: min(700px, 100%);
+  padding: 16px 0 28px;
+}
+
+.cutter-skeleton-hero span,
+.cutter-skeleton-controls span,
+.cutter-skeleton-stage {
+  background: linear-gradient(
+    100deg,
+    color-mix(in oklab, var(--card) 88%, var(--background)) 20%,
+    color-mix(in oklab, var(--foreground) 9%, var(--card)) 42%,
+    color-mix(in oklab, var(--card) 88%, var(--background)) 64%
+  );
+  background-size: 220% 100%;
+  animation: cutter-skeleton-shimmer 1.15s ease-in-out infinite;
+}
+
+.cutter-skeleton-hero span {
+  height: 14px;
+  border-radius: 999px;
+}
+
+.cutter-skeleton-hero span:nth-child(1) { width: 100px; height: 9px; }
+.cutter-skeleton-hero span:nth-child(2) { width: min(520px, 88%); height: 48px; }
+.cutter-skeleton-hero span:nth-child(3) { width: min(680px, 100%); }
+
+.cutter-skeleton-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 330px;
+  gap: 14px;
+}
+
+.cutter-skeleton-stage {
+  min-height: 580px;
+  border-radius: 18px;
+}
+
+.cutter-skeleton-controls {
+  display: grid;
+  gap: 10px;
+}
+
+.cutter-skeleton-controls span {
+  height: 170px;
+  border-radius: 16px;
+}
+
+@keyframes cutter-skeleton-shimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -20% 0; }
+}
+
+@media (max-width: 1000px) {
+  .cutter-workspace,
+  .cutter-skeleton-workspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .cutter-controls {
+    position: static;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .cutter-help-card {
+    grid-column: 1 / -1;
+  }
+
+  .cutter-results-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .cutter-page {
+    padding-top: 8px;
+  }
+
+  .cutter-hero {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+
+  .cutter-hero-actions {
+    width: 100%;
+  }
+
+  .cutter-hero-actions > button {
+    flex: 1 1 auto;
+  }
+
+  .cutter-sheet-strip,
+  .cutter-results-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .cutter-sheet-list {
+    width: 100%;
+  }
+
+  .cutter-stage {
+    min-height: 420px;
+    max-height: 66vh;
+    padding: 12px;
+  }
+
+  .cutter-stage-toolbar,
+  .cutter-stage-footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .cutter-stage-toolbar-actions {
+    width: 100%;
+  }
+
+  .cutter-stage-footer p {
+    text-align: left;
+  }
+
+  .cutter-zoom {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .cutter-zoom input {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .cutter-controls {
+    grid-template-columns: 1fr;
+  }
+
+  .cutter-help-card {
+    grid-column: auto;
+  }
+
+  .cutter-results-actions {
+    width: 100%;
+  }
+
+  .cutter-results-actions > button {
+    flex: 1 1 auto;
+  }
+
+  .cutter-results-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .cutter-dropzone {
+    min-height: 300px;
+  }
+
+  .cutter-sheet-chip {
+    width: 156px;
+  }
+
+  .cutter-stage-toolbar-actions {
+    flex-wrap: wrap;
+  }
+
+  .cutter-results-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .cutter-result-preview {
+    padding: 10px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cutter-skeleton-hero span,
+  .cutter-skeleton-controls span,
+  .cutter-skeleton-stage {
+    animation: none;
+  }
+}
