@@ -27,7 +27,12 @@ test('Sheet Cutter auto-detects emoji and keeps manual crop as fallback', async 
   assert.match(client, /DETECT_MAX_DIMENSION/);
   assert.match(client, /runAutoDetect/);
   assert.match(client, /detectedRegions/);
-  assert.match(client, /Save all \{detectedRegions\.length\}/);
+  assert.match(client, /selectedRegionIndexes/);
+  assert.match(client, /manualRegions/);
+  assert.match(client, /Save selected \{selectedRegionIndexes\.length\}/);
+  assert.match(client, /selectAllRegions/);
+  assert.match(client, /clearRegionSelection/);
+  assert.match(client, /toggleRegion/);
   assert.match(client, /cutter-detected-region/);
   assert.match(client, /onPointerDown/);
   assert.match(client, /onPointerMove/);
@@ -86,4 +91,23 @@ test('Sheet Cutter provides a shared library plus local upload/paste sources', a
   assert.match(styles, /\.cutter-source-tabs/);
   assert.match(styles, /\.cutter-detected-region/);
   assert.doesNotMatch(styles, /0 0 0 9999px/);
+});
+
+
+test('Sheet Cutter supports selecting many detected and manual crop boxes at once', async () => {
+  const [client, styles] = await Promise.all([
+    read('src/components/cutter/EmojiSheetCutter.tsx'),
+    read('src/styles/cutter.css'),
+  ]);
+
+  assert.match(client, /const \[manualRegions, setManualRegions\]/);
+  assert.match(client, /const \[selectedRegionIndexes, setSelectedRegionIndexes\]/);
+  assert.match(client, /setManualRegions\(\(regions\) => \[\.\.\.regions, current\]\)/);
+  assert.match(client, /Select all/);
+  assert.match(client, /Save selected \{selectedRegionIndexes\.length\}/);
+  assert.match(client, /aria-pressed=\{selected\}/);
+  assert.match(client, /is-manual/);
+  assert.match(styles, /\.cutter-detected-region\.is-selected/);
+  assert.match(styles, /\.cutter-detected-region\.is-manual/);
+  assert.match(styles, /\.cutter-multi-actions/);
 });
