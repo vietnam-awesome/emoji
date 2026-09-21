@@ -20,18 +20,21 @@ test('Emoji Sheet Cutter is a client-only public browser tool', async () => {
   assert.doesNotMatch(client, /method:\s*["'](?:POST|PUT|PATCH|DELETE)["']/);
 });
 
-test('Sheet Cutter supports manual square crop, zoom, grid guides and multiple saved cuts', async () => {
+test('Sheet Cutter auto-detects emoji and keeps manual crop as fallback', async () => {
   const client = await read('src/components/cutter/EmojiSheetCutter.tsx');
 
+  assert.match(client, /detectEmojiRegions/);
+  assert.match(client, /DETECT_MAX_DIMENSION/);
+  assert.match(client, /runAutoDetect/);
+  assert.match(client, /detectedRegions/);
+  assert.match(client, /Save all \{detectedRegions\.length\}/);
+  assert.match(client, /cutter-detected-region/);
   assert.match(client, /onPointerDown/);
   assert.match(client, /onPointerMove/);
   assert.match(client, /squareLock/);
   assert.match(client, /showGrid/);
-  assert.match(client, /gridColumns/);
-  assert.match(client, /gridRows/);
   assert.match(client, /setZoom/);
-  assert.match(client, /setCrops/);
-  assert.match(client, /Draw directly on the image|Drag directly on the image/);
+  assert.match(client, /manual crop fallback/i);
 });
 
 test('Sheet Cutter exports PNG crops, ZIP batches and editor handoff locally', async () => {
@@ -72,9 +75,8 @@ test('Sheet Cutter provides a shared library plus local upload/paste sources', a
   ]);
 
   assert.match(page, /data\/public\/cutter\/library\.json/);
-  assert.match(client, /BUILT_IN_LIBRARY/);
-  assert.match(client, /Faces & reactions/);
-  assert.match(client, /Work & tech/);
+  assert.doesNotMatch(client, /data:image\/svg\+xml/);
+  assert.match(client, /fetch\(item\.image\)/);
   assert.match(client, /sourceMode/);
   assert.match(client, /Shared sheet library|shared library/i);
   assert.match(client, /Use sheet/);
@@ -82,4 +84,6 @@ test('Sheet Cutter provides a shared library plus local upload/paste sources', a
   assert.match(client, /origin: "local"/);
   assert.match(styles, /\.cutter-library-grid/);
   assert.match(styles, /\.cutter-source-tabs/);
+  assert.match(styles, /\.cutter-detected-region/);
+  assert.doesNotMatch(styles, /0 0 0 9999px/);
 });
