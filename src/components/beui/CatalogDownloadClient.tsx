@@ -9,7 +9,6 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from "../motion/select";
 
 type SelectedItem = {
@@ -521,7 +520,10 @@ export default function CatalogDownloadClient() {
             </Button>
             <Select value={platform} onValueChange={(value) => setPlatform(value as PlatformPresetKey)}>
               <SelectTrigger className="emoji-selection-platform" aria-label="Batch export platform">
-                <SelectValue placeholder="Platform" />
+                <span className="emoji-selection-platform-value">
+                  <strong>{PLATFORM_PRESETS[platform].label}</strong>
+                  <small>{PLATFORM_PRESETS[platform].size}px</small>
+                </span>
               </SelectTrigger>
               <SelectContent>
                 {(Object.entries(PLATFORM_PRESETS) as Array<[PlatformPresetKey, (typeof PLATFORM_PRESETS)[PlatformPresetKey]]>).map(([key, preset]) => (
