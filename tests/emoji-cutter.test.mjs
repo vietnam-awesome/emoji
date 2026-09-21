@@ -102,7 +102,8 @@ test('Sheet Cutter supports selecting many detected and manual crop boxes at onc
 
   assert.match(client, /const \[manualRegions, setManualRegions\]/);
   assert.match(client, /const \[selectedRegionIndexes, setSelectedRegionIndexes\]/);
-  assert.match(client, /setManualRegions\(\(regions\) => \[\.\.\.regions, current\]\)/);
+  assert.match(client, /const dragRect/);
+  assert.match(client, /setManualRegions\(\(regions\) => \[\.\.\.regions, rect\]\)/);
   assert.match(client, /Select all/);
   assert.match(client, /Save selected \{selectedRegionIndexes\.length\}/);
   assert.match(client, /aria-pressed=\{selected\}/);
