@@ -121,8 +121,10 @@ jobs:
             --empty-page-stop=3 \
             --concurrency=8
 
-      - name: Verify emoji index
+      - name: Verify Emoji.gg metadata and checked-out assets
         working-directory: data
+        env:
+          VERIFY_DATA_ASSET_PREFIXES: '/emojis/community/emojigg/'
         run: node ../app/scripts/verify-data.mjs
 
       - name: Shard emoji index for Git
