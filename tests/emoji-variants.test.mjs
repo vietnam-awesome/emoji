@@ -12,13 +12,19 @@ test('static search emits sharded exact-Unicode variant groups', async () => {
   assert.match(build, /license/);
 });
 
-test('emoji detail exposes other source versions without adding per-page build work', async () => {
+test('emoji variants avoid repeating section markup across every static detail page', async () => {
   const detail = await read('src/components/beui/EmojiDetail.astro');
   const client = await read('src/scripts/emoji-variants.js');
-  assert.match(detail, /Other versions/);
-  assert.match(detail, /data-variant-section/);
+
+  assert.match(detail, /data-variant-hexcode=\{emoji\.hexcode \|\| ''\}/);
   assert.match(detail, /emoji-variants\.js/);
+  assert.doesNotMatch(detail, /Other versions/);
+  assert.doesNotMatch(detail, /data-variant-section/);
+  assert.doesNotMatch(detail, /Array\.from\(\{ length: 4 \}\)/);
+
+  assert.match(client, /createVariantsSection/);
+  assert.match(client, /title\.textContent = 'Other versions'/);
+  assert.match(client, /detailRoot\.insertBefore\(section, similarSection\)/);
   assert.match(client, /variants\/\$\{prefix\}\.json/);
   assert.match(client, /entry\.l/);
-  assert.match(client, /section\.hidden = false/);
 });
