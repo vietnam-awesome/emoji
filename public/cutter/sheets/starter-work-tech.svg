@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+<rect width="1024" height="1024" rx="48" fill="#f7f7f7"/>
+<g opacity=".06" stroke="#111"><path d="M256 0v1024M512 0v1024M768 0v1024M0 256h1024M0 512h1024M0 768h1024"/></g>
+<g text-anchor="middle" dominant-baseline="middle" font-size="126" font-family="Apple Color Emoji,Segoe UI Emoji,Noto Color Emoji,sans-serif">
+<text x="128" y="140">💻</text><text x="384" y="140">⌨️</text><text x="640" y="140">🖥️</text><text x="896" y="140">📱</text>
+<text x="128" y="396">⚙️</text><text x="384" y="396">🛠️</text><text x="640" y="396">🚀</text><text x="896" y="396">🔥</text>
+<text x="128" y="652">✅</text><text x="384" y="652">❌</text><text x="640" y="652">💡</text><text x="896" y="652">📌</text>
+<text x="128" y="908">📦</text><text x="384" y="908">🔧</text><text x="640" y="908">🧪</text><text x="896" y="908">🎯</text>
+</g></svg>
