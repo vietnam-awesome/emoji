@@ -256,11 +256,11 @@ jobs:
         working-directory: data
         run: node ../app/scripts/emoji-store.mjs hydrate
 
-      - name: Verify emoji metadata
+      - name: Verify Discords metadata and checked-out assets
         if: ${{ steps.resume.outputs.skip_import == 'true' || steps.checkpoint.outputs.created == 'true' }}
         working-directory: data
         env:
-          VERIFY_DATA_SKIP_ASSETS: '1'
+          VERIFY_DATA_ASSET_PREFIXES: '/emojis/community/discords/'
         run: node ../app/scripts/verify-data.mjs
 
       - name: Shard verified catalog
