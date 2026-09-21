@@ -604,20 +604,30 @@
   position: absolute;
   z-index: 3;
   padding: 0;
-  border: 1.5px solid color-mix(in oklab, var(--foreground) 55%, transparent);
+  border: 1.5px solid color-mix(in oklab, var(--foreground) 28%, transparent);
   border-radius: 8px;
-  background: color-mix(in oklab, var(--background) 5%, transparent);
-  box-shadow: 0 0 0 1px color-mix(in oklab, var(--background) 70%, transparent);
+  background: color-mix(in oklab, var(--background) 2%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--background) 58%, transparent);
+  opacity: .48;
   cursor: pointer;
-  transition: border-color .12s ease, background .12s ease, box-shadow .12s ease;
+  transition: border-color .12s ease, background .12s ease, box-shadow .12s ease, opacity .12s ease;
 }
 
-.cutter-detected-region:hover,
+.cutter-detected-region:hover {
+  z-index: 5;
+  opacity: .82;
+}
+
 .cutter-detected-region.is-selected {
   z-index: 5;
   border-color: var(--foreground);
-  background: color-mix(in oklab, var(--background) 12%, transparent);
-  box-shadow: 0 0 0 2px color-mix(in oklab, var(--foreground) 20%, transparent);
+  background: color-mix(in oklab, var(--background) 10%, transparent);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--foreground) 18%, transparent);
+  opacity: 1;
+}
+
+.cutter-detected-region.is-manual {
+  border-style: dashed;
 }
 
 .cutter-detected-region > span {
@@ -804,6 +814,16 @@
 .cutter-field select:focus {
   border-color: var(--border-strong);
   box-shadow: 0 0 0 3px color-mix(in oklab, var(--foreground) 7%, transparent);
+}
+
+.cutter-multi-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.cutter-multi-actions > button {
+  width: 100%;
 }
 
 .cutter-toggle--inline {
