@@ -1,0 +1,24 @@
+---
+import Layout from '../layouts/Layout.astro';
+import EmojiCook from '../components/cook/EmojiCook';
+import CookSkeleton from '../components/cook/CookSkeleton.astro';
+import { withBase } from '../lib/url';
+import '../styles/cook.css';
+
+const base = import.meta.env.BASE_URL;
+const homeUrl = withBase('/', base);
+const editorUrl = withBase('/editor', base);
+---
+<Layout
+  title="Emoji Kitchen — Mix two emoji into a custom mashup"
+  description="Mix two Unicode emoji into a custom mashup directly in your browser. Try different recipe styles, export PNG or WebP, share a recipe link, or continue editing the result in the emoji editor."
+  keywords={['emoji kitchen', 'emoji mashup', 'combine emoji', 'emoji mixer', 'emoji maker', 'custom emoji', 'emoji generator']}
+  breadcrumbs={[
+    { name: 'Home', href: homeUrl },
+    { name: 'Emoji Kitchen' }
+  ]}
+>
+  <EmojiCook editorUrl={editorUrl} client:only="react">
+    <CookSkeleton slot="fallback" />
+  </EmojiCook>
+</Layout>

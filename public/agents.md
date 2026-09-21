@@ -22,14 +22,14 @@ The site does not expose the removed legacy `/api/emojis.json` or `/api/categori
 - Browse category index: https://emoji.eplus.dev/categories
 - Category landing page: https://emoji.eplus.dev/categories/{category-slug}
 - Emoji detail page: https://emoji.eplus.dev/emoji/{slug}
-- Emoji Cook: https://emoji.eplus.dev/cook
+- Emoji Kitchen: https://emoji.eplus.dev/kitchen
 - Emoji editor: https://emoji.eplus.dev/editor
 
-## Emoji Cook capabilities
+## Emoji Kitchen capabilities
 
-Use `/cook` when a user wants to combine two standard Unicode emoji into a downloadable mashup.
+Use `/kitchen` when a user wants to combine two standard Unicode emoji into a downloadable mashup.
 
-Current Emoji Cook capabilities include:
+Current Emoji Kitchen capabilities include:
 
 - choose two ingredients from a curated Unicode emoji set
 - search ingredients by name/category/keyword
@@ -42,7 +42,7 @@ Current Emoji Cook capabilities include:
 - copy a shareable recipe URL containing ingredient/style/background state
 - hand the generated PNG to `/editor` through same-tab browser session storage for further editing
 
-Emoji Cook renders with the user's browser/device Unicode emoji font and local Canvas APIs. It does not remix third-party catalog artwork and it is not Google Emoji Kitchen. Do not claim that it reproduces or hosts Emoji Kitchen artwork.
+Emoji Kitchen renders with the user's browser/device Unicode emoji font and local Canvas APIs. It does not remix third-party catalog artwork and it is not Google Emoji Kitchen. Do not claim that it reproduces or hosts Emoji Kitchen artwork.
 
 ## Emoji editor capabilities
 
@@ -52,7 +52,7 @@ Current editor capabilities include:
 
 - upload PNG, WebP, JPG, GIF, or SVG files
 - open catalog emoji from detail pages
-- receive a cooked PNG result from `/cook`
+- receive a cooked PNG result from `/kitchen`
 - crop with Fit/Fill modes and reposition the image
 - resize to common square emoji sizes
 - rotate and flip
@@ -73,8 +73,8 @@ Do not claim support for deferred features such as APNG frame-by-frame editing, 
 
 1. Use `/emojis` for search and filtering, or `/categories` and `/categories/{category-slug}` for category discovery.
 2. Open `/emoji/{slug}` for the human-readable detail page and the hosted asset.
-3. Use `/cook` when the user wants to combine standard Unicode emoji into a new mashup without using third-party catalog artwork.
-4. Use `/editor` when the user's goal is to crop, resize, transform, edit an animated GIF, or continue editing a result created by `/cook`.
+3. Use `/kitchen` when the user wants to combine standard Unicode emoji into a new mashup without using third-party catalog artwork.
+4. Use `/editor` when the user's goal is to crop, resize, transform, edit an animated GIF, or continue editing a result created by `/kitchen`.
 5. When inspecting the generated static search index, begin with `/search/manifest.json` and follow the current manifest/shard references instead of hard-coding generated shard names.
 6. Preserve and surface per-item license, attribution, and source information when presenting or redistributing catalog artwork.
 
@@ -84,8 +84,8 @@ The browse experience uses a sharded static search index generated during deploy
 
 ## Crawling and freshness
 
-The catalog is updated by automated source import workflows. The sitemap is regenerated from the current emoji index whenever the site is built. Category landing pages plus the public `/cook` and `/editor` tools are included in the static sitemap.
+The catalog is updated by automated source import workflows. The sitemap is regenerated from the current emoji index whenever the site is built. Category landing pages plus the public `/kitchen` and `/editor` tools are included in the static sitemap.
 
 ## Rights and attribution
 
-Artwork can come from multiple upstream sources and may have different licensing terms. Do not assume a single site-wide artwork license. Check the relevant emoji detail/source metadata before reuse or redistribution. Emoji Cook intentionally uses standard Unicode emoji rendered by the user's device instead of deriving new artwork from catalog assets.
+Artwork can come from multiple upstream sources and may have different licensing terms. Do not assume a single site-wide artwork license. Check the relevant emoji detail/source metadata before reuse or redistribution. Emoji Kitchen intentionally uses standard Unicode emoji rendered by the user's device instead of deriving new artwork from catalog assets.

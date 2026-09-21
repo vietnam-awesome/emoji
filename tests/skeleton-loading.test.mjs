@@ -10,7 +10,7 @@ const homePage = await readFile(new URL('../src/pages/index.astro', import.meta.
 const homeClient = await readFile(new URL('../src/scripts/home.js', import.meta.url), 'utf8');
 const detail = await readFile(new URL('../src/components/beui/EmojiDetail.astro', import.meta.url), 'utf8');
 const notFound = await readFile(new URL('../src/components/beui/NotFoundExperience.tsx', import.meta.url), 'utf8');
-const cookPage = await readFile(new URL('../src/pages/cook.astro', import.meta.url), 'utf8');
+const cookPage = await readFile(new URL('../src/pages/kitchen.astro', import.meta.url), 'utf8');
 const cookSkeleton = await readFile(new URL('../src/components/cook/CookSkeleton.astro', import.meta.url), 'utf8');
 const editorPage = await readFile(new URL('../src/pages/editor.astro', import.meta.url), 'utf8');
 const editorClient = await readFile(new URL('../src/components/editor/EmojiEditor.tsx', import.meta.url), 'utf8');
@@ -91,7 +91,7 @@ test('404 emoji marquee keeps build-time content and skeletons lazy tile images'
   assert.match(beuiCss, /\.not-found-image-skeleton/);
 });
 
-test('cook already provides a full client-only hydration skeleton', () => {
+test('kitchen already provides a full client-only hydration skeleton', () => {
   assert.match(cookPage, /<CookSkeleton slot="fallback" \/>/);
   assert.match(cookSkeleton, /cook-skeleton-workspace/);
   assert.match(cookSkeleton, /cook-skeleton-picker-grid/);

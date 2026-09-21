@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
-const cookPage = await readFile(new URL('../src/pages/cook.astro', import.meta.url), 'utf8');
+const cookPage = await readFile(new URL('../src/pages/kitchen.astro', import.meta.url), 'utf8');
 const cookClient = await readFile(new URL('../src/components/cook/EmojiCook.tsx', import.meta.url), 'utf8');
 const cookCss = await readFile(new URL('../src/styles/cook.css', import.meta.url), 'utf8');
 const cookSkeleton = await readFile(new URL('../src/components/cook/CookSkeleton.astro', import.meta.url), 'utf8');
@@ -10,7 +10,7 @@ const pressableCard = await readFile(new URL('../src/components/motion/pressable
 const editorClient = await readFile(new URL('../src/components/editor/EmojiEditor.tsx', import.meta.url), 'utf8');
 const siteHeader = await readFile(new URL('../src/components/beui/SiteHeader.tsx', import.meta.url), 'utf8');
 
-test('Emoji Cook is a client-only public tool using local BeUI primitives', () => {
+test('Emoji Kitchen is a client-only public tool using local BeUI primitives', () => {
   assert.match(cookPage, /<EmojiCook editorUrl=\{editorUrl\} client:only="react"/);
   assert.match(cookClient, /from '\.\.\/motion\/button'/);
   assert.match(cookClient, /from '\.\.\/motion\/input'/);
@@ -57,10 +57,10 @@ test('Cook result can be handed off to the existing editor without a server uplo
   assert.match(editorClient, /cleanUrl\.searchParams\.delete\('handoff'\)/);
 });
 
-test('Cook is discoverable from the BeUI primary navigation', () => {
-  assert.match(siteHeader, /label: 'Cook'/);
-  assert.match(siteHeader, /routePath === '\/cook'/);
-  assert.match(siteHeader, /const cookUrl/);
+test('Kitchen is discoverable from the BeUI primary navigation', () => {
+  assert.match(siteHeader, /label: 'Kitchen'/);
+  assert.match(siteHeader, /routePath === '\/kitchen'/);
+  assert.match(siteHeader, /const kitchenUrl/);
 });
 
 test('Cook UI is responsive and keeps the preview usable on mobile', () => {
@@ -89,7 +89,7 @@ test('Cook renders an SSR skeleton while the client-only island hydrates', () =>
   assert.match(cookPage, /import CookSkeleton from '\.\.\/components\/cook\/CookSkeleton\.astro'/);
   assert.match(cookPage, /<CookSkeleton slot="fallback" \/>/);
   assert.match(cookSkeleton, /cook-skeleton/);
-  assert.match(cookSkeleton, /Loading Emoji Cook/);
+  assert.match(cookSkeleton, /Loading Emoji Kitchen/);
   assert.match(cookSkeleton, /Array\.from\(\{ length: 24 \}\)/);
   assert.match(cookCss, /cook-skeleton-shimmer/);
   assert.match(cookCss, /\.cook-skeleton-equation/);
