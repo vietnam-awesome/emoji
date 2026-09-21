@@ -1,5 +1,4 @@
 const section = document.querySelector('[data-variant-section]');
-const grid = section?.querySelector('[data-variant-grid]');
 
 const normalizeVariantKey = (value) =>
   String(value || '')
@@ -104,8 +103,40 @@ const createVariantCard = (record) => {
   return article;
 };
 
+const renderVariantSection = (records) => {
+  if (!(section instanceof HTMLElement) || !records.length) return;
+
+  const heading = document.createElement('div');
+  heading.className = 'section-heading-modern';
+
+  const headingCopy = document.createElement('div');
+  const kicker = document.createElement('p');
+  kicker.className = 'section-kicker';
+  kicker.textContent = 'Same Unicode';
+  const title = document.createElement('h2');
+  title.id = 'emoji-variants-title';
+  title.textContent = 'Other versions';
+  const description = document.createElement('p');
+  description.textContent = 'Compare the same Unicode emoji across available artwork sources and licenses.';
+  headingCopy.append(kicker, title, description);
+
+  const hexcode = document.createElement('span');
+  hexcode.className = 'detail-variant-hex';
+  hexcode.textContent = section.dataset.currentHexcode || '';
+  heading.append(headingCopy, hexcode);
+
+  const grid = document.createElement('div');
+  grid.className = 'detail-similar-grid';
+  grid.dataset.variantGrid = '';
+  grid.replaceChildren(...records.map(createVariantCard));
+
+  section.setAttribute('aria-labelledby', title.id);
+  section.replaceChildren(heading, grid);
+  section.hidden = false;
+};
+
 const loadVariants = async () => {
-  if (!(section instanceof HTMLElement) || !(grid instanceof HTMLElement)) return;
+  if (!(section instanceof HTMLElement)) return;
 
   const currentSlug = section.dataset.currentSlug || '';
   const key = normalizeVariantKey(section.dataset.currentHexcode);
@@ -152,8 +183,7 @@ const loadVariants = async () => {
       .slice(0, 12);
 
     if (!records.length) return;
-    grid.replaceChildren(...records.map(createVariantCard));
-    section.hidden = false;
+    renderVariantSection(records);
   } catch (error) {
     section.hidden = true;
     console.warn('Could not load emoji variants', error);
