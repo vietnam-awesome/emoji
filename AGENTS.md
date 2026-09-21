@@ -51,6 +51,16 @@ A merge into `main` can trigger an expensive GitHub Pages build/deploy. Merging 
 - CI/preview on feature PRs is useful, but the combined release PR must also pass because integrations can introduce new failures.
 - Production GitHub Pages should ideally run once for a batch, after the final release PR enters `main`.
 
+## Static detail-page size rules
+
+The site generates hundreds of thousands of emoji detail pages. Small additions to `src/components/beui/EmojiDetail.astro` are multiplied across the entire catalog and can push the GitHub Pages artifact over its hard deployment limit.
+
+- Avoid adding repeated skeleton grids, large hidden sections, or duplicated client-only UI markup directly to every emoji detail page.
+- Prefer one tiny data attribute or mount marker plus client-side rendering for optional blocks such as Similar, Random, Variants, recommendations, or other discovery widgets.
+- When a feature is only useful for a subset of emoji, do not pre-render its full hidden markup for every emoji.
+- Keep regression tests that ensure optional client-rendered blocks are not accidentally moved back into static per-detail HTML.
+- Review the production Pages artifact size after detail-page template changes.
+
 ## Public discovery documentation rules
 
 Public routes and tools must stay synchronized across the site's discovery surfaces.
