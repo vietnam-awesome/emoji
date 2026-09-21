@@ -7,7 +7,17 @@ const ids = new Set();
 const slugs = new Set();
 const canonicalCategories = new Set(Object.keys(CANONICAL_CATEGORIES));
 const verifyAssets = process.env.VERIFY_DATA_SKIP_ASSETS !== '1';
+const assetPrefixes = String(process.env.VERIFY_DATA_ASSET_PREFIXES || '')
+  .split(',')
+  .map((value) => value.trim())
+  .filter(Boolean)
+  .map((value) => {
+    const normalized = value.startsWith('/') ? value : `/${value}`;
+    return normalized.endsWith('/') ? normalized : `${normalized}/`;
+  });
 let errors = 0;
+let checkedAssets = 0;
+let skippedAssetChecks = 0;
 
 function twemojiFilename(hexcode) {
   return `${hexcode
@@ -61,6 +71,12 @@ for (const emoji of emojis) {
 
   if (!verifyAssets) continue;
 
+  if (assetPrefixes.length > 0 && !assetPrefixes.some((prefix) => image.startsWith(prefix))) {
+    skippedAssetChecks += 1;
+    continue;
+  }
+
+  checkedAssets += 1;
   const localPath = path.resolve('public', image.replace(/^\//, ''));
   try {
     await access(localPath);
@@ -75,5 +91,14 @@ if (errors) {
   process.exit(1);
 }
 
-const assetSummary = verifyAssets ? 'and local assets' : '(metadata-only; local asset checks skipped)';
-console.log(`Verified ${emojis.length} emoji records, canonical taxonomy v${TAXONOMY_VERSION}, ${assetSummary}.`);
+let assetSummary;
+if (!verifyAssets) {
+  assetSummary = 'metadata-only; local asset checks skipped';
+} else if (assetPrefixes.length > 0) {
+  assetSummary =
+    `checked ${checkedAssets.toLocaleString('en-US')} local asset(s) in scoped prefix(es) ${assetPrefixes.join(', ')}` +
+    `; skipped ${skippedAssetChecks.toLocaleString('en-US')} out-of-scope asset check(s)`;
+} else {
+  assetSummary = `checked all ${checkedAssets.toLocaleString('en-US')} local asset(s)`;
+}
+console.log(`Verified ${emojis.length} emoji records, canonical taxonomy v${TAXONOMY_VERSION}; ${assetSummary}.`);
