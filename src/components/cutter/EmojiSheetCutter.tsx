@@ -632,37 +632,29 @@ export default function EmojiSheetCutter({ editorUrl }: Props) {
           <div className="cutter-sheet-strip" aria-label="Uploaded sheets">
             <div className="cutter-sheet-list">
               {sheets.map((sheet, index) => (
-                <button
-                  type="button"
-                  key={sheet.id}
-                  className={`cutter-sheet-chip${activeSheet?.id === sheet.id ? " is-active" : ""}`}
-                  onClick={() => setActiveSheetId(sheet.id)}
-                  aria-pressed={activeSheet?.id === sheet.id}
-                >
-                  <img src={sheet.url} alt="" />
-                  <span>
-                    <strong>Sheet {index + 1}</strong>
-                    <small>{sheet.name}</small>
-                  </span>
-                  <span
-                    role="button"
-                    tabIndex={0}
+                <div className="cutter-sheet-item" key={sheet.id}>
+                  <button
+                    type="button"
+                    className={`cutter-sheet-chip${activeSheet?.id === sheet.id ? " is-active" : ""}`}
+                    onClick={() => setActiveSheetId(sheet.id)}
+                    aria-pressed={activeSheet?.id === sheet.id}
+                  >
+                    <img src={sheet.url} alt="" />
+                    <span>
+                      <strong>Sheet {index + 1}</strong>
+                      <small>{sheet.name}</small>
+                    </span>
+                  </button>
+                  <button
+                    type="button"
                     className="cutter-sheet-remove"
                     aria-label={`Remove ${sheet.name}`}
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      removeSheet(sheet.id);
-                    }}
-                    onKeyDown={(event) => {
-                      if (event.key !== "Enter" && event.key !== " ") return;
-                      event.preventDefault();
-                      event.stopPropagation();
-                      removeSheet(sheet.id);
-                    }}
+                    data-beui-tooltip="Remove sheet"
+                    onClick={() => removeSheet(sheet.id)}
                   >
                     <X aria-hidden="true" />
-                  </span>
-                </button>
+                  </button>
+                </div>
               ))}
               <Button variant="secondary" size="sm" ripple onClick={() => fileInputRef.current?.click()}>
                 <ImagePlus className="size-4" aria-hidden="true" />
