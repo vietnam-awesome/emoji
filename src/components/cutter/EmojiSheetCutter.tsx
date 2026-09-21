@@ -521,7 +521,7 @@ export default function EmojiSheetCutter({ editorUrl, libraryManifestUrl }: Prop
     setSheets((current) => [...current, ...incoming]);
     setActiveSheetId((current) => current || incoming[0].id);
     setError("");
-    setStatus(`Added ${incoming.length} sheet${incoming.length === 1 ? "" : "s"}. Draw a box around one emoji to start.`);
+    setStatus(`Added ${incoming.length} sheet${incoming.length === 1 ? "" : "s"}. Auto-detect will run when the image opens.`);
   };
 
   const addLibrarySheet = async (item: LibrarySheet) => {
@@ -542,7 +542,13 @@ export default function EmojiSheetCutter({ editorUrl, libraryManifestUrl }: Prop
       setError("");
       const response = await fetch(item.image);
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const blob = await response.blob();
+      const rawBlob = await response.blob();
+      const inferredType = item.image.toLowerCase().includes(".svg")
+        ? "image/svg+xml"
+        : rawBlob.type || "application/octet-stream";
+      const blob = rawBlob.type === inferredType
+        ? rawBlob
+        : new Blob([await rawBlob.arrayBuffer()], { type: inferredType });
       const localUrl = makeObjectUrl(blob);
       const sheet: Sheet = {
         id,
@@ -1053,7 +1059,15 @@ export default function EmojiSheetCutter({ editorUrl, libraryManifestUrl }: Prop
                   onClick={() => addLibrarySheet(item)}
                 >
                   <span className="cutter-library-preview">
-                    <img src={item.thumbnail || item.image} alt="" loading="lazy" />
+                    <Images className="cutter-library-placeholder" aria-hidden="true" />
+                    <img
+                      src={item.thumbnail || item.image}
+                      alt=""
+                      loading="lazy"
+                      onError={(event) => {
+                        event.currentTarget.hidden = true;
+                      }}
+                    />
                   </span>
                   <span className="cutter-library-copy">
                     <strong>{item.name}</strong>
