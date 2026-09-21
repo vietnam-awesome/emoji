@@ -414,7 +414,6 @@ export default function EmojiSheetCutter({ editorUrl, libraryManifestUrl }: Prop
   const [detectedRegions, setDetectedRegions] = useState<CropRect[]>([]);
   const [manualRegions, setManualRegions] = useState<CropRect[]>([]);
   const [selectedRegionIndexes, setSelectedRegionIndexes] = useState<number[]>([]);
-  const [selectedDetectedIndex, setSelectedDetectedIndex] = useState(-1);
   const [detecting, setDetecting] = useState(false);
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
   const [squareLock, setSquareLock] = useState(true);
@@ -499,7 +498,6 @@ export default function EmojiSheetCutter({ editorUrl, libraryManifestUrl }: Prop
     setDetectedRegions([]);
     setManualRegions([]);
     setSelectedRegionIndexes([]);
-    setSelectedDetectedIndex(-1);
     setDimensions({ width: 0, height: 0 });
     setZoom(100);
   }, [activeSheet?.id]);
@@ -660,7 +658,6 @@ export default function EmojiSheetCutter({ editorUrl, libraryManifestUrl }: Prop
         setDetectedRegions(regions);
         setManualRegions([]);
         setSelectedRegionIndexes(regions.map((_, index) => index));
-        setSelectedDetectedIndex(regions.length ? 0 : -1);
         setSelection(regions[0] || null);
         if (regions.length) {
           setCropName("emoji-01");
@@ -672,8 +669,7 @@ export default function EmojiSheetCutter({ editorUrl, libraryManifestUrl }: Prop
         setDetectedRegions([]);
         setManualRegions([]);
         setSelectedRegionIndexes([]);
-        setSelectedDetectedIndex(-1);
-        setStatus("");
+            setStatus("");
         setError(reason instanceof Error
           ? `Auto-detect could not analyze this sheet: ${reason.message}`
           : "Auto-detect could not analyze this sheet.");
@@ -686,7 +682,6 @@ export default function EmojiSheetCutter({ editorUrl, libraryManifestUrl }: Prop
   const focusRegion = (index: number) => {
     const region = allRegions[index];
     if (!region) return;
-    setSelectedDetectedIndex(index < detectedRegions.length ? index : -1);
     setSelection(region);
     setCropName(`emoji-${String(index + 1).padStart(2, "0")}`);
     setError("");
@@ -708,7 +703,6 @@ export default function EmojiSheetCutter({ editorUrl, libraryManifestUrl }: Prop
   const clearRegionSelection = () => {
     setSelectedRegionIndexes([]);
     setSelection(null);
-    setSelectedDetectedIndex(-1);
   };
 
   const pointerPosition = (event: React.PointerEvent<HTMLDivElement>) => {
@@ -721,6 +715,30 @@ export default function EmojiSheetCutter({ editorUrl, libraryManifestUrl }: Prop
     };
   };
 
+  const dragRect = (startX: number, startY: number, point: { x: number; y: number }) => {
+    let endX = point.x;
+    let endY = point.y;
+
+    if (squareLock) {
+      const dx = point.x - startX;
+      const dy = point.y - startY;
+      const signX = dx < 0 ? -1 : 1;
+      const signY = dy < 0 ? -1 : 1;
+      const maxX = signX > 0 ? dimensions.width - startX : startX;
+      const maxY = signY > 0 ? dimensions.height - startY : startY;
+      const size = Math.min(Math.max(Math.abs(dx), Math.abs(dy)), maxX, maxY);
+      endX = startX + signX * size;
+      endY = startY + signY * size;
+    }
+
+    return {
+      x: Math.min(startX, endX),
+      y: Math.min(startY, endY),
+      width: Math.abs(endX - startX),
+      height: Math.abs(endY - startY),
+    };
+  };
+
   const onPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
     if (!activeSheet || !dimensions.width || !dimensions.height) return;
     const point = pointerPosition(event);
@@ -729,7 +747,6 @@ export default function EmojiSheetCutter({ editorUrl, libraryManifestUrl }: Prop
     event.preventDefault();
     event.currentTarget.setPointerCapture(event.pointerId);
     dragRef.current = { pointerId: event.pointerId, startX: point.x, startY: point.y };
-    setSelectedDetectedIndex(-1);
     setSelection({ x: point.x, y: point.y, width: 0, height: 0 });
     setStatus("");
     setError("");
@@ -740,50 +757,37 @@ export default function EmojiSheetCutter({ editorUrl, libraryManifestUrl }: Prop
     if (!drag || drag.pointerId !== event.pointerId) return;
     const point = pointerPosition(event);
     if (!point) return;
-
-    let endX = point.x;
-    let endY = point.y;
-
-    if (squareLock) {
-      const dx = point.x - drag.startX;
-      const dy = point.y - drag.startY;
-      const signX = dx < 0 ? -1 : 1;
-      const signY = dy < 0 ? -1 : 1;
-      const maxX = signX > 0 ? dimensions.width - drag.startX : drag.startX;
-      const maxY = signY > 0 ? dimensions.height - drag.startY : drag.startY;
-      const size = Math.min(Math.max(Math.abs(dx), Math.abs(dy)), maxX, maxY);
-      endX = drag.startX + signX * size;
-      endY = drag.startY + signY * size;
-    }
-
-    setSelection({
-      x: Math.min(drag.startX, endX),
-      y: Math.min(drag.startY, endY),
-      width: Math.abs(endX - drag.startX),
-      height: Math.abs(endY - drag.startY),
-    });
+    setSelection(dragRect(drag.startX, drag.startY, point));
   };
 
   const finishPointer = (event: React.PointerEvent<HTMLDivElement>) => {
     const drag = dragRef.current;
     if (!drag || drag.pointerId !== event.pointerId) return;
+    const point = pointerPosition(event);
     dragRef.current = null;
+
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId);
     }
+    if (!point) {
+      setSelection(null);
+      return;
+    }
 
-    setSelection((current) => {
-      if (!current || current.width < 4 || current.height < 4) return null;
+    const rect = dragRect(drag.startX, drag.startY, point);
+    if (rect.width < 4 || rect.height < 4) {
+      setSelection(null);
+      return;
+    }
 
-      const manualIndex = detectedRegions.length + manualRegions.length;
-      setManualRegions((regions) => [...regions, current]);
-      setSelectedRegionIndexes((indexes) =>
-        [...new Set([...indexes, manualIndex])].sort((a, b) => a - b),
-      );
-      setCropName(`emoji-${String(manualIndex + 1).padStart(2, "0")}`);
-      setStatus(`Added manual crop ${manualIndex + 1}. Draw another box or save the selected crops.`);
-      return current;
-    });
+    const manualIndex = detectedRegions.length + manualRegions.length;
+    setManualRegions((regions) => [...regions, rect]);
+    setSelectedRegionIndexes((indexes) =>
+      [...new Set([...indexes, manualIndex])].sort((a, b) => a - b),
+    );
+    setSelection(rect);
+    setCropName(`emoji-${String(manualIndex + 1).padStart(2, "0")}`);
+    setStatus(`Added manual crop ${manualIndex + 1}. Draw another box or save the selected crops.`);
   };
 
   const selectionStyle = selection && dimensions.width && dimensions.height
@@ -1403,8 +1407,7 @@ export default function EmojiSheetCutter({ editorUrl, libraryManifestUrl }: Prop
                   disabled={!selection}
                   onClick={() => {
                     setSelection(null);
-                    setSelectedDetectedIndex(-1);
-                  }}
+                                  }}
                 >
                   <X className="size-3.5" aria-hidden="true" />
                   Clear focus
