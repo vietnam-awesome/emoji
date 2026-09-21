@@ -155,6 +155,34 @@ const tagTargetUrl = (tag) => {
   </div>
 
   <section
+    class="detail-variants detail-similar"
+    aria-labelledby="emoji-variants-title"
+    data-variant-section
+    data-current-slug={emoji.slug}
+    data-current-hexcode={emoji.hexcode || ''}
+    data-search-root={withBase('/search', base).replace(/\/$/, '')}
+    hidden
+  >
+    <div class="section-heading-modern">
+      <div>
+        <p class="section-kicker">Same Unicode</p>
+        <h2 id="emoji-variants-title">Other versions</h2>
+        <p>Compare the same Unicode emoji across available artwork sources and licenses.</p>
+      </div>
+      <span class="detail-variant-hex">{emoji.hexcode}</span>
+    </div>
+    <div class="detail-similar-grid" data-variant-grid>
+      {Array.from({ length: 4 }).map(() => (
+        <div class="detail-client-card-skeleton" aria-hidden="true">
+          <span class="detail-client-card-skeleton-media"></span>
+          <span class="detail-client-card-skeleton-line detail-client-card-skeleton-line--title"></span>
+          <span class="detail-client-card-skeleton-line detail-client-card-skeleton-line--meta"></span>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <section
     class="detail-similar"
     aria-labelledby="similar-emoji-title"
     data-similar-section
@@ -795,7 +823,18 @@ const tagTargetUrl = (tag) => {
   loadRandomEmoji();
 </script>
 
+<script>
+  import '../../scripts/emoji-variants.js';
+</script>
+
 <style>
+  .detail-variant-hex {
+    align-self: end;
+    font-size: 0.78rem;
+    color: var(--muted-foreground);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  }
+
   .detail-preview-actions {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
