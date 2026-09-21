@@ -1,5 +1,5 @@
-const section = document.querySelector('[data-variant-section]');
-const grid = section?.querySelector('[data-variant-grid]');
+const detailRoot = document.querySelector('[data-recent-emoji]');
+const basePrefix = import.meta.env.BASE_URL === '/' ? '' : import.meta.env.BASE_URL.replace(/\/$/, '');
 
 const normalizeVariantKey = (value) =>
   String(value || '')
@@ -24,7 +24,6 @@ const expandRecord = (row, license = '', attribution = '') => ({
 });
 
 const createVariantCard = (record) => {
-  const basePrefix = import.meta.env.BASE_URL === '/' ? '' : import.meta.env.BASE_URL.replace(/\/$/, '');
   const detailUrl = `${basePrefix}/emoji/${encodeURIComponent(record.slug)}`;
   const categoryUrl = `${basePrefix}/categories/${encodeURIComponent(record.categorySlug || 'other')}`;
 
@@ -104,14 +103,50 @@ const createVariantCard = (record) => {
   return article;
 };
 
-const loadVariants = async () => {
-  if (!(section instanceof HTMLElement) || !(grid instanceof HTMLElement)) return;
+const createVariantsSection = (hexcode, records) => {
+  const section = document.createElement('section');
+  section.className = 'detail-variants detail-similar';
+  section.setAttribute('aria-labelledby', 'emoji-variants-title');
+  section.dataset.variantSection = '';
 
-  const currentSlug = section.dataset.currentSlug || '';
-  const key = normalizeVariantKey(section.dataset.currentHexcode);
+  const heading = document.createElement('div');
+  heading.className = 'section-heading-modern';
+
+  const copy = document.createElement('div');
+  const kicker = document.createElement('p');
+  kicker.className = 'section-kicker';
+  kicker.textContent = 'Same Unicode';
+  const title = document.createElement('h2');
+  title.id = 'emoji-variants-title';
+  title.textContent = 'Other versions';
+  const description = document.createElement('p');
+  description.textContent = 'Compare the same Unicode emoji across available artwork sources and licenses.';
+  copy.append(kicker, title, description);
+
+  const hex = document.createElement('span');
+  hex.className = 'detail-variant-hex';
+  hex.textContent = hexcode;
+
+  heading.append(copy, hex);
+
+  const grid = document.createElement('div');
+  grid.className = 'detail-similar-grid';
+  grid.dataset.variantGrid = '';
+  grid.replaceChildren(...records.map(createVariantCard));
+
+  section.append(heading, grid);
+  return section;
+};
+
+const loadVariants = async () => {
+  if (!(detailRoot instanceof HTMLElement)) return;
+
+  const currentSlug = detailRoot.dataset.recentSlug || '';
+  const rawHexcode = detailRoot.dataset.variantHexcode || '';
+  const key = normalizeVariantKey(rawHexcode);
   if (!key) return;
 
-  const searchRoot = section.dataset.searchRoot || '/search';
+  const searchRoot = `${basePrefix}/search`;
   const prefix = key.slice(0, 2) || 'xx';
 
   try {
@@ -152,10 +187,12 @@ const loadVariants = async () => {
       .slice(0, 12);
 
     if (!records.length) return;
-    grid.replaceChildren(...records.map(createVariantCard));
-    section.hidden = false;
+
+    const section = createVariantsSection(rawHexcode, records);
+    const similarSection = detailRoot.querySelector('[data-similar-section]');
+    if (similarSection) detailRoot.insertBefore(section, similarSection);
+    else detailRoot.append(section);
   } catch (error) {
-    section.hidden = true;
     console.warn('Could not load emoji variants', error);
   }
 };
