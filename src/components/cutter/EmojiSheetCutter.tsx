@@ -50,6 +50,8 @@ type CropRect = {
   height: number;
 };
 
+type ResizeCorner = "nw" | "ne" | "sw" | "se";
+
 type SavedCrop = {
   id: string;
   name: string;
@@ -402,8 +404,15 @@ const blobToDataUrl = (blob: Blob) =>
 export default function EmojiSheetCutter({ editorUrl, libraryManifestUrl }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
+  const imageWrapRef = useRef<HTMLDivElement>(null);
   const objectUrlsRef = useRef(new Set<string>());
   const dragRef = useRef<{ pointerId: number; startX: number; startY: number } | null>(null);
+  const resizeRef = useRef<{
+    pointerId: number;
+    index: number;
+    corner: ResizeCorner;
+    origin: CropRect;
+  } | null>(null);
 
   const [sourceMode, setSourceMode] = useState<"library" | "upload">("library");
   const [librarySheets, setLibrarySheets] = useState<LibrarySheet[]>([]);
@@ -414,6 +423,7 @@ export default function EmojiSheetCutter({ editorUrl, libraryManifestUrl }: Prop
   const [detectedRegions, setDetectedRegions] = useState<CropRect[]>([]);
   const [manualRegions, setManualRegions] = useState<CropRect[]>([]);
   const [selectedRegionIndexes, setSelectedRegionIndexes] = useState<number[]>([]);
+  const [focusedRegionIndex, setFocusedRegionIndex] = useState(-1);
   const [detecting, setDetecting] = useState(false);
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
   const [squareLock, setSquareLock] = useState(true);
@@ -498,6 +508,7 @@ export default function EmojiSheetCutter({ editorUrl, libraryManifestUrl }: Prop
     setDetectedRegions([]);
     setManualRegions([]);
     setSelectedRegionIndexes([]);
+    setFocusedRegionIndex(-1);
     setDimensions({ width: 0, height: 0 });
     setZoom(100);
   }, [activeSheet?.id]);
@@ -658,6 +669,7 @@ export default function EmojiSheetCutter({ editorUrl, libraryManifestUrl }: Prop
         setDetectedRegions(regions);
         setManualRegions([]);
         setSelectedRegionIndexes(regions.map((_, index) => index));
+        setFocusedRegionIndex(regions.length ? 0 : -1);
         setSelection(regions[0] || null);
         if (regions.length) {
           setCropName("emoji-01");
@@ -669,7 +681,8 @@ export default function EmojiSheetCutter({ editorUrl, libraryManifestUrl }: Prop
         setDetectedRegions([]);
         setManualRegions([]);
         setSelectedRegionIndexes([]);
-            setStatus("");
+        setFocusedRegionIndex(-1);
+        setStatus("");
         setError(reason instanceof Error
           ? `Auto-detect could not analyze this sheet: ${reason.message}`
           : "Auto-detect could not analyze this sheet.");
@@ -682,6 +695,7 @@ export default function EmojiSheetCutter({ editorUrl, libraryManifestUrl }: Prop
   const focusRegion = (index: number) => {
     const region = allRegions[index];
     if (!region) return;
+    setFocusedRegionIndex(index);
     setSelection(region);
     setCropName(`emoji-${String(index + 1).padStart(2, "0")}`);
     setError("");
@@ -702,18 +716,23 @@ export default function EmojiSheetCutter({ editorUrl, libraryManifestUrl }: Prop
 
   const clearRegionSelection = () => {
     setSelectedRegionIndexes([]);
+    setFocusedRegionIndex(-1);
     setSelection(null);
   };
 
-  const pointerPosition = (event: React.PointerEvent<HTMLDivElement>) => {
-    const node = event.currentTarget;
+  const clientToImage = (clientX: number, clientY: number) => {
+    const node = imageWrapRef.current;
+    if (!node) return null;
     const rect = node.getBoundingClientRect();
     if (!rect.width || !rect.height || !dimensions.width || !dimensions.height) return null;
     return {
-      x: clamp(((event.clientX - rect.left) / rect.width) * dimensions.width, 0, dimensions.width),
-      y: clamp(((event.clientY - rect.top) / rect.height) * dimensions.height, 0, dimensions.height),
+      x: clamp(((clientX - rect.left) / rect.width) * dimensions.width, 0, dimensions.width),
+      y: clamp(((clientY - rect.top) / rect.height) * dimensions.height, 0, dimensions.height),
     };
   };
+
+  const pointerPosition = (event: React.PointerEvent<HTMLDivElement>) =>
+    clientToImage(event.clientX, event.clientY);
 
   const dragRect = (startX: number, startY: number, point: { x: number; y: number }) => {
     let endX = point.x;
@@ -739,6 +758,88 @@ export default function EmojiSheetCutter({ editorUrl, libraryManifestUrl }: Prop
     };
   };
 
+  const updateRegionAt = (index: number, rect: CropRect) => {
+    if (index < detectedRegions.length) {
+      setDetectedRegions((regions) =>
+        regions.map((region, regionIndex) => regionIndex === index ? rect : region),
+      );
+    } else {
+      const manualIndex = index - detectedRegions.length;
+      setManualRegions((regions) =>
+        regions.map((region, regionIndex) => regionIndex === manualIndex ? rect : region),
+      );
+    }
+    setSelection(rect);
+  };
+
+  const resizedRect = (origin: CropRect, corner: ResizeCorner, point: { x: number; y: number }) => {
+    const minSize = Math.max(8, Math.round(Math.min(dimensions.width, dimensions.height) * 0.012));
+    const left = origin.x;
+    const top = origin.y;
+    const right = origin.x + origin.width;
+    const bottom = origin.y + origin.height;
+
+    let nextLeft = left;
+    let nextTop = top;
+    let nextRight = right;
+    let nextBottom = bottom;
+
+    if (corner.includes("w")) nextLeft = clamp(point.x, 0, right - minSize);
+    if (corner.includes("e")) nextRight = clamp(point.x, left + minSize, dimensions.width);
+    if (corner.includes("n")) nextTop = clamp(point.y, 0, bottom - minSize);
+    if (corner.includes("s")) nextBottom = clamp(point.y, top + minSize, dimensions.height);
+
+    return {
+      x: nextLeft,
+      y: nextTop,
+      width: Math.max(minSize, nextRight - nextLeft),
+      height: Math.max(minSize, nextBottom - nextTop),
+    };
+  };
+
+  const beginResize = (event: React.PointerEvent<HTMLButtonElement>, corner: ResizeCorner) => {
+    if (focusedRegionIndex < 0) return;
+    const region = allRegions[focusedRegionIndex];
+    if (!region) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    resizeRef.current = {
+      pointerId: event.pointerId,
+      index: focusedRegionIndex,
+      corner,
+      origin: { ...region },
+    };
+  };
+
+  const moveResize = (event: React.PointerEvent<HTMLButtonElement>) => {
+    const resize = resizeRef.current;
+    if (!resize || resize.pointerId !== event.pointerId) return;
+    const point = clientToImage(event.clientX, event.clientY);
+    if (!point) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+    const next = resizedRect(resize.origin, resize.corner, point);
+    updateRegionAt(resize.index, next);
+  };
+
+  const finishResize = (event: React.PointerEvent<HTMLButtonElement>) => {
+    const resize = resizeRef.current;
+    if (!resize || resize.pointerId !== event.pointerId) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+    resizeRef.current = null;
+    const region = allRegions[resize.index];
+    setStatus(`Resized crop ${resize.index + 1}. Save the selected set when ready.`);
+    if (region) setSelection(region);
+  };
+
   const onPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
     if (!activeSheet || !dimensions.width || !dimensions.height) return;
     const point = pointerPosition(event);
@@ -747,6 +848,7 @@ export default function EmojiSheetCutter({ editorUrl, libraryManifestUrl }: Prop
     event.preventDefault();
     event.currentTarget.setPointerCapture(event.pointerId);
     dragRef.current = { pointerId: event.pointerId, startX: point.x, startY: point.y };
+    setFocusedRegionIndex(-1);
     setSelection({ x: point.x, y: point.y, width: 0, height: 0 });
     setStatus("");
     setError("");
@@ -782,6 +884,7 @@ export default function EmojiSheetCutter({ editorUrl, libraryManifestUrl }: Prop
 
     const manualIndex = detectedRegions.length + manualRegions.length;
     setManualRegions((regions) => [...regions, rect]);
+    setFocusedRegionIndex(manualIndex);
     setSelectedRegionIndexes((indexes) =>
       [...new Set([...indexes, manualIndex])].sort((a, b) => a - b),
     );
@@ -1243,6 +1346,7 @@ export default function EmojiSheetCutter({ editorUrl, libraryManifestUrl }: Prop
                 }}
               >
                 <div
+                  ref={imageWrapRef}
                   className="cutter-image-wrap"
                   style={{ width: `${zoom}%`, touchAction: "none" }}
                   onPointerDown={onPointerDown}
@@ -1275,11 +1379,12 @@ export default function EmojiSheetCutter({ editorUrl, libraryManifestUrl }: Prop
                   {allRegions.map((region, index) => {
                     const selected = selectedRegionIndexes.includes(index);
                     const manual = index >= detectedRegions.length;
+                    const focused = focusedRegionIndex === index;
                     return (
                       <button
                         type="button"
                         key={`region-${index}`}
-                        className={`cutter-detected-region${selected ? " is-selected" : ""}${manual ? " is-manual" : ""}`}
+                        className={`cutter-detected-region${selected ? " is-selected" : ""}${manual ? " is-manual" : ""}${focused ? " is-focused" : ""}`}
                         style={{
                           left: `${(region.x / dimensions.width) * 100}%`,
                           top: `${(region.y / dimensions.height) * 100}%`,
@@ -1289,24 +1394,53 @@ export default function EmojiSheetCutter({ editorUrl, libraryManifestUrl }: Prop
                         onPointerDown={(event) => event.stopPropagation()}
                         onClick={(event) => {
                           event.stopPropagation();
-                          toggleRegion(index);
+                          focusRegion(index);
                         }}
-                        aria-pressed={selected}
-                        aria-label={`${selected ? "Exclude" : "Include"} crop ${index + 1}`}
+                        aria-label={`Focus crop ${index + 1}`}
                       >
-                        <span>{selected ? "✓" : index + 1}</span>
+                        <span
+                          role="checkbox"
+                          tabIndex={0}
+                          aria-checked={selected}
+                          className="cutter-region-toggle"
+                          onPointerDown={(event) => event.stopPropagation()}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            toggleRegion(index);
+                          }}
+                          onKeyDown={(event) => {
+                            if (event.key !== "Enter" && event.key !== " ") return;
+                            event.preventDefault();
+                            event.stopPropagation();
+                            toggleRegion(index);
+                          }}
+                        >
+                          {selected ? "✓" : "+"}
+                        </span>
                       </button>
                     );
                   })}
                   {selection && selectionStyle ? (
-                    <span className="cutter-selection" style={selectionStyle} aria-hidden="true">
+                    <span className="cutter-selection" style={selectionStyle}>
                       <span className="cutter-selection-label">
                         {Math.round(selection.width)} × {Math.round(selection.height)}
                       </span>
-                      <i className="cutter-handle cutter-handle--nw"></i>
-                      <i className="cutter-handle cutter-handle--ne"></i>
-                      <i className="cutter-handle cutter-handle--sw"></i>
-                      <i className="cutter-handle cutter-handle--se"></i>
+                      {focusedRegionIndex >= 0 ? (
+                        <>
+                          {(["nw", "ne", "sw", "se"] as ResizeCorner[]).map((corner) => (
+                            <button
+                              type="button"
+                              key={corner}
+                              className={`cutter-handle cutter-handle--${corner}`}
+                              aria-label={`Resize crop from ${corner}`}
+                              onPointerDown={(event) => beginResize(event, corner)}
+                              onPointerMove={moveResize}
+                              onPointerUp={finishResize}
+                              onPointerCancel={finishResize}
+                            />
+                          ))}
+                        </>
+                      ) : null}
                     </span>
                   ) : null}
                 </div>
@@ -1335,7 +1469,7 @@ export default function EmojiSheetCutter({ editorUrl, libraryManifestUrl }: Prop
                   <span className="cutter-step">1</span>
                   <div>
                     <h2>{allRegions.length ? `${selectedRegionIndexes.length} of ${allRegions.length} selected` : "Select emoji"}</h2>
-                    <p>{allRegions.length ? "Click boxes to include or exclude them. Drag anywhere else to add more manual crop boxes." : "Auto-detect runs when the image opens. Drag to add one or more manual crop boxes."}</p>
+                    <p>{allRegions.length ? "Click a box to edit/resize it. Use its ✓ badge to include or exclude it. Drag empty space to add more boxes." : "Auto-detect runs when the image opens. Drag to add one or more manual crop boxes."}</p>
                   </div>
                 </div>
 
