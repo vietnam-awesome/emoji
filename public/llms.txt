@@ -1,6 +1,6 @@
 # ePlus Emoji
 
-> Open, searchable emoji directory with browser-based Emoji Kitchen and editor tools for developers, communities, and AI agents.
+> Open, searchable emoji directory with browser-based Emoji Kitchen, editor, and sheet-cutting tools for developers, communities, and AI agents.
 
 Canonical site: https://emoji.eplus.dev
 Repository: https://github.com/vietnam-awesome/emoji
@@ -14,6 +14,7 @@ Repository: https://github.com/vietnam-awesome/emoji
 - Emoji detail page pattern: https://emoji.eplus.dev/emoji/{slug}
 - Emoji Kitchen: https://emoji.eplus.dev/kitchen
 - Emoji editor: https://emoji.eplus.dev/editor
+- Emoji Sheet Cutter: https://emoji.eplus.dev/cutter
 - Static search manifest: https://emoji.eplus.dev/search/manifest.json
 - Sitemap: https://emoji.eplus.dev/sitemap.xml
 - Static routes sitemap: https://emoji.eplus.dev/sitemap-static.xml
@@ -39,11 +40,19 @@ Source images are processed locally in the browser rather than uploaded to a ser
 
 Deferred capabilities such as APNG frame-by-frame editing, interpolation, AI-generated in-between frames, onion skin, and arbitrary non-square output should not be assumed.
 
+## Emoji Sheet Cutter
+
+The `/cutter` route is a client-side tool for extracting individual emoji PNGs from larger emoji sheets or image collages. Users can upload multiple sheets or paste an image from the clipboard, draw manual crop rectangles, optionally lock crops to a square, use a row/column grid guide, zoom for precision, and save multiple crops in one session.
+
+Saved crops can keep their original dimensions or be normalized to 64, 128, 256, or 512 square PNGs. Users can copy or download each crop, download all crops as a browser-generated ZIP, or continue editing a crop in `/editor` through same-tab session storage.
+
+Source sheets and crop processing stay in the browser; `/cutter` does not require uploading the source image to an ePlus Emoji server.
+
 ## Discovery guidance
 
 Use `/emojis` for human-readable search/filtering, `/categories` for category discovery, `/categories/{category-slug}` for category overviews, and `/emoji/{slug}` for individual emoji details and hosted assets.
 
-Use `/kitchen` when the task is to combine standard Unicode emoji into a new mashup. Use `/editor` when the task involves transforming an emoji, editing an animated GIF, or refining a cooked result.
+Use `/kitchen` when the task is to combine standard Unicode emoji into a new mashup. Use `/cutter` when the task is to manually extract individual emoji from a larger sheet or collage. Use `/editor` when the task involves transforming an emoji, editing an animated GIF, or refining a result from `/kitchen` or `/cutter`.
 
 For the build-generated search index, start from `/search/manifest.json` and follow the current manifest/shard references instead of hard-coding generated shard filenames.
 
