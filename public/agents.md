@@ -76,6 +76,7 @@ Use `/cutter` when a user has one or more larger images containing multiple emoj
 
 Current Sheet Cutter capabilities include:
 
+- browse built-in starter sheets plus shared sheet assets published from the repository `data` branch
 - upload multiple local image sheets or paste an image from the clipboard
 - switch between uploaded sheets without sending source images to a server
 - draw a manual crop rectangle directly on the source image
@@ -88,7 +89,7 @@ Current Sheet Cutter capabilities include:
 - download all saved crops as a browser-generated ZIP
 - hand a saved crop to `/editor` through same-tab browser session storage
 
-Source images and crop processing stay in the browser. Do not describe `/cutter` as uploading source sheets to ePlus Emoji servers.
+Shared library sheets are read-only public assets. User-provided source images and crop processing stay in the browser. Do not describe `/cutter` as uploading a user's local source sheet to ePlus Emoji servers.
 
 ## Recommended agent workflow
 
