@@ -59,7 +59,7 @@ test('Cook result can be handed off to the existing editor without a server uplo
 
 test('Kitchen is discoverable from the BeUI primary navigation', () => {
   assert.match(siteHeader, /label: 'Kitchen'/);
-  assert.match(siteHeader, /routePath === '\/cook'/);
+  assert.match(siteHeader, /routePath === '\/kitchen'/);
   assert.match(siteHeader, /const kitchenUrl/);
 });
 
