@@ -1,9 +1,16 @@
 "use client";
 
-import { Download, PackagePlus, X } from "lucide-react";
+import { Download, ImageDown, PackagePlus, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "../motion/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../motion/select";
 
 type SelectedItem = {
   key: string;
@@ -130,6 +137,68 @@ const buildZip = (files: Array<{ name: string; data: Uint8Array }>) => {
   return new Blob([concatBytes([...localParts, centralBytes, end])], { type: "application/zip" });
 };
 
+type PlatformPresetKey = "discord" | "slack" | "twitch" | "telegram";
+
+const PLATFORM_PRESETS: Record<PlatformPresetKey, { label: string; size: number; suffix: string }> = {
+  discord: { label: "Discord", size: 128, suffix: "discord-128" },
+  slack: { label: "Slack", size: 128, suffix: "slack-128" },
+  twitch: { label: "Twitch", size: 112, suffix: "twitch-112" },
+  telegram: { label: "Telegram", size: 100, suffix: "telegram-100" },
+};
+
+const loadSourceBitmap = async (url: string): Promise<ImageBitmap | HTMLImageElement> => {
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  const blob = await response.blob();
+
+  if ("createImageBitmap" in window) return createImageBitmap(blob);
+
+  const objectUrl = URL.createObjectURL(blob);
+  try {
+    const image = new Image();
+    image.decoding = "async";
+    image.src = objectUrl;
+    await image.decode();
+    return image;
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
+};
+
+const canvasPngBlob = (canvas: HTMLCanvasElement) =>
+  new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => blob ? resolve(blob) : reject(new Error("Could not encode PNG")),
+      "image/png",
+    );
+  });
+
+const renderPlatformPng = async (url: string, size: number) => {
+  const source = await loadSourceBitmap(url);
+  const width = source instanceof HTMLImageElement ? source.naturalWidth : source.width;
+  const height = source instanceof HTMLImageElement ? source.naturalHeight : source.height;
+  const safeWidth = Math.max(1, width || size);
+  const safeHeight = Math.max(1, height || size);
+  const scale = Math.min(size / safeWidth, size / safeHeight);
+  const drawWidth = Math.max(1, Math.round(safeWidth * scale));
+  const drawHeight = Math.max(1, Math.round(safeHeight * scale));
+  const x = Math.round((size - drawWidth) / 2);
+  const y = Math.round((size - drawHeight) / 2);
+
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const context = canvas.getContext("2d");
+  if (!context) throw new Error("Canvas is unavailable");
+  context.clearRect(0, 0, size, size);
+  context.imageSmoothingEnabled = true;
+  context.imageSmoothingQuality = "high";
+  context.drawImage(source, x, y, drawWidth, drawHeight);
+  if ("close" in source && typeof source.close === "function") source.close();
+
+  return canvasPngBlob(canvas);
+};
+
 const isSelectableCard = (node: Element): node is HTMLElement =>
   node instanceof HTMLElement &&
   node.matches(".emoji-card[data-emoji-card]") &&
@@ -140,6 +209,7 @@ export default function CatalogDownloadClient() {
   const [count, setCount] = useState(0);
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState("");
+  const [platform, setPlatform] = useState<PlatformPresetKey>("discord");
 
   const cardItem = useCallback((card: HTMLElement): SelectedItem | null => {
     const image = card.querySelector(".emoji-preview img");
@@ -338,6 +408,79 @@ export default function CatalogDownloadClient() {
     }
   };
 
+  const downloadPlatformBatch = async () => {
+    const items = [...selectedRef.current.values()];
+    if (!items.length || busy) return;
+
+    const preset = PLATFORM_PRESETS[platform];
+    const files: Array<{ name: string; data: Uint8Array }> = [];
+    const failures: string[] = [];
+    const animatedSkipped: string[] = [];
+    const used = new Set<string>();
+
+    const uniqueName = (filename: string) => {
+      if (!used.has(filename)) {
+        used.add(filename);
+        return filename;
+      }
+      const dot = filename.lastIndexOf(".");
+      const stem = dot > 0 ? filename.slice(0, dot) : filename;
+      const extension = dot > 0 ? filename.slice(dot) : "";
+      let index = 2;
+      while (used.has(`${stem}-${index}${extension}`)) index += 1;
+      const resolved = `${stem}-${index}${extension}`;
+      used.add(resolved);
+      return resolved;
+    };
+
+    setBusy(true);
+    try {
+      for (let index = 0; index < items.length; index += 1) {
+        const item = items[index];
+        if (item.animated) {
+          animatedSkipped.push(item.name);
+          continue;
+        }
+
+        setProgress(`Exporting ${index + 1}/${items.length}`);
+        try {
+          const blob = await renderPlatformPng(item.url, preset.size);
+          const filename = uniqueName(`${sanitizeFilename(item.name)}-${preset.suffix}.png`);
+          files.push({ name: filename, data: new Uint8Array(await blob.arrayBuffer()) });
+        } catch {
+          failures.push(item.name);
+        }
+      }
+
+      if (!files.length) {
+        if (animatedSkipped.length === items.length) {
+          throw new Error("The selected emoji are animated. Batch platform export currently preserves safety by skipping animated files instead of flattening them.");
+        }
+        throw new Error("No selected files could be exported.");
+      }
+
+      setProgress("Creating ZIP…");
+      const objectUrl = URL.createObjectURL(buildZip(files));
+      const anchor = document.createElement("a");
+      anchor.href = objectUrl;
+      anchor.download = `eplus-emoji-${platform}-${preset.size}px-${files.length}-items.zip`;
+      document.body.append(anchor);
+      anchor.click();
+      anchor.remove();
+      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 2000);
+
+      const notes = [];
+      if (animatedSkipped.length) notes.push(`${animatedSkipped.length} animated item(s) skipped to preserve animation.`);
+      if (failures.length) notes.push(`${failures.length} item(s) could not be fetched or converted.`);
+      if (notes.length) window.alert(`Exported ${files.length} item(s) for ${preset.label}. ${notes.join(" ")}`);
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : "Could not create the platform export.");
+    } finally {
+      setProgress("");
+      setBusy(false);
+    }
+  };
+
   return (
     <AnimatePresence>
       {count > 0 ? (
@@ -375,6 +518,27 @@ export default function CatalogDownloadClient() {
             >
               <PackagePlus className="size-3.5" aria-hidden="true" />
               Pack
+            </Button>
+            <Select value={platform} onValueChange={(value) => setPlatform(value as PlatformPresetKey)}>
+              <SelectTrigger className="emoji-selection-platform" aria-label="Batch export platform">
+                <SelectValue placeholder="Platform" />
+              </SelectTrigger>
+              <SelectContent>
+                {(Object.entries(PLATFORM_PRESETS) as Array<[PlatformPresetKey, (typeof PLATFORM_PRESETS)[PlatformPresetKey]]>).map(([key, preset]) => (
+                  <SelectItem key={key} value={key}>{preset.label} · {preset.size}px</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="emoji-selection-export !border-0 !bg-background/10 !text-background !shadow-none hover:!bg-background/20 disabled:!opacity-40"
+              onClick={downloadPlatformBatch}
+              disabled={busy}
+              title="Resize selected static emoji and download them as a platform-ready PNG ZIP"
+            >
+              <ImageDown className="size-3.5" aria-hidden="true" />
+              {busy ? progress || "Preparing…" : `Export ${PLATFORM_PRESETS[platform].label}`}
             </Button>
             <Button
               variant="secondary"
