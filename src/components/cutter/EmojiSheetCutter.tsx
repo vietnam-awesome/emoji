@@ -412,6 +412,8 @@ export default function EmojiSheetCutter({ editorUrl, libraryManifestUrl }: Prop
   const [activeSheetId, setActiveSheetId] = useState("");
   const [selection, setSelection] = useState<CropRect | null>(null);
   const [detectedRegions, setDetectedRegions] = useState<CropRect[]>([]);
+  const [manualRegions, setManualRegions] = useState<CropRect[]>([]);
+  const [selectedRegionIndexes, setSelectedRegionIndexes] = useState<number[]>([]);
   const [selectedDetectedIndex, setSelectedDetectedIndex] = useState(-1);
   const [detecting, setDetecting] = useState(false);
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
@@ -430,6 +432,11 @@ export default function EmojiSheetCutter({ editorUrl, libraryManifestUrl }: Prop
   const activeSheet = useMemo(
     () => sheets.find((sheet) => sheet.id === activeSheetId) || sheets[0] || null,
     [sheets, activeSheetId],
+  );
+
+  const allRegions = useMemo(
+    () => [...detectedRegions, ...manualRegions],
+    [detectedRegions, manualRegions],
   );
 
   useEffect(() => {
@@ -490,6 +497,8 @@ export default function EmojiSheetCutter({ editorUrl, libraryManifestUrl }: Prop
   useEffect(() => {
     setSelection(null);
     setDetectedRegions([]);
+    setManualRegions([]);
+    setSelectedRegionIndexes([]);
     setSelectedDetectedIndex(-1);
     setDimensions({ width: 0, height: 0 });
     setZoom(100);
@@ -649,6 +658,8 @@ export default function EmojiSheetCutter({ editorUrl, libraryManifestUrl }: Prop
       try {
         const regions = detectEmojiRegions(image);
         setDetectedRegions(regions);
+        setManualRegions([]);
+        setSelectedRegionIndexes(regions.map((_, index) => index));
         setSelectedDetectedIndex(regions.length ? 0 : -1);
         setSelection(regions[0] || null);
         if (regions.length) {
@@ -659,6 +670,8 @@ export default function EmojiSheetCutter({ editorUrl, libraryManifestUrl }: Prop
         }
       } catch (reason) {
         setDetectedRegions([]);
+        setManualRegions([]);
+        setSelectedRegionIndexes([]);
         setSelectedDetectedIndex(-1);
         setStatus("");
         setError(reason instanceof Error
@@ -670,13 +683,32 @@ export default function EmojiSheetCutter({ editorUrl, libraryManifestUrl }: Prop
     });
   };
 
-  const chooseDetectedRegion = (index: number) => {
-    const region = detectedRegions[index];
+  const focusRegion = (index: number) => {
+    const region = allRegions[index];
     if (!region) return;
-    setSelectedDetectedIndex(index);
+    setSelectedDetectedIndex(index < detectedRegions.length ? index : -1);
     setSelection(region);
     setCropName(`emoji-${String(index + 1).padStart(2, "0")}`);
     setError("");
+  };
+
+  const toggleRegion = (index: number) => {
+    focusRegion(index);
+    setSelectedRegionIndexes((current) =>
+      current.includes(index)
+        ? current.filter((value) => value !== index)
+        : [...current, index].sort((a, b) => a - b),
+    );
+  };
+
+  const selectAllRegions = () => {
+    setSelectedRegionIndexes(allRegions.map((_, index) => index));
+  };
+
+  const clearRegionSelection = () => {
+    setSelectedRegionIndexes([]);
+    setSelection(null);
+    setSelectedDetectedIndex(-1);
   };
 
   const pointerPosition = (event: React.PointerEvent<HTMLDivElement>) => {
@@ -739,8 +771,17 @@ export default function EmojiSheetCutter({ editorUrl, libraryManifestUrl }: Prop
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId);
     }
+
     setSelection((current) => {
       if (!current || current.width < 4 || current.height < 4) return null;
+
+      const manualIndex = detectedRegions.length + manualRegions.length;
+      setManualRegions((regions) => [...regions, current]);
+      setSelectedRegionIndexes((indexes) =>
+        [...new Set([...indexes, manualIndex])].sort((a, b) => a - b),
+      );
+      setCropName(`emoji-${String(manualIndex + 1).padStart(2, "0")}`);
+      setStatus(`Added manual crop ${manualIndex + 1}. Draw another box or save the selected crops.`);
       return current;
     });
   };
@@ -845,16 +886,23 @@ export default function EmojiSheetCutter({ editorUrl, libraryManifestUrl }: Prop
     }
   };
 
-  const saveAllDetected = async () => {
-    if (!activeSheet || !detectedRegions.length) return;
+  const saveSelectedRegions = async () => {
+    if (!activeSheet || !selectedRegionIndexes.length) return;
+    const regions = selectedRegionIndexes
+      .map((index) => ({ index, rect: allRegions[index] }))
+      .filter((item): item is { index: number; rect: CropRect } => Boolean(item.rect));
+
+    if (!regions.length) return;
+
     try {
-      setStatus(`Preparing ${detectedRegions.length} detected emoji…`);
+      setStatus(`Preparing ${regions.length} selected emoji…`);
       const created: SavedCrop[] = [];
-      for (let index = 0; index < detectedRegions.length; index += 1) {
-        const result = await createCropBlob(detectedRegions[index]);
-        const name = `emoji-${String(index + 1).padStart(2, "0")}`;
+      for (let position = 0; position < regions.length; position += 1) {
+        const item = regions[position];
+        const result = await createCropBlob(item.rect);
+        const name = `emoji-${String(item.index + 1).padStart(2, "0")}`;
         created.push({
-          id: `${Date.now()}-${index}-${Math.random().toString(36).slice(2)}`,
+          id: `${Date.now()}-${position}-${Math.random().toString(36).slice(2)}`,
           name,
           sourceName: activeSheet.name,
           url: makeObjectUrl(result.blob),
@@ -864,11 +912,11 @@ export default function EmojiSheetCutter({ editorUrl, libraryManifestUrl }: Prop
         });
       }
       setCrops((current) => [...current, ...created]);
-      setStatus(`Saved all ${created.length} detected emoji. Review them below or download the ZIP.`);
+      setStatus(`Saved ${created.length} selected emoji. Review them below or download the ZIP.`);
       setError("");
     } catch (reason) {
       setStatus("");
-      setError(reason instanceof Error ? reason.message : "Could not save all detected crops.");
+      setError(reason instanceof Error ? reason.message : "Could not save the selected crops.");
     }
   };
 
@@ -1220,27 +1268,32 @@ export default function EmojiSheetCutter({ editorUrl, libraryManifestUrl }: Prop
                     />
                   )}
                   {showGrid ? <span className="cutter-grid-guide" style={gridStyle} aria-hidden="true" /> : null}
-                  {detectedRegions.map((region, index) => (
-                    <button
-                      type="button"
-                      key={`detected-${index}`}
-                      className={`cutter-detected-region${selectedDetectedIndex === index ? " is-selected" : ""}`}
-                      style={{
-                        left: `${(region.x / dimensions.width) * 100}%`,
-                        top: `${(region.y / dimensions.height) * 100}%`,
-                        width: `${(region.width / dimensions.width) * 100}%`,
-                        height: `${(region.height / dimensions.height) * 100}%`,
-                      }}
-                      onPointerDown={(event) => event.stopPropagation()}
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        chooseDetectedRegion(index);
-                      }}
-                      aria-label={`Select detected emoji ${index + 1}`}
-                    >
-                      <span>{index + 1}</span>
-                    </button>
-                  ))}
+                  {allRegions.map((region, index) => {
+                    const selected = selectedRegionIndexes.includes(index);
+                    const manual = index >= detectedRegions.length;
+                    return (
+                      <button
+                        type="button"
+                        key={`region-${index}`}
+                        className={`cutter-detected-region${selected ? " is-selected" : ""}${manual ? " is-manual" : ""}`}
+                        style={{
+                          left: `${(region.x / dimensions.width) * 100}%`,
+                          top: `${(region.y / dimensions.height) * 100}%`,
+                          width: `${(region.width / dimensions.width) * 100}%`,
+                          height: `${(region.height / dimensions.height) * 100}%`,
+                        }}
+                        onPointerDown={(event) => event.stopPropagation()}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          toggleRegion(index);
+                        }}
+                        aria-pressed={selected}
+                        aria-label={`${selected ? "Exclude" : "Include"} crop ${index + 1}`}
+                      >
+                        <span>{selected ? "✓" : index + 1}</span>
+                      </button>
+                    );
+                  })}
                   {selection && selectionStyle ? (
                     <span className="cutter-selection" style={selectionStyle} aria-hidden="true">
                       <span className="cutter-selection-label">
@@ -1268,7 +1321,7 @@ export default function EmojiSheetCutter({ editorUrl, libraryManifestUrl }: Prop
                   />
                   <strong>{zoom}%</strong>
                 </label>
-                <p>{detectedRegions.length ? `${detectedRegions.length} emoji detected · click a box to review` : "Drag on the image for manual crop fallback."}</p>
+                <p>{allRegions.length ? `${selectedRegionIndexes.length}/${allRegions.length} crops selected · click boxes to include/exclude` : "Drag on the image for manual crop fallback."}</p>
               </div>
             </section>
 
@@ -1277,16 +1330,32 @@ export default function EmojiSheetCutter({ editorUrl, libraryManifestUrl }: Prop
                 <div className="cutter-control-heading">
                   <span className="cutter-step">1</span>
                   <div>
-                    <h2>{detectedRegions.length ? `${detectedRegions.length} emoji detected` : "Select one emoji"}</h2>
-                    <p>{detectedRegions.length ? "Click a detected box to review or adjust it manually." : "Auto-detect runs when the image opens. Manual drag remains available as fallback."}</p>
+                    <h2>{allRegions.length ? `${selectedRegionIndexes.length} of ${allRegions.length} selected` : "Select emoji"}</h2>
+                    <p>{allRegions.length ? "Click boxes to include or exclude them. Drag anywhere else to add more manual crop boxes." : "Auto-detect runs when the image opens. Drag to add one or more manual crop boxes."}</p>
                   </div>
                 </div>
 
-                {detectedRegions.length > 0 ? (
-                  <Button variant="primary" size="md" ripple onClick={saveAllDetected}>
-                    <Scissors className="size-4" aria-hidden="true" />
-                    Save all {detectedRegions.length}
-                  </Button>
+                {allRegions.length > 0 ? (
+                  <>
+                    <div className="cutter-multi-actions">
+                      <Button variant="secondary" size="sm" onClick={selectAllRegions}>
+                        Select all
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={clearRegionSelection}>
+                        Clear
+                      </Button>
+                    </div>
+                    <Button
+                      variant="primary"
+                      size="md"
+                      ripple
+                      onClick={saveSelectedRegions}
+                      disabled={!selectedRegionIndexes.length}
+                    >
+                      <Scissors className="size-4" aria-hidden="true" />
+                      Save selected {selectedRegionIndexes.length}
+                    </Button>
+                  </>
                 ) : null}
 
                 <label className="cutter-toggle cutter-toggle--inline">
@@ -1332,10 +1401,13 @@ export default function EmojiSheetCutter({ editorUrl, libraryManifestUrl }: Prop
                   variant="ghost"
                   size="sm"
                   disabled={!selection}
-                  onClick={() => setSelection(null)}
+                  onClick={() => {
+                    setSelection(null);
+                    setSelectedDetectedIndex(-1);
+                  }}
                 >
                   <X className="size-3.5" aria-hidden="true" />
-                  Clear selection
+                  Clear focus
                 </Button>
               </section>
 
@@ -1379,7 +1451,7 @@ export default function EmojiSheetCutter({ editorUrl, libraryManifestUrl }: Prop
                 <Scissors aria-hidden="true" />
                 <div>
                   <strong>Fast workflow</strong>
-                  <p>Draw → Save crop → draw the next emoji. Saved crops stay below while you move through all sheets.</p>
+                  <p>Auto-detect selects every emoji. Toggle boxes on/off, draw extra manual boxes if needed, then save the whole selected set in one action.</p>
                 </div>
               </section>
             </aside>
