@@ -202,6 +202,7 @@ const sources = new Map();
 const tokenIndex = new Map();
 const animatedIds = [];
 const staticIds = [];
+const variantGroups = new Map();
 const compatibility = {
   totals: countBucket(),
   categories: {},
@@ -214,6 +215,16 @@ for (let id = 0; id < records.length; id += 1) {
   const category = String(record.categorySlug || safeSlug(record.category)).trim().toLowerCase();
   const source = String(record.source || '').trim().toLowerCase();
   const animated = Boolean(record.animated);
+  const variantKey = safeSlug(record.hexcode, '');
+
+  if (variantKey) {
+    if (!variantGroups.has(variantKey)) variantGroups.set(variantKey, []);
+    variantGroups.get(variantKey).push({
+      id,
+      l: String(record.license || ''),
+      at: String(record.attribution || '')
+    });
+  }
 
   addFacet(categories, category, record.category, id, animated);
   addFacet(sources, source, record.sourceLabel || record.source, id, animated);
@@ -228,6 +239,23 @@ for (let chunk = 0; chunk < chunkCount; chunk += 1) {
   await writeJson(
     path.join(OUT_DIR, 'chunks', `${String(chunk).padStart(4, '0')}.json`),
     compact.slice(start, start + CHUNK_SIZE)
+  );
+}
+
+const variantShards = new Map();
+let variantGroupCount = 0;
+for (const [key, entries] of variantGroups) {
+  if (entries.length < 2) continue;
+  const prefix = key.slice(0, 2) || 'xx';
+  if (!variantShards.has(prefix)) variantShards.set(prefix, new Map());
+  variantShards.get(prefix).set(key, entries);
+  variantGroupCount += 1;
+}
+
+for (const [prefix, groups] of variantShards) {
+  await writeJson(
+    path.join(OUT_DIR, 'variants', `${prefix}.json`),
+    Object.fromEntries([...groups.entries()].sort(([a], [b]) => a.localeCompare(b)))
   );
 }
 
@@ -270,7 +298,8 @@ await writeJson(path.join(OUT_DIR, 'manifest.json'), {
   categories: categoryManifest.map(({ value, name, count, file }) => ({ value, name, count, file })),
   sources: sourceManifest,
   motion: { yes: animatedIds.length, no: staticIds.length },
-  compatibility
+  compatibility,
+  variants: { groupCount: variantGroupCount, shards: [...variantShards.keys()].sort() }
 });
 
 await writeJson(
