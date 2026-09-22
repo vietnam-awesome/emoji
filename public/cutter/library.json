@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-09-21",
+  "updated_at": "2026-09-22",
   "sheets": [
     {
       "id": "starter-faces",
@@ -8,7 +8,11 @@
       "image": "./sheets/starter-faces.svg",
       "description": "16 reaction emoji on a clean 4×4 practice sheet.",
       "source": "ePlus Emoji",
-      "tags": ["faces", "reactions", "demo"]
+      "tags": [
+        "faces",
+        "reactions",
+        "demo"
+      ]
     },
     {
       "id": "starter-work-tech",
@@ -16,7 +20,26 @@
       "image": "./sheets/starter-work-tech.svg",
       "description": "16 work and developer emoji on a clean 4×4 practice sheet.",
       "source": "ePlus Emoji",
-      "tags": ["work", "tech", "demo"]
+      "tags": [
+        "work",
+        "tech",
+        "demo"
+      ]
+    },
+    {
+      "id": "eplus-originals-20260922-1027",
+      "name": "ePlus Originals · 2026-09-22 10:27",
+      "image": "./sheets/eplus-originals-20260922-1027.png",
+      "description": "8 original developer and workflow emoji concepts generated as a cutter-ready PNG sheet.",
+      "source": "ePlus Originals",
+      "tags": [
+        "eplus",
+        "originals",
+        "developer",
+        "workflow",
+        "systems",
+        "generated"
+      ]
     }
   ]
 }
