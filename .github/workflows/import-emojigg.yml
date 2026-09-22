@@ -179,19 +179,56 @@ jobs:
           fi
           git push origin "HEAD:$IMPORT_BRANCH"
 
-      - name: Open review pull request
-        if: steps.checkpoint.outputs.created == 'true'
+      - name: Open review PR
+        if: ${{ steps.checkpoint.outputs.created == 'true' }}
         env:
           GH_TOKEN: ${{ github.token }}
           IMPORT_BRANCH: ${{ steps.review_branch.outputs.name }}
         shell: bash
         run: |
-          set -euo pipefail
-          printf -v pr_body 'Automated Emoji.gg import candidate from Actions run `%s`.\n\nThe import checkpoint was pushed before scoped asset verification, so a later verification failure does not discard downloaded assets. Review the assets and catalog diff. Merge this PR into `data` only after approval. Production deployment starts automatically after the merge.' "$GITHUB_RUN_ID"
-          pr_url="$(gh pr create \
+          set -uo pipefail
+
+          compare_url="https://github.com/${GITHUB_REPOSITORY}/compare/${DATA_BRANCH}...${IMPORT_BRANCH}?expand=1"
+          existing="$(gh pr list \
             --repo "$GITHUB_REPOSITORY" \
             --base "$DATA_BRANCH" \
             --head "$IMPORT_BRANCH" \
-            --title "Import Emoji.gg Catalog #${GITHUB_RUN_NUMBER}" \
-            --body "$pr_body")"
-          echo "Review PR: $pr_url"
+            --state open \
+            --json number,url \
+            --jq '.[0] | select(.) | "\(.number) \(.url)"' 2>/dev/null || true)"
+
+          if [ -n "$existing" ]; then
+            echo "Review PR already exists: $existing"
+          else
+            printf -v pr_body 'Verified Emoji.gg import from Actions run `%s` on branch `%s`.\n\nThe import checkpoint was pushed before scoped asset verification. A failed PR operation does not invalidate or delete the imported data.' "$GITHUB_RUN_ID" "$IMPORT_BRANCH"
+
+            if gh pr create \
+              --repo "$GITHUB_REPOSITORY" \
+              --base "$DATA_BRANCH" \
+              --head "$IMPORT_BRANCH" \
+              --title "Import Emoji.gg Catalog #${GITHUB_RUN_NUMBER}" \
+              --body "$pr_body"; then
+              echo "Review PR created."
+            else
+              echo "::warning::Automatic PR creation is unavailable. Import and verification already succeeded."
+              echo "::warning::Create the PR manually: $compare_url"
+            fi
+          fi
+
+          exit 0
+
+      - name: Recovery summary
+        if: ${{ always() }}
+        env:
+          IMPORT_BRANCH: ${{ steps.review_branch.outputs.name }}
+        shell: bash
+        run: |
+          {
+            echo "### Emoji.gg import recovery"
+            echo "- Import branch: \`${IMPORT_BRANCH:-not-created}\`"
+            echo "- Imported data is pushed before pull-request creation."
+            echo "- Pull-request creation is best-effort and cannot fail an already verified import."
+            if [ -n "${IMPORT_BRANCH:-}" ]; then
+              echo "- Manual PR: https://github.com/${GITHUB_REPOSITORY}/compare/${DATA_BRANCH}...${IMPORT_BRANCH}?expand=1"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
