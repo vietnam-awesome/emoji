@@ -1,14 +1,16 @@
 {
   "slackmojis": {
-    "mode": "all",
+    "mode": "recent",
     "endpoint": "https://slackmojis.com/emojis.json",
-    "catalogPages": 210,
-    "discovered": 105000,
-    "missingBeforeRun": 105000,
-    "attemptedThisRun": 105000,
-    "importedThisRun": 104769,
+    "catalogPages": 211,
+    "discovered": 105151,
+    "sensitiveFilteredThisRun": 341,
+    "safeCandidates": 104810,
+    "missingBeforeRun": 382,
+    "attemptedThisRun": 382,
+    "importedThisRun": 151,
     "failedThisRun": 231,
-    "lastRunAt": "2026-09-14T11:13:32.585Z"
+    "lastRunAt": "2026-09-22T01:15:58.672Z"
   },
   "discadia": {
     "cursor": 0,
