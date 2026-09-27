@@ -3,19 +3,19 @@
     "mode": "recent",
     "endpoint": "https://slackmojis.com/emojis.json",
     "catalogPages": 211,
-    "discovered": 105148,
+    "discovered": 105295,
     "sensitiveFilteredThisRun": 341,
-    "safeCandidates": 104807,
-    "missingBeforeRun": 379,
-    "attemptedThisRun": 379,
-    "importedThisRun": 148,
-    "failedThisRun": 231,
-    "lastRunAt": "2026-09-21T23:21:57.152Z"
+    "safeCandidates": 104954,
+    "missingBeforeRun": 378,
+    "attemptedThisRun": 75,
+    "importedThisRun": 75,
+    "failedThisRun": 0,
+    "lastRunAt": "2026-09-27T06:58:49.521Z"
   },
   "discadia": {
     "cursor": 0,
     "discovered": 1,
-    "lastRunAt": "2026-09-21T23:22:09.868Z",
+    "lastRunAt": "2026-09-27T06:59:02.494Z",
     "sensitiveFilteredThisRun": 0
   },
   "emojigg-pepe": {

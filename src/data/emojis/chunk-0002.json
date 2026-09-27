@@ -1,5 +1,41 @@
 [
   {
+    "id": "slackmojis-89340",
+    "slug": "slackmojis-asana-intensifies-89340",
+    "name": "asana-intensifies",
+    "shortcode": "asana_intensifies",
+    "group": "community",
+    "subgroup": "slackmojis-random",
+    "category": "Other",
+    "categorySlug": "other",
+    "categoryId": "19",
+    "tags": [
+      "slackmojis",
+      "custom-emoji",
+      "random",
+      "animated"
+    ],
+    "source": "slackmojis",
+    "sourceLabel": "Slackmojis",
+    "sourceUrl": "https://slackmojis.com/emojis/89340-asana-intensifies",
+    "upstreamAssetUrl": "https://emojis.slackmojis.com/emojis/images/1707862495/89340/asana-intensifies.gif?1707862495",
+    "image": "/emojis/community/slackmojis/89340.gif",
+    "format": "gif",
+    "animated": true,
+    "license": "Source terms / rights vary",
+    "attribution": "Slackmojis / twilbur",
+    "addedAt": "2024-02-13",
+    "syncedAt": "2026-09-14T11:12:54.650Z",
+    "assetSha256": "68dfdd0f97c2dea4240498ceb01d7cd0b6eab6327c80714047a2aab34be77ee8",
+    "duplicateAsset": false,
+    "taxonomyVersion": 1,
+    "sourceCategory": "Random",
+    "sourceCategorySlug": "random",
+    "topics": [
+      "animated"
+    ]
+  },
+  {
     "id": "slackmojis-89341",
     "slug": "slackmojis-asana-on-fire-89341",
     "name": "asana-on-fire",
@@ -90098,43 +90134,6 @@
     "taxonomyVersion": 1,
     "sourceCategory": "Random",
     "sourceCategorySlug": "random",
-    "collection": "blob",
-    "topics": [
-      "animated"
-    ]
-  },
-  {
-    "id": "slackmojis-15845",
-    "slug": "slackmojis-blob-explode-15845",
-    "name": "blob_explode",
-    "shortcode": "blob_explode",
-    "group": "community",
-    "subgroup": "slackmojis-hangouts-blob",
-    "category": "Other",
-    "categorySlug": "other",
-    "categoryId": "17",
-    "tags": [
-      "slackmojis",
-      "custom-emoji",
-      "hangouts-blob",
-      "animated"
-    ],
-    "source": "slackmojis",
-    "sourceLabel": "Slackmojis",
-    "sourceUrl": "https://slackmojis.com/emojis/15845-blob-explode",
-    "upstreamAssetUrl": "https://emojis.slackmojis.com/emojis/images/1643515565/15845/blob_explode.gif?1643515565",
-    "image": "/emojis/community/slackmojis/15845.gif",
-    "format": "gif",
-    "animated": true,
-    "license": "Source terms / rights vary",
-    "attribution": "Slackmojis / original contributor",
-    "addedAt": "2021-03-01",
-    "syncedAt": "2026-09-14T11:10:22.313Z",
-    "assetSha256": "19cbbe7202ab65aa819d95e4e964b0795529da29b5c64022a476753834ecc57f",
-    "duplicateAsset": false,
-    "taxonomyVersion": 1,
-    "sourceCategory": "Hangouts Blob",
-    "sourceCategorySlug": "hangouts-blob",
     "collection": "blob",
     "topics": [
       "animated"
