@@ -1,7 +1,7 @@
 {
   "version": 1,
   "taxonomyVersion": 1,
-  "total": 213931,
+  "total": 212433,
   "chunkSize": 2500,
   "chunks": [
     {
@@ -342,11 +342,7 @@
     },
     {
       "file": "chunk-0085.json",
-      "count": 2500
-    },
-    {
-      "file": "chunk-0086.json",
-      "count": 1431
+      "count": 2433
     }
   ]
 }
