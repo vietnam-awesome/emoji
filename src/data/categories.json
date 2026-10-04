@@ -2,30 +2,30 @@
   {
     "slug": "other",
     "name": "Other",
-    "count": 131384,
+    "count": 131385,
     "animated": 37544,
-    "static": 93840
+    "static": 93841
   },
   {
     "slug": "reactions",
     "name": "Reactions",
-    "count": 23652,
+    "count": 23655,
     "animated": 3595,
-    "static": 20057
+    "static": 20060
   },
   {
     "slug": "animals",
     "name": "Animals",
-    "count": 12807,
+    "count": 12808,
     "animated": 2870,
-    "static": 9937
+    "static": 9938
   },
   {
     "slug": "gaming",
     "name": "Gaming",
-    "count": 9526,
+    "count": 9591,
     "animated": 546,
-    "static": 8980
+    "static": 9045
   },
   {
     "slug": "meme",
@@ -51,9 +51,9 @@
   {
     "slug": "activities",
     "name": "Activities",
-    "count": 4335,
+    "count": 4337,
     "animated": 1675,
-    "static": 2660
+    "static": 2662
   },
   {
     "slug": "brands",
@@ -65,23 +65,23 @@
   {
     "slug": "nature",
     "name": "Nature",
-    "count": 3804,
+    "count": 3805,
     "animated": 973,
-    "static": 2831
+    "static": 2832
   },
   {
     "slug": "symbols",
     "name": "Symbols",
-    "count": 2329,
+    "count": 2330,
     "animated": 304,
-    "static": 2025
+    "static": 2026
   },
   {
     "slug": "objects",
     "name": "Objects",
-    "count": 2059,
+    "count": 2060,
     "animated": 469,
-    "static": 1590
+    "static": 1591
   },
   {
     "slug": "food-drink",
