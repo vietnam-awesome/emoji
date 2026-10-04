@@ -2,23 +2,23 @@
   {
     "slug": "other",
     "name": "Other",
-    "count": 131384,
-    "animated": 37544,
-    "static": 93840
+    "count": 131441,
+    "animated": 37557,
+    "static": 93884
   },
   {
     "slug": "reactions",
     "name": "Reactions",
-    "count": 23652,
+    "count": 23663,
     "animated": 3595,
-    "static": 20057
+    "static": 20068
   },
   {
     "slug": "animals",
     "name": "Animals",
-    "count": 12807,
+    "count": 12808,
     "animated": 2870,
-    "static": 9937
+    "static": 9938
   },
   {
     "slug": "gaming",
@@ -44,9 +44,9 @@
   {
     "slug": "people",
     "name": "People",
-    "count": 4353,
+    "count": 4354,
     "animated": 1075,
-    "static": 3278
+    "static": 3279
   },
   {
     "slug": "activities",
@@ -58,9 +58,9 @@
   {
     "slug": "brands",
     "name": "Brands",
-    "count": 3860,
+    "count": 3861,
     "animated": 102,
-    "static": 3758
+    "static": 3759
   },
   {
     "slug": "nature",
@@ -79,9 +79,9 @@
   {
     "slug": "objects",
     "name": "Objects",
-    "count": 2059,
+    "count": 2062,
     "animated": 469,
-    "static": 1590
+    "static": 1593
   },
   {
     "slug": "food-drink",
@@ -100,8 +100,8 @@
   {
     "slug": "travel-places",
     "name": "Travel & Places",
-    "count": 525,
-    "animated": 311,
+    "count": 526,
+    "animated": 312,
     "static": 214
   }
 ]

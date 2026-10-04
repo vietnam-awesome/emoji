@@ -2,20 +2,20 @@
   "slackmojis": {
     "mode": "recent",
     "endpoint": "https://slackmojis.com/emojis.json",
-    "catalogPages": 211,
-    "discovered": 105148,
-    "sensitiveFilteredThisRun": 341,
-    "safeCandidates": 104807,
-    "missingBeforeRun": 379,
-    "attemptedThisRun": 379,
-    "importedThisRun": 148,
-    "failedThisRun": 231,
-    "lastRunAt": "2026-09-21T23:21:57.152Z"
+    "catalogPages": 212,
+    "discovered": 105512,
+    "sensitiveFilteredThisRun": 342,
+    "safeCandidates": 105170,
+    "missingBeforeRun": 594,
+    "attemptedThisRun": 75,
+    "importedThisRun": 75,
+    "failedThisRun": 0,
+    "lastRunAt": "2026-10-04T07:37:15.006Z"
   },
   "discadia": {
     "cursor": 0,
     "discovered": 1,
-    "lastRunAt": "2026-09-21T23:22:09.868Z",
+    "lastRunAt": "2026-10-04T07:37:29.906Z",
     "sensitiveFilteredThisRun": 0
   },
   "emojigg-pepe": {
