@@ -2,100 +2,100 @@
   {
     "slug": "other",
     "name": "Other",
-    "count": 131384,
-    "animated": 37544,
-    "static": 93840
+    "count": 131774,
+    "animated": 37650,
+    "static": 94124
   },
   {
     "slug": "reactions",
     "name": "Reactions",
-    "count": 23652,
-    "animated": 3595,
-    "static": 20057
+    "count": 23977,
+    "animated": 3638,
+    "static": 20339
   },
   {
     "slug": "animals",
     "name": "Animals",
-    "count": 12807,
-    "animated": 2870,
-    "static": 9937
+    "count": 12888,
+    "animated": 2881,
+    "static": 10007
   },
   {
     "slug": "gaming",
     "name": "Gaming",
-    "count": 9526,
-    "animated": 546,
-    "static": 8980
+    "count": 9601,
+    "animated": 547,
+    "static": 9054
   },
   {
     "slug": "meme",
     "name": "Meme",
-    "count": 7774,
-    "animated": 545,
-    "static": 7229
+    "count": 4853,
+    "animated": 216,
+    "static": 4637
   },
   {
     "slug": "entertainment",
     "name": "Entertainment",
-    "count": 4395,
-    "animated": 388,
-    "static": 4007
+    "count": 4545,
+    "animated": 401,
+    "static": 4144
   },
   {
     "slug": "people",
     "name": "People",
-    "count": 4353,
-    "animated": 1075,
-    "static": 3278
+    "count": 4433,
+    "animated": 1076,
+    "static": 3357
   },
   {
     "slug": "activities",
     "name": "Activities",
-    "count": 4335,
-    "animated": 1675,
+    "count": 4339,
+    "animated": 1679,
     "static": 2660
   },
   {
     "slug": "brands",
     "name": "Brands",
-    "count": 3860,
-    "animated": 102,
-    "static": 3758
+    "count": 3935,
+    "animated": 107,
+    "static": 3828
   },
   {
     "slug": "nature",
     "name": "Nature",
-    "count": 3804,
-    "animated": 973,
-    "static": 2831
+    "count": 3809,
+    "animated": 974,
+    "static": 2835
   },
   {
     "slug": "symbols",
     "name": "Symbols",
-    "count": 2329,
-    "animated": 304,
-    "static": 2025
+    "count": 2407,
+    "animated": 305,
+    "static": 2102
   },
   {
     "slug": "objects",
     "name": "Objects",
-    "count": 2059,
-    "animated": 469,
-    "static": 1590
+    "count": 2141,
+    "animated": 473,
+    "static": 1668
   },
   {
     "slug": "food-drink",
     "name": "Food & Drink",
-    "count": 1927,
+    "count": 1930,
     "animated": 964,
-    "static": 963
+    "static": 966
   },
   {
     "slug": "flags",
     "name": "Flags",
-    "count": 1276,
-    "animated": 142,
-    "static": 1134
+    "count": 1351,
+    "animated": 143,
+    "static": 1208
   },
   {
     "slug": "travel-places",
