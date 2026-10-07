@@ -15,7 +15,7 @@ function normalizeBase(value) {
 export default defineConfig({
   site: previewSite || (isGitHubActions ? 'https://emoji.eplus.dev' : 'http://localhost:4321'),
   base: normalizeBase(previewBase),
-  trailingSlash: previewBase ? 'always' : 'never',
+  trailingSlash: 'always',
   output: 'static',
   integrations: [react()],
   vite: {

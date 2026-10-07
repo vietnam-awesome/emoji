@@ -53,3 +53,17 @@ test('head includes keywords, publisher, Open Graph and Twitter cards', async ()
   const ogImage = await readFile(new URL('../public/og-default.png', import.meta.url));
   assert.deepEqual(pngDimensions(ogImage), { width: 1731, height: 909 });
 });
+
+
+test('canonical URLs match GitHub Pages trailing-slash routes', async () => {
+  const astroConfig = await readFile(new URL('../astro.config.mjs', import.meta.url), 'utf8');
+  const emojiSitemap = await readFile(new URL('../src/pages/sitemaps/emoji-[page].xml.js', import.meta.url), 'utf8');
+  const staticSitemap = await readFile(new URL('../src/pages/sitemap-static.xml.js', import.meta.url), 'utf8');
+
+  assert.ok(astroConfig.includes("trailingSlash: 'always'"));
+  assert.ok(layout.includes("const canonicalPath = Astro.url.pathname === '/'"));
+  assert.ok(layout.includes("Astro.url.pathname.replace(/\\/+$/, '')"));
+  assert.ok(emojiSitemap.includes("/emoji/\${encodeURIComponent(String(emoji.slug))}/"));
+  assert.ok(staticSitemap.includes("\${SITE}/emojis/"));
+  assert.ok(staticSitemap.includes("\${SITE}/categories/\${category.slug}/"));
+});

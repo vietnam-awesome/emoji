@@ -68,7 +68,10 @@ const faviconPngUrl = withBase('/favicon-48x48.png', base);
 const appleTouchIconUrl = withBase('/apple-touch-icon.png', base);
 const manifestUrl = withBase('/site.webmanifest', base);
 const defaultSocialImageUrl = withBase('/og-default.png', base);
-const canonical = new URL(Astro.url.pathname, origin);
+const canonicalPath = Astro.url.pathname === '/'
+  ? '/'
+  : `${Astro.url.pathname.replace(/\/+$/, '')}/`;
+const canonical = new URL(canonicalPath, origin);
 const absoluteSocialImageUrl = new URL(socialImage || defaultSocialImageUrl, origin).toString();
 const keywordsText = Array.isArray(keywords) ? keywords.join(', ') : String(keywords || '');
 const pathname = Astro.url.pathname;

@@ -23,7 +23,7 @@ function urlEntry(emoji) {
   const lastmod = dateOnly(emoji.syncedAt || emoji.addedAt);
   return [
     '  <url>',
-    `    <loc>${escapeXml(`${SITE}/emoji/${encodeURIComponent(String(emoji.slug))}`)}</loc>`,
+    `    <loc>${escapeXml(`${SITE}/emoji/${encodeURIComponent(String(emoji.slug))}/`)}</loc>`,
     lastmod ? `    <lastmod>${lastmod}</lastmod>` : '',
     '    <changefreq>monthly</changefreq>',
     '    <priority>0.7</priority>',
