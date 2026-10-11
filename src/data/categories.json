@@ -2,23 +2,23 @@
   {
     "slug": "other",
     "name": "Other",
-    "count": 131384,
-    "animated": 37544,
-    "static": 93840
+    "count": 131444,
+    "animated": 37575,
+    "static": 93869
   },
   {
     "slug": "reactions",
     "name": "Reactions",
-    "count": 23652,
-    "animated": 3595,
-    "static": 20057
+    "count": 23654,
+    "animated": 3596,
+    "static": 20058
   },
   {
     "slug": "animals",
     "name": "Animals",
-    "count": 12807,
-    "animated": 2870,
-    "static": 9937
+    "count": 12813,
+    "animated": 2872,
+    "static": 9941
   },
   {
     "slug": "gaming",
@@ -37,22 +37,22 @@
   {
     "slug": "entertainment",
     "name": "Entertainment",
-    "count": 4395,
-    "animated": 388,
+    "count": 4396,
+    "animated": 389,
     "static": 4007
   },
   {
     "slug": "people",
     "name": "People",
-    "count": 4353,
-    "animated": 1075,
+    "count": 4354,
+    "animated": 1076,
     "static": 3278
   },
   {
     "slug": "activities",
     "name": "Activities",
-    "count": 4335,
-    "animated": 1675,
+    "count": 4336,
+    "animated": 1676,
     "static": 2660
   },
   {
@@ -86,9 +86,9 @@
   {
     "slug": "food-drink",
     "name": "Food & Drink",
-    "count": 1927,
-    "animated": 964,
-    "static": 963
+    "count": 1930,
+    "animated": 966,
+    "static": 964
   },
   {
     "slug": "flags",
@@ -100,8 +100,8 @@
   {
     "slug": "travel-places",
     "name": "Travel & Places",
-    "count": 525,
+    "count": 526,
     "animated": 311,
-    "static": 214
+    "static": 215
   }
 ]
