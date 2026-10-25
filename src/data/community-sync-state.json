@@ -310,7 +310,7 @@
         "nextBatch": 26,
         "complete": false,
         "adultFiltered": 0,
-        "lastRunAt": "2026-09-27T05:32:42.821Z"
+        "lastRunAt": "2026-10-25T05:04:26.872Z"
       },
       "animated": {
         "name": "Animated",
@@ -322,7 +322,7 @@
         "nextBatch": 26,
         "complete": false,
         "adultFiltered": 15,
-        "lastRunAt": "2026-09-27T05:33:04.357Z"
+        "lastRunAt": "2026-10-25T05:04:46.694Z"
       },
       "anime": {
         "name": "Anime",
@@ -334,7 +334,7 @@
         "nextBatch": 26,
         "complete": false,
         "adultFiltered": 5,
-        "lastRunAt": "2026-09-27T05:33:22.876Z"
+        "lastRunAt": "2026-10-25T05:05:03.494Z"
       },
       "blobs": {
         "name": "Blobs",
@@ -346,7 +346,7 @@
         "nextBatch": 26,
         "complete": false,
         "adultFiltered": 1,
-        "lastRunAt": "2026-09-27T05:33:43.580Z"
+        "lastRunAt": "2026-10-25T05:05:22.709Z"
       },
       "blue": {
         "name": "Blue",
@@ -358,7 +358,7 @@
         "nextBatch": 26,
         "complete": false,
         "adultFiltered": 1,
-        "lastRunAt": "2026-09-27T05:34:04.019Z"
+        "lastRunAt": "2026-10-25T05:05:41.523Z"
       },
       "blurple": {
         "name": "Blurple",
@@ -370,7 +370,7 @@
         "nextBatch": 26,
         "complete": false,
         "adultFiltered": 0,
-        "lastRunAt": "2026-09-27T05:34:21.798Z"
+        "lastRunAt": "2026-10-25T05:05:57.700Z"
       },
       "bunny": {
         "name": "Bunny",
@@ -382,7 +382,7 @@
         "nextBatch": 26,
         "complete": false,
         "adultFiltered": 4,
-        "lastRunAt": "2026-09-27T05:34:44.898Z"
+        "lastRunAt": "2026-10-25T05:06:19.444Z"
       },
       "cat": {
         "name": "Cat",
@@ -394,7 +394,7 @@
         "nextBatch": 26,
         "complete": false,
         "adultFiltered": 6,
-        "lastRunAt": "2026-09-27T05:35:03.334Z"
+        "lastRunAt": "2026-10-25T05:06:36.157Z"
       },
       "celebrity": {
         "name": "Celebrity",
@@ -406,7 +406,7 @@
         "nextBatch": 26,
         "complete": false,
         "adultFiltered": 0,
-        "lastRunAt": "2026-09-27T05:35:21.368Z"
+        "lastRunAt": "2026-10-25T05:06:52.640Z"
       },
       "crying": {
         "name": "Crying",
@@ -418,7 +418,7 @@
         "nextBatch": 26,
         "complete": false,
         "adultFiltered": 1,
-        "lastRunAt": "2026-09-27T05:35:42.131Z"
+        "lastRunAt": "2026-10-25T05:07:12.006Z"
       },
       "crypto": {
         "name": "Crypto",
@@ -430,7 +430,7 @@
         "nextBatch": null,
         "complete": true,
         "adultFiltered": 0,
-        "lastRunAt": "2026-09-27T05:35:43.166Z"
+        "lastRunAt": "2026-10-25T05:07:12.938Z"
       },
       "cute": {
         "name": "Cute",
@@ -442,7 +442,7 @@
         "nextBatch": 26,
         "complete": false,
         "adultFiltered": 2,
-        "lastRunAt": "2026-09-27T05:36:01.662Z"
+        "lastRunAt": "2026-10-25T05:07:29.717Z"
       },
       "dancing": {
         "name": "Dancing",
@@ -454,7 +454,7 @@
         "nextBatch": 26,
         "complete": false,
         "adultFiltered": 1,
-        "lastRunAt": "2026-09-27T05:36:41.626Z"
+        "lastRunAt": "2026-10-25T05:08:08.793Z"
       },
       "dog": {
         "name": "Dog",
@@ -466,7 +466,7 @@
         "nextBatch": 26,
         "complete": false,
         "adultFiltered": 4,
-        "lastRunAt": "2026-09-27T05:37:04.887Z"
+        "lastRunAt": "2026-10-25T05:08:30.716Z"
       },
       "fire": {
         "name": "Fire",
@@ -478,7 +478,7 @@
         "nextBatch": 26,
         "complete": false,
         "adultFiltered": 12,
-        "lastRunAt": "2026-09-27T05:37:26.179Z"
+        "lastRunAt": "2026-10-25T05:08:50.187Z"
       },
       "furry": {
         "name": "Furry",
@@ -490,7 +490,7 @@
         "nextBatch": 26,
         "complete": false,
         "adultFiltered": 7,
-        "lastRunAt": "2026-09-27T05:37:45.849Z"
+        "lastRunAt": "2026-10-25T05:09:08.253Z"
       },
       "gaming": {
         "name": "Gaming",
@@ -502,19 +502,19 @@
         "nextBatch": 26,
         "complete": false,
         "adultFiltered": 2,
-        "lastRunAt": "2026-09-27T05:38:04.629Z"
+        "lastRunAt": "2026-10-25T05:09:25.514Z"
       },
       "happy": {
         "name": "Happy",
         "url": "https://discords.com/emoji-list/tag/Happy",
-        "discovered": 489,
+        "discovered": 495,
         "startBatch": 1,
         "batchesRequested": 25,
         "lastBatchReached": 25,
         "nextBatch": 26,
         "complete": false,
-        "adultFiltered": 11,
-        "lastRunAt": "2026-09-27T05:38:25.585Z"
+        "adultFiltered": 5,
+        "lastRunAt": "2026-10-25T05:09:44.993Z"
       },
       "head": {
         "name": "Head",
@@ -526,7 +526,7 @@
         "nextBatch": 26,
         "complete": false,
         "adultFiltered": 8,
-        "lastRunAt": "2026-09-27T05:38:51.683Z"
+        "lastRunAt": "2026-10-25T05:10:09.126Z"
       },
       "heart": {
         "name": "Heart",
@@ -538,7 +538,7 @@
         "nextBatch": 26,
         "complete": false,
         "adultFiltered": 7,
-        "lastRunAt": "2026-09-27T05:39:10.341Z"
+        "lastRunAt": "2026-10-25T05:10:25.949Z"
       },
       "laughing": {
         "name": "Laughing",
@@ -550,7 +550,7 @@
         "nextBatch": 26,
         "complete": false,
         "adultFiltered": 9,
-        "lastRunAt": "2026-09-27T05:39:31.364Z"
+        "lastRunAt": "2026-10-25T05:10:45.125Z"
       },
       "logo": {
         "name": "Logo",
@@ -562,7 +562,7 @@
         "nextBatch": 26,
         "complete": false,
         "adultFiltered": 0,
-        "lastRunAt": "2026-09-27T05:39:50.600Z"
+        "lastRunAt": "2026-10-25T05:11:02.764Z"
       },
       "memes": {
         "name": "Memes",
@@ -574,7 +574,7 @@
         "nextBatch": 26,
         "complete": false,
         "adultFiltered": 10,
-        "lastRunAt": "2026-09-27T05:40:09.062Z"
+        "lastRunAt": "2026-10-25T05:11:19.624Z"
       },
       "minecraft": {
         "name": "Minecraft",
@@ -586,7 +586,7 @@
         "nextBatch": 26,
         "complete": false,
         "adultFiltered": 0,
-        "lastRunAt": "2026-09-27T05:40:53.599Z"
+        "lastRunAt": "2026-10-25T05:12:04.966Z"
       },
       "neko": {
         "name": "Neko",
@@ -598,7 +598,7 @@
         "nextBatch": 26,
         "complete": false,
         "adultFiltered": 5,
-        "lastRunAt": "2026-09-27T05:41:14.935Z"
+        "lastRunAt": "2026-10-25T05:12:25.119Z"
       },
       "orange": {
         "name": "Orange",
@@ -610,7 +610,7 @@
         "nextBatch": 26,
         "complete": false,
         "adultFiltered": 0,
-        "lastRunAt": "2026-09-27T05:41:33.610Z"
+        "lastRunAt": "2026-10-25T05:12:42.119Z"
       },
       "panda": {
         "name": "Panda",
@@ -622,7 +622,7 @@
         "nextBatch": 26,
         "complete": false,
         "adultFiltered": 0,
-        "lastRunAt": "2026-09-27T05:41:53.473Z"
+        "lastRunAt": "2026-10-25T05:13:00.305Z"
       },
       "party": {
         "name": "Party",
@@ -634,19 +634,19 @@
         "nextBatch": 26,
         "complete": false,
         "adultFiltered": 0,
-        "lastRunAt": "2026-09-27T05:42:12.508Z"
+        "lastRunAt": "2026-10-25T05:13:17.535Z"
       },
       "pepe": {
         "name": "Pepe",
         "url": "https://discords.com/emoji-list/tag/Pepe",
-        "discovered": 493,
+        "discovered": 492,
         "startBatch": 1,
         "batchesRequested": 25,
         "lastBatchReached": 25,
         "nextBatch": 26,
         "complete": false,
-        "adultFiltered": 7,
-        "lastRunAt": "2026-09-27T05:42:30.830Z"
+        "adultFiltered": 8,
+        "lastRunAt": "2026-10-25T05:13:34.358Z"
       },
       "pixel": {
         "name": "Pixel",
@@ -658,7 +658,7 @@
         "nextBatch": 26,
         "complete": false,
         "adultFiltered": 4,
-        "lastRunAt": "2026-09-27T05:42:48.804Z"
+        "lastRunAt": "2026-10-25T05:13:50.860Z"
       },
       "purple": {
         "name": "Purple",
@@ -670,7 +670,7 @@
         "nextBatch": 26,
         "complete": false,
         "adultFiltered": 3,
-        "lastRunAt": "2026-09-27T05:43:08.328Z"
+        "lastRunAt": "2026-10-25T05:14:08.699Z"
       },
       "red": {
         "name": "Red",
@@ -682,7 +682,7 @@
         "nextBatch": 26,
         "complete": false,
         "adultFiltered": 3,
-        "lastRunAt": "2026-09-27T05:43:27.530Z"
+        "lastRunAt": "2026-10-25T05:14:26.774Z"
       },
       "roblox": {
         "name": "Roblox",
@@ -694,7 +694,7 @@
         "nextBatch": 26,
         "complete": false,
         "adultFiltered": 0,
-        "lastRunAt": "2026-09-27T05:43:45.971Z"
+        "lastRunAt": "2026-10-25T05:14:43.675Z"
       },
       "role-icons": {
         "name": "Role Icons",
@@ -706,7 +706,7 @@
         "nextBatch": 26,
         "complete": false,
         "adultFiltered": 1,
-        "lastRunAt": "2026-09-27T05:44:03.858Z"
+        "lastRunAt": "2026-10-25T05:15:00.194Z"
       },
       "sad": {
         "name": "Sad",
@@ -718,7 +718,7 @@
         "nextBatch": 26,
         "complete": false,
         "adultFiltered": 2,
-        "lastRunAt": "2026-09-27T05:44:25.788Z"
+        "lastRunAt": "2026-10-25T05:15:20.737Z"
       },
       "skull": {
         "name": "Skull",
@@ -730,7 +730,7 @@
         "nextBatch": 26,
         "complete": false,
         "adultFiltered": 0,
-        "lastRunAt": "2026-09-27T05:44:44.350Z"
+        "lastRunAt": "2026-10-25T05:15:37.788Z"
       },
       "sparkle": {
         "name": "Sparkle",
@@ -742,7 +742,7 @@
         "nextBatch": 26,
         "complete": false,
         "adultFiltered": 7,
-        "lastRunAt": "2026-09-27T05:45:03.570Z"
+        "lastRunAt": "2026-10-25T05:15:55.341Z"
       },
       "star": {
         "name": "Star",
@@ -754,7 +754,7 @@
         "nextBatch": 26,
         "complete": false,
         "adultFiltered": 0,
-        "lastRunAt": "2026-09-27T05:45:24.977Z"
+        "lastRunAt": "2026-10-25T05:16:15.222Z"
       },
       "thinking": {
         "name": "Thinking",
@@ -766,7 +766,7 @@
         "nextBatch": 26,
         "complete": false,
         "adultFiltered": 1,
-        "lastRunAt": "2026-09-27T05:45:47.660Z"
+        "lastRunAt": "2026-10-25T05:16:36.503Z"
       },
       "utility": {
         "name": "Utility",
@@ -778,7 +778,7 @@
         "nextBatch": 26,
         "complete": false,
         "adultFiltered": 4,
-        "lastRunAt": "2026-09-27T05:46:05.372Z"
+        "lastRunAt": "2026-10-25T05:16:52.587Z"
       },
       "valorant": {
         "name": "Valorant",
@@ -790,7 +790,7 @@
         "nextBatch": 26,
         "complete": false,
         "adultFiltered": 2,
-        "lastRunAt": "2026-09-27T05:46:23.941Z"
+        "lastRunAt": "2026-10-25T05:17:09.762Z"
       },
       "verified": {
         "name": "Verified",
@@ -802,17 +802,17 @@
         "nextBatch": 26,
         "complete": false,
         "adultFiltered": 0,
-        "lastRunAt": "2026-09-27T05:46:43.116Z"
+        "lastRunAt": "2026-10-25T05:17:27.166Z"
       }
     },
     "discovered": 17210,
-    "adultFilteredThisRun": 145,
+    "adultFilteredThisRun": 140,
     "purgedAdultRecords": 0,
     "purgedAdultAssets": 0,
-    "missingBeforeRun": 178,
+    "missingBeforeRun": 231,
     "attemptedThisRun": 75,
     "importedThisRun": 75,
     "failedThisRun": 0,
-    "lastRunAt": "2026-09-27T05:46:44.260Z"
+    "lastRunAt": "2026-10-25T05:17:28.406Z"
   }
 }
