@@ -1,29 +1,12 @@
-name: Import Community Emoji
+name: Import Discadia Emoji
 
 on:
   workflow_dispatch:
     inputs:
-      source:
-        description: Community source to import
-        required: true
-        default: all
-        type: choice
-        options: [all, slackmojis, discadia]
       limit:
-        description: Maximum emoji to import per selected source. Slackmojis accepts 0 for all missing records.
+        description: Maximum Discadia emoji to import
         required: true
         default: '200'
-        type: string
-      slackmojis_mode:
-        description: Slackmojis catalog mode
-        required: true
-        default: recent
-        type: choice
-        options: [recent, all]
-      slackmojis_concurrency:
-        description: Parallel Slackmojis image downloads (1-12)
-        required: true
-        default: '6'
         type: string
   schedule:
     - cron: '30 0 * * 0'
@@ -35,7 +18,7 @@ permissions:
 env:
   APP_BRANCH: main
   DATA_BRANCH: data
-  IMPORT_BRANCH_PREFIX: import/community
+  IMPORT_BRANCH_PREFIX: import/discadia
 
 concurrency:
   group: emoji-data-write
@@ -46,10 +29,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 120
     env:
-      IMPORT_SOURCE: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.source || 'all' }}
       IMPORT_LIMIT: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.limit || '75' }}
-      SLACKMOJIS_MODE: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.slackmojis_mode || 'recent' }}
-      SLACKMOJIS_CONCURRENCY: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.slackmojis_concurrency || '6' }}
 
     steps:
       - name: Checkout importer runtime from main (read-only)
@@ -76,7 +56,6 @@ jobs:
           filter: blob:none
           sparse-checkout: |
             /src/data/
-            /public/emojis/community/slackmojis/
             /public/emojis/community/discadia/
           sparse-checkout-cone-mode: false
 
@@ -113,7 +92,6 @@ jobs:
         run: npm install --ignore-scripts --no-audit --no-fund
 
       - name: Install Chromium for Discadia
-        if: env.IMPORT_SOURCE == 'all' || env.IMPORT_SOURCE == 'discadia'
         working-directory: app
         run: npx playwright install --with-deps chromium
 
@@ -121,17 +99,9 @@ jobs:
         working-directory: data
         run: node ../app/scripts/emoji-store.mjs hydrate
 
-      - name: Import selected community sources
+      - name: Import Discadia emojis
         working-directory: data
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [ "$IMPORT_SOURCE" = "all" ] || [ "$IMPORT_SOURCE" = "slackmojis" ]; then
-            node ../app/scripts/import-slackmojis.mjs --mode="$SLACKMOJIS_MODE" --limit="$IMPORT_LIMIT" --concurrency="$SLACKMOJIS_CONCURRENCY"
-          fi
-          if [ "$IMPORT_SOURCE" = "all" ] || [ "$IMPORT_SOURCE" = "discadia" ]; then
-            node ../app/scripts/import-community.mjs --source=discadia --limit="$IMPORT_LIMIT" --concurrency=4
-          fi
+        run: node ../app/scripts/import-community.mjs --source=discadia --limit="$IMPORT_LIMIT" --concurrency=4
 
       - name: Shard import checkpoint
         working-directory: data
@@ -147,13 +117,13 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A src/data public/emojis/community/slackmojis public/emojis/community/discadia
+          git add -A src/data public/emojis/community/discadia
           if git diff --cached --quiet; then
-            echo "No community emoji updates found."
+            echo "No Discadia emoji updates found."
             echo "created=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          git commit -m "chore(data): checkpoint community emoji import"
+          git commit -m "chore(data): checkpoint Discadia emoji import"
           git push --set-upstream origin "HEAD:$IMPORT_BRANCH"
           echo "created=true" >> "$GITHUB_OUTPUT"
           echo "Checkpoint pushed before verification."
@@ -163,11 +133,11 @@ jobs:
         working-directory: data
         run: node ../app/scripts/emoji-store.mjs hydrate
 
-      - name: Verify community metadata and checked-out assets
+      - name: Verify Discadia metadata and checked-out assets
         if: steps.checkpoint.outputs.created == 'true'
         working-directory: data
         env:
-          VERIFY_DATA_ASSET_PREFIXES: '/emojis/community/slackmojis/,/emojis/community/discadia/'
+          VERIFY_DATA_ASSET_PREFIXES: '/emojis/community/discadia/'
         run: node ../app/scripts/verify-data.mjs
 
       - name: Shard verified catalog
@@ -185,9 +155,9 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A src/data public/emojis/community/slackmojis public/emojis/community/discadia
+          git add -A src/data public/emojis/community/discadia
           if ! git diff --cached --quiet; then
-            git commit -m "chore(data): finalize verified community emoji import"
+            git commit -m "chore(data): finalize verified Discadia emoji import"
           fi
           git push origin "HEAD:$IMPORT_BRANCH"
 
@@ -212,13 +182,13 @@ jobs:
           if [ -n "$existing" ]; then
             echo "Review PR already exists: $existing"
           else
-            printf -v pr_body 'Verified community emoji import from Actions run `%s` on branch `%s`.\n\nThe import checkpoint was pushed before scoped asset verification. A failed PR operation does not invalidate or delete the imported data.' "$GITHUB_RUN_ID" "$IMPORT_BRANCH"
+            printf -v pr_body 'Verified Discadia emoji import from Actions run `%s` on branch `%s`.\n\nThe import checkpoint was pushed before scoped asset verification. A failed PR operation does not invalidate or delete the imported data.' "$GITHUB_RUN_ID" "$IMPORT_BRANCH"
 
             if gh pr create \
               --repo "$GITHUB_REPOSITORY" \
               --base "$DATA_BRANCH" \
               --head "$IMPORT_BRANCH" \
-              --title "Import Community Emoji #${GITHUB_RUN_NUMBER}" \
+              --title "Import Discadia Emoji #${GITHUB_RUN_NUMBER}" \
               --body "$pr_body"; then
               echo "Review PR created."
             else
@@ -236,7 +206,7 @@ jobs:
         shell: bash
         run: |
           {
-            echo "### Community import recovery"
+            echo "### Discadia import recovery"
             echo "- Import branch: \`${IMPORT_BRANCH:-not-created}\`"
             echo "- Imported data is pushed before pull-request creation."
             echo "- Pull-request creation is best-effort and cannot fail an already verified import."
