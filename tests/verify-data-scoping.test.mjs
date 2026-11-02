@@ -72,7 +72,8 @@ test('all sparse data workflows declare an explicit asset-verification mode', as
   const expectations = new Map([
     ['.github/workflows/ci.yml', "VERIFY_DATA_SKIP_ASSETS: '1'"],
     ['.github/workflows/import-emojigg.yml', "VERIFY_DATA_ASSET_PREFIXES: '/emojis/community/emojigg/'"],
-    ['.github/workflows/import-community.yml', "VERIFY_DATA_ASSET_PREFIXES: '/emojis/community/slackmojis/,/emojis/community/discadia/'"],
+    ['.github/workflows/import-community.yml', "VERIFY_DATA_ASSET_PREFIXES: '/emojis/community/discadia/'"],
+    ['.github/workflows/import-slackmojis.yml', "VERIFY_DATA_ASSET_PREFIXES: '/emojis/community/slackmojis/'"],
     ['.github/workflows/import-discords.yml', "VERIFY_DATA_ASSET_PREFIXES: '/emojis/community/discords/'"],
     ['.github/workflows/import-eplus.yml', "VERIFY_DATA_ASSET_PREFIXES: '/emojis/eplus/'"],
     ['.github/workflows/sync-emojis.yml', "VERIFY_DATA_ASSET_PREFIXES: '/emojis/openmoji/,/emojis/twemoji/,/emojis/noto/'"],
