@@ -6,7 +6,8 @@ const read = (path) => readFile(new URL(`../${path}`, import.meta.url), 'utf8');
 
 for (const [label, path, verifyStep, prefix] of [
   ['Emoji.gg', '.github/workflows/import-emojigg.yml', 'Verify Emoji.gg metadata and checked-out assets', '/emojis/community/emojigg/'],
-  ['Community', '.github/workflows/import-community.yml', 'Verify community metadata and checked-out assets', '/emojis/community/slackmojis/,/emojis/community/discadia/'],
+  ['Discadia', '.github/workflows/import-community.yml', 'Verify Discadia metadata and checked-out assets', '/emojis/community/discadia/'],
+  ['Slackmojis', '.github/workflows/import-slackmojis.yml', 'Verify Slackmojis metadata and checked-out assets', '/emojis/community/slackmojis/'],
 ]) {
   test(`${label} import checkpoints before scoped verification`, async () => {
     const workflow = await read(path);
@@ -48,4 +49,21 @@ test('licensed sync normalizes new taxonomy before verifying it', async () => {
   assert.ok(verify > normalize, 'verification must follow taxonomy normalization');
   assert.ok(shard > verify, 'the existing post-verification shard step must remain');
   assert.ok(workflow.slice(normalize, verify).includes('node ../app/scripts/emoji-store.mjs hydrate'));
+});
+
+test('Slackmojis runs independently without Chromium or Discadia import', async () => {
+  const slack = await read('.github/workflows/import-slackmojis.yml');
+  const discadia = await read('.github/workflows/import-community.yml');
+  assert.match(slack, /name: Import Slackmojis Emoji/);
+  assert.match(slack, /run: node \.\.\/app\/scripts\/import-slackmojis\.mjs/);
+  assert.match(slack, /--mode="\$SLACKMOJIS_MODE"/);
+  assert.match(slack, /--limit="\$IMPORT_LIMIT"/);
+  assert.match(slack, /--concurrency="\$SLACKMOJIS_CONCURRENCY"/);
+  assert.doesNotMatch(slack, /playwright install|import-community\.mjs|public\/emojis\/community\/discadia/);
+  assert.match(slack, /--draft; then/);
+  assert.match(slack, /group: emoji-data-write/);
+  assert.match(discadia, /run: node \.\.\/app\/scripts\/import-community\.mjs --source=discadia/);
+  assert.doesNotMatch(discadia, /import-slackmojis\.mjs|public\/emojis\/community\/slackmojis/);
+  assert.match(discadia, /cron: '30 0 \* \* 0'/);
+  assert.match(slack, /cron: '30 12 \* \* 0'/);
 });

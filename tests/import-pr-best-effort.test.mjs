@@ -6,6 +6,7 @@ const read = (path) => readFile(new URL(`../${path}`, import.meta.url), 'utf8');
 
 const workflows = [
   '.github/workflows/import-community.yml',
+  '.github/workflows/import-slackmojis.yml',
   '.github/workflows/import-discords.yml',
   '.github/workflows/import-emojigg.yml',
   '.github/workflows/import-eplus.yml',
