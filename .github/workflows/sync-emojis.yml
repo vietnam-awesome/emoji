@@ -108,6 +108,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: node ../app/scripts/sync.mjs --source="$SYNC_SOURCE" --limit="$SYNC_LIMIT"
 
+      - name: Normalize synced emoji taxonomy
+        working-directory: data
+        run: node ../app/scripts/emoji-store.mjs hydrate
+
       - name: Verify licensed metadata and checked-out assets
         working-directory: data
         env:
