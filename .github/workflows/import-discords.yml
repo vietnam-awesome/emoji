@@ -59,7 +59,7 @@ concurrency:
 jobs:
   launch:
     if: ${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs._worker != true) }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     env:
       IMPORT_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || 'all' }}
@@ -124,7 +124,7 @@ jobs:
 
   import:
     if: ${{ github.event_name == 'workflow_dispatch' && inputs._worker == true }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 240
     env:
       IMPORT_TAG: ${{ inputs.tag }}

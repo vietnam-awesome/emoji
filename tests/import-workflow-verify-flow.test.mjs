@@ -24,3 +24,28 @@ for (const [label, path, verifyStep, prefix] of [
     assert.doesNotMatch(workflow, /VERIFY_DATA_SKIP_ASSETS: '1'/);
   });
 }
+
+test('Chromium import jobs pin an Ubuntu version supported by Playwright 1.55', async () => {
+  for (const path of [
+    '.github/workflows/import-community.yml',
+    '.github/workflows/import-emojigg.yml',
+    '.github/workflows/import-discords.yml',
+  ]) {
+    const workflow = await read(path);
+    assert.match(workflow, /run: npx playwright install --with-deps chromium/);
+    assert.match(workflow, /runs-on: ubuntu-24\.04/);
+    assert.doesNotMatch(workflow, /runs-on: ubuntu-latest/, `${path} must not drift onto an unsupported runner`);
+  }
+});
+
+test('licensed sync normalizes new taxonomy before verifying it', async () => {
+  const workflow = await read('.github/workflows/sync-emojis.yml');
+  const sync = workflow.indexOf('name: Sync licensed emoji assets');
+  const normalize = workflow.indexOf('name: Normalize synced emoji taxonomy');
+  const verify = workflow.indexOf('name: Verify licensed metadata and checked-out assets');
+  const shard = workflow.indexOf('name: Shard emoji index for Git');
+  assert.ok(sync >= 0 && normalize > sync, 'sync must precede taxonomy normalization');
+  assert.ok(verify > normalize, 'verification must follow taxonomy normalization');
+  assert.ok(shard > verify, 'the existing post-verification shard step must remain');
+  assert.ok(workflow.slice(normalize, verify).includes('node ../app/scripts/emoji-store.mjs hydrate'));
+});
