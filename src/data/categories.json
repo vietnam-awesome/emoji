@@ -2,30 +2,30 @@
   {
     "slug": "other",
     "name": "Other",
-    "count": 131384,
-    "animated": 37544,
-    "static": 93840
+    "count": 131443,
+    "animated": 37565,
+    "static": 93878
   },
   {
     "slug": "reactions",
     "name": "Reactions",
-    "count": 23652,
-    "animated": 3595,
-    "static": 20057
+    "count": 23661,
+    "animated": 3596,
+    "static": 20065
   },
   {
     "slug": "animals",
     "name": "Animals",
-    "count": 12807,
-    "animated": 2870,
+    "count": 12809,
+    "animated": 2872,
     "static": 9937
   },
   {
     "slug": "gaming",
     "name": "Gaming",
-    "count": 9526,
+    "count": 9527,
     "animated": 546,
-    "static": 8980
+    "static": 8981
   },
   {
     "slug": "meme",
@@ -44,15 +44,15 @@
   {
     "slug": "people",
     "name": "People",
-    "count": 4353,
+    "count": 4354,
     "animated": 1075,
-    "static": 3278
+    "static": 3279
   },
   {
     "slug": "activities",
     "name": "Activities",
-    "count": 4335,
-    "animated": 1675,
+    "count": 4337,
+    "animated": 1677,
     "static": 2660
   },
   {
@@ -79,9 +79,9 @@
   {
     "slug": "objects",
     "name": "Objects",
-    "count": 2059,
+    "count": 2060,
     "animated": 469,
-    "static": 1590
+    "static": 1591
   },
   {
     "slug": "food-drink",

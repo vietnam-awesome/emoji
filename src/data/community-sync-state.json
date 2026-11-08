@@ -2,15 +2,15 @@
   "slackmojis": {
     "mode": "recent",
     "endpoint": "https://slackmojis.com/emojis.json",
-    "catalogPages": 211,
-    "discovered": 105148,
-    "sensitiveFilteredThisRun": 341,
-    "safeCandidates": 104807,
-    "missingBeforeRun": 379,
-    "attemptedThisRun": 379,
-    "importedThisRun": 148,
-    "failedThisRun": 231,
-    "lastRunAt": "2026-09-21T23:21:57.152Z"
+    "catalogPages": 213,
+    "discovered": 106359,
+    "sensitiveFilteredThisRun": 342,
+    "safeCandidates": 106017,
+    "missingBeforeRun": 1442,
+    "attemptedThisRun": 75,
+    "importedThisRun": 75,
+    "failedThisRun": 0,
+    "lastRunAt": "2026-11-08T18:01:24.709Z"
   },
   "discadia": {
     "cursor": 0,
