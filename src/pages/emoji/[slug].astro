@@ -3,9 +3,11 @@ import Layout from '../../layouts/Layout.astro';
 import EmojiDetail from '../../components/beui/EmojiDetail.astro';
 import emojis from '../../data/emojis.json';
 import { emojiCategorySlug } from '../../lib/category';
+import { createRelatedEmojiPicker } from '../../lib/relatedEmoji.mjs';
 import { withBase } from '../../lib/url';
 
 export function getStaticPaths() {
+  const relatedPicker = createRelatedEmojiPicker(emojis);
   const fastBuild = process.env.FAST_BUILD === '1';
   const requestedLimit = Number.parseInt(process.env.FAST_BUILD_DETAIL_LIMIT || '300', 10);
   let detailRecords = emojis;
@@ -35,7 +37,7 @@ export function getStaticPaths() {
 
   return detailRecords.map((emoji) => ({
     params: { slug: emoji.slug },
-    props: { emoji }
+    props: { emoji, related: relatedPicker(emoji) }
   }));
 }
 
@@ -45,7 +47,7 @@ const normalizeIdentity = (value) => String(value || '')
   .replace(/[\u0300-\u036f]/g, '')
   .replace(/[^a-z0-9]+/g, '');
 
-const { emoji } = Astro.props;
+const { emoji, related } = Astro.props;
 const base = import.meta.env.BASE_URL;
 const categoryName = emoji.category || String(emoji.group || '').replaceAll('-', ' ') || 'Other';
 const categoryUrl = withBase(`/categories/${emojiCategorySlug(emoji)}`, base);
@@ -72,5 +74,5 @@ const keywords = [
 ].filter(Boolean);
 ---
 <Layout title={title} description={description} keywords={keywords} breadcrumbs={breadcrumbs}>
-  <EmojiDetail emoji={emoji} />
+  <EmojiDetail emoji={emoji} related={related} />
 </Layout>
