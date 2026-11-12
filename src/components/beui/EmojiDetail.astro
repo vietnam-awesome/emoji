@@ -1,5 +1,4 @@
 ---
-import EmojiCard from '../EmojiCard.astro';
 import EmojiShareDialog from './EmojiShareDialog.astro';
 import { emojiAssetUrl } from '../../lib/emojiAsset';
 import { emojiCategorySlug } from '../../lib/category';
@@ -166,7 +165,12 @@ const tagTargetUrl = (tag) => {
         <a href={categoryUrl}>More in {category} <span>→</span></a>
       </div>
       <div class="detail-similar-grid">
-        {related.map((item) => <EmojiCard emoji={item} />)}
+        {related.map((item) => (
+          <a class="detail-related-item" href={withBase(`/emoji/${item.slug}`, base)}>
+            <img src={emojiAssetUrl(item, base)} alt="" loading="lazy" width="48" height="48" />
+            {item.name}
+          </a>
+        ))}
       </div>
     </section>
   )}
@@ -810,6 +814,33 @@ const tagTargetUrl = (tag) => {
 </script>
 
 <style>
+  .detail-related-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 7px;
+    min-width: 0;
+    padding: 10px 6px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--card);
+    color: var(--foreground);
+    font-size: 0.8rem;
+    text-align: center;
+    text-decoration: none;
+    overflow-wrap: anywhere;
+  }
+
+  .detail-related-item:hover {
+    border-color: var(--border-strong);
+  }
+
+  .detail-related-item img {
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
+  }
+
   .detail-variant-hex {
     align-self: end;
     font-size: 0.78rem;
