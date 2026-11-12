@@ -1,4 +1,5 @@
 import emojis from '../../data/emojis.json';
+import { emojiSitemapPriority } from '../../lib/sitemapEmoji.mjs';
 
 export const prerender = true;
 
@@ -14,21 +15,16 @@ function escapeXml(value) {
     .replaceAll("'", '&apos;');
 }
 
-function dateOnly(value) {
-  const match = String(value || '').match(/^\d{4}-\d{2}-\d{2}/);
-  return match?.[0] || '';
-}
-
 function urlEntry(emoji) {
-  const lastmod = dateOnly(emoji.syncedAt || emoji.addedAt);
+  // Intentionally no lastmod element: see emojiSitemapPriority in
+  // src/lib/sitemapEmoji.mjs — the catalog has no genuine page-update date.
   return [
     '  <url>',
     `    <loc>${escapeXml(`${SITE}/emoji/${encodeURIComponent(String(emoji.slug))}/`)}</loc>`,
-    lastmod ? `    <lastmod>${lastmod}</lastmod>` : '',
     '    <changefreq>monthly</changefreq>',
-    '    <priority>0.7</priority>',
+    `    <priority>${emojiSitemapPriority(emoji)}</priority>`,
     '  </url>'
-  ].filter(Boolean).join('\n');
+  ].join('\n');
 }
 
 export function getStaticPaths() {
