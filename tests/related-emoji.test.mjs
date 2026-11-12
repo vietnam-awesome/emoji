@@ -67,7 +67,13 @@ test('emoji detail renders a server-side related section fed from static paths',
   const detail = await readFile(new URL('../src/components/beui/EmojiDetail.astro', import.meta.url), 'utf8');
   const page = await readFile(new URL('../src/pages/emoji/[slug].astro', import.meta.url), 'utf8');
   assert.match(detail, /related-emoji-title/);
-  assert.match(detail, /<EmojiCard emoji=\{item\} \/>/);
+  // Compact server-rendered links only: the full EmojiCard markup costs
+  // ~3.2 KB per card (~39 KB per page), which pushed the full site past the
+  // GitHub Pages 10 GiB output limit. Keep this section slim.
+  assert.match(detail, /related\.map\(\(item\)/);
+  assert.match(detail, /href=\{withBase\(`\/emoji\/\$\{item\.slug\}`, base\)\}/);
+  assert.match(detail, /<img src=\{emojiAssetUrl\(item, base\)\} alt="" loading="lazy"/);
+  assert.doesNotMatch(detail, /<EmojiCard/);
   assert.match(page, /createRelatedEmojiPicker\(emojis\)/);
   assert.match(page, /related: relatedPicker\(emoji\)/);
 });
