@@ -282,6 +282,13 @@ jobs:
           fi
           git push origin "HEAD:$GITHUB_REF_NAME"
 
+      - name: Reconcile Discords import against latest data
+        if: ${{ steps.resume.outputs.skip_import == 'true' || steps.checkpoint.outputs.created == 'true' }}
+        working-directory: data
+        env:
+          IMPORT_BRANCH: ${{ github.ref_name }}
+        run: node ../app/scripts/reconcile-import-branch.mjs --source=discords --branch="$IMPORT_BRANCH"
+
       - name: Open review PR
         if: ${{ steps.resume.outputs.skip_import == 'true' || steps.checkpoint.outputs.created == 'true' }}
         env:
