@@ -2,51 +2,51 @@
   {
     "slug": "other",
     "name": "Other",
-    "count": 131777,
-    "animated": 37646,
-    "static": 94131
+    "count": 131831,
+    "animated": 37660,
+    "static": 94171
   },
   {
     "slug": "reactions",
     "name": "Reactions",
-    "count": 23960,
+    "count": 23939,
     "animated": 3679,
-    "static": 20281
+    "static": 20260
   },
   {
     "slug": "animals",
     "name": "Animals",
-    "count": 12894,
+    "count": 12892,
     "animated": 2882,
-    "static": 10012
+    "static": 10010
   },
   {
     "slug": "gaming",
     "name": "Gaming",
-    "count": 9602,
-    "animated": 606,
+    "count": 9601,
+    "animated": 605,
     "static": 8996
   },
   {
     "slug": "meme",
     "name": "Meme",
-    "count": 4853,
-    "animated": 229,
-    "static": 4624
+    "count": 7842,
+    "animated": 559,
+    "static": 7283
   },
   {
     "slug": "entertainment",
     "name": "Entertainment",
-    "count": 4545,
-    "animated": 401,
-    "static": 4144
+    "count": 4529,
+    "animated": 399,
+    "static": 4130
   },
   {
     "slug": "people",
     "name": "People",
     "count": 4434,
-    "animated": 1078,
-    "static": 3356
+    "animated": 1079,
+    "static": 3355
   },
   {
     "slug": "activities",
@@ -58,30 +58,30 @@
   {
     "slug": "brands",
     "name": "Brands",
-    "count": 3935,
+    "count": 3932,
     "animated": 107,
-    "static": 3828
+    "static": 3825
   },
   {
     "slug": "nature",
     "name": "Nature",
-    "count": 3809,
-    "animated": 976,
+    "count": 3811,
+    "animated": 978,
     "static": 2833
   },
   {
     "slug": "symbols",
     "name": "Symbols",
-    "count": 2406,
-    "animated": 307,
-    "static": 2099
+    "count": 2403,
+    "animated": 308,
+    "static": 2095
   },
   {
     "slug": "objects",
     "name": "Objects",
-    "count": 2141,
+    "count": 2139,
     "animated": 472,
-    "static": 1669
+    "static": 1667
   },
   {
     "slug": "food-drink",
@@ -93,9 +93,9 @@
   {
     "slug": "flags",
     "name": "Flags",
-    "count": 1351,
+    "count": 1349,
     "animated": 143,
-    "static": 1208
+    "static": 1206
   },
   {
     "slug": "travel-places",
