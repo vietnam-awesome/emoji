@@ -187,3 +187,9 @@ For upstream Unicode projects, prefer sources with an explicit redistribution li
 Repository code: MIT.
 
 Emoji artwork: upstream licenses and source-specific terms; see [NOTICE.md](NOTICE.md).
+
+## Import shard conflict avoidance
+
+`npm run emoji-store:shard` preserves the membership of existing `src/data/emojis/chunk-*.json` files and appends new records as immutable, source-specific `delta-<source>-<hash>.json` shards. The `index.json` manifest remains compatible with existing readers. Re-running without new data is idempotent; importing one source no longer shifts millions of unrelated JSON lines.
+
+An import PR must still reconcile against the current `data` HEAD before merging; never resolve conflicts by discarding one side of the emoji catalog.
