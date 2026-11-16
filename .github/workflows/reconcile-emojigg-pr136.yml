@@ -137,7 +137,7 @@ jobs:
           node ../app/scripts/emoji-store.mjs shard
 
           # One-shot workflow is absent in data's tree and must not enter data PR.
-          git add -A src/data public/emojis/community/emojigg/ .github/workflows/reconcile-emojigg-pr136.yml
+          git add -A src/data public/emojis/community/emojigg/
           if [ -z "$(git status --porcelain)" ]; then
             echo "Nothing to reconcile; refusing to publish empty repair." >&2
             exit 1
