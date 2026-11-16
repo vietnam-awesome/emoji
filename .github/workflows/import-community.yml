@@ -161,6 +161,13 @@ jobs:
           fi
           git push origin "HEAD:$IMPORT_BRANCH"
 
+      - name: Reconcile import against latest data
+        if: steps.checkpoint.outputs.created == 'true'
+        working-directory: data
+        env:
+          IMPORT_BRANCH: ${{ steps.review_branch.outputs.name }}
+        run: node ../app/scripts/reconcile-import-branch.mjs --source=discadia --branch="$IMPORT_BRANCH"
+
       - name: Open review PR
         if: ${{ steps.checkpoint.outputs.created == 'true' }}
         env:

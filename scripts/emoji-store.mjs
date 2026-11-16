@@ -1,5 +1,6 @@
-import { access, mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
+import { access, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import { planIncrementalShards } from './lib/incremental-shards.mjs';
 import {
   filterSensitiveEmojiRecords,
   removeSensitiveLocalAssets
@@ -196,30 +197,35 @@ async function shard() {
   const chunkSizeArg = Number.parseInt(process.env.EMOJI_SHARD_SIZE || '', 10);
   const chunkSize = Number.isFinite(chunkSizeArg) && chunkSizeArg > 0 ? chunkSizeArg : DEFAULT_CHUNK_SIZE;
 
-  await rm(SHARD_DIR, { recursive: true, force: true });
-  await mkdir(SHARD_DIR, { recursive: true });
-
-  const chunks = [];
-  for (let offset = 0, index = 0; offset < emojis.length; offset += chunkSize, index += 1) {
-    const records = emojis.slice(offset, offset + chunkSize);
-    const filename = `chunk-${String(index + 1).padStart(4, '0')}.json`;
-    await writeJson(path.join(SHARD_DIR, filename), records);
-    chunks.push({ file: filename, count: records.length });
+  const manifest = await exists(MANIFEST_FILE) ? await readJson(MANIFEST_FILE) : { chunks: [] };
+  const existingChunks = [];
+  for (const chunk of manifest.chunks || []) {
+    const file = typeof chunk === 'string' ? chunk : chunk.file;
+    if (!file || path.basename(file) !== file) {
+      throw new Error('Unsafe emoji shard filename.');
+    }
+    existingChunks.push({ file, records: await readJson(path.join(SHARD_DIR, file)) });
   }
 
+  const plan = planIncrementalShards(emojis, existingChunks, chunkSize);
+  for (const { file, records } of plan.changed) {
+    await writeJson(path.join(SHARD_DIR, file), records);
+  }
   await writeJson(MANIFEST_FILE, {
     version: 1,
     taxonomyVersion: TAXONOMY_VERSION,
     total: emojis.length,
     chunkSize,
-    chunks
+    chunks: plan.chunks
   });
   await writeCategorySummary(summary);
-
   await rm(DATA_FILE, { force: true });
 
-  const files = await readdir(SHARD_DIR);
-  console.log(`[emoji-store] sharded ${emojis.length.toLocaleString('en-US')} safe records into ${chunks.length} chunks (${files.length} files including manifest)`);
+  console.log(
+    '[emoji-store] kept ' + existingChunks.length + ' existing shards, added ' +
+    plan.additions + ' record(s), wrote ' + plan.changed.length +
+    ' shard file(s); ' + plan.chunks.length + ' shards total'
+  );
 }
 
 const command = String(process.argv[2] || '').toLowerCase();
