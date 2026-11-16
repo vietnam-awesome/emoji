@@ -1,0 +1,151 @@
+name: Repair Emoji.gg PR 136 (one-shot)
+
+on:
+  push:
+    branches:
+      - import/emojigg-43687516063-1
+    paths:
+      - .github/workflows/reconcile-emojigg-pr136.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: reconcile-emojigg-pr136
+  cancel-in-progress: false
+
+jobs:
+  reconcile:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - name: Checkout import PR without unrelated emoji binaries
+        uses: actions/checkout@v7
+        with:
+          ref: import/emojigg-43687516063-1
+          fetch-depth: 0
+          filter: blob:none
+          path: work
+          sparse-checkout: |
+            /src/data/
+            /public/emojis/community/emojigg/
+            /.github/workflows/reconcile-emojigg-pr136.yml
+          sparse-checkout-cone-mode: false
+
+      - name: Checkout validated incremental sharder
+        uses: actions/checkout@v7
+        with:
+          ref: 3b9db426b5fec3d1b405341db9b2e15ef4f02428
+          persist-credentials: false
+          fetch-depth: 1
+          filter: blob:none
+          path: app
+          sparse-checkout: |
+            /scripts/
+          sparse-checkout-cone-mode: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - name: Snapshot validated Emoji.gg records before merge
+        working-directory: work
+        shell: bash
+        run: |
+          set -euo pipefail
+          node ../app/scripts/emoji-store.mjs hydrate
+          node --input-type=module <<'NODE'
+          import { readFileSync, writeFileSync } from 'node:fs';
+          const records = JSON.parse(readFileSync('src/data/emojis.json', 'utf8'));
+          const state = JSON.parse(readFileSync('src/data/community-sync-state.json', 'utf8'));
+          const sourceRecords = records.filter((record) => record.source === 'emojigg');
+          writeFileSync('/tmp/emojigg-pr136-snapshot.json', JSON.stringify({
+            records: sourceRecords,
+            sourceState: state.emojigg || null
+          }));
+          console.log('Emoji.gg records saved before rebase: ' + sourceRecords.length);
+          NODE
+
+      - name: Reconcile against current data safely
+        working-directory: work
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git reset --hard HEAD
+          rm -f src/data/emojis.json
+          git fetch origin data
+          original_import="a0aa841e12b232b1cfe0718a8197aa9b357ff805"
+          import_base="d7f3c9eb0591e0846b2b016a6e7893ce3d8e58c4"
+          expected_data_sha="$(git rev-parse origin/data)"
+          if ! git merge-base --is-ancestor "$import_base" origin/data; then
+            echo "Unexpected data history; refusing automatic reconciliation." >&2
+            exit 1
+          fi
+          if git merge-base --is-ancestor origin/data HEAD; then
+            echo "Import branch already includes latest data; refusing redundant repair." >&2
+            exit 1
+          fi
+          # Keep the two-parent merge ancestry, but rebuild its tree from current data.
+          git merge --no-commit --no-ff -s ours origin/data
+          git read-tree --reset -u origin/data
+          # Restore ONLY new Emoji.gg assets, never overwrite assets already on data.
+          : > /tmp/emojigg-new-assets.nul
+          while IFS= read -r -d '' file; do
+            if ! git cat-file -e "origin/data:$file" 2>/dev/null; then
+              printf '%s\0' "$file" >> /tmp/emojigg-new-assets.nul
+            fi
+          done < <(git diff --name-only -z --diff-filter=AM "$import_base" "$original_import" -- public/emojis/community/emojigg/)
+          if [ -s /tmp/emojigg-new-assets.nul ]; then
+            git restore --source="$original_import" --staged --worktree \
+              --pathspec-from-file=/tmp/emojigg-new-assets.nul --pathspec-file-nul
+          fi
+          rm -f src/data/emojis.json
+          node ../app/scripts/emoji-store.mjs hydrate
+          node --input-type=module <<'NODE'
+          import { readFileSync, writeFileSync } from 'node:fs';
+          const saved = JSON.parse(readFileSync('/tmp/emojigg-pr136-snapshot.json', 'utf8'));
+          const latest = JSON.parse(readFileSync('src/data/emojis.json', 'utf8'));
+          const ids = new Set(latest.map((record) => String(record.id)));
+          const slugs = new Set(latest.map((record) => String(record.slug)));
+          const addedHashes = new Set(latest.map((record) => record.assetSha256).filter(Boolean));
+          let added = 0, skipped = 0;
+          for (const record of saved.records) {
+            if (ids.has(String(record.id)) || slugs.has(String(record.slug)) ||
+                (record.assetSha256 && addedHashes.has(record.assetSha256))) {
+              skipped += 1;
+              continue;
+            }
+            latest.push(record);
+            ids.add(String(record.id));
+            slugs.add(String(record.slug));
+            if (record.assetSha256) addedHashes.add(record.assetSha256);
+            added += 1;
+          }
+          writeFileSync('src/data/emojis.json', JSON.stringify(latest));
+          const state = JSON.parse(readFileSync('src/data/community-sync-state.json', 'utf8'));
+          if (saved.sourceState) state.emojigg = saved.sourceState;
+          writeFileSync('src/data/community-sync-state.json', JSON.stringify(state, null, 2) + '\n');
+          console.log('Merged new Emoji.gg records: ' + added + ', existing/duplicate: ' + skipped);
+          NODE
+          VERIFY_DATA_SKIP_ASSETS=1 node ../app/scripts/verify-data.mjs
+          node ../app/scripts/emoji-store.mjs shard
+          node ../app/scripts/emoji-store.mjs hydrate
+          VERIFY_DATA_ASSET_PREFIXES=/emojis/community/emojigg/ node ../app/scripts/verify-data.mjs
+          node ../app/scripts/emoji-store.mjs shard
+
+          # One-shot workflow is absent in data's tree and must not enter data PR.
+          git add -A src/data public/emojis/community/emojigg/ .github/workflows/reconcile-emojigg-pr136.yml
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "Nothing to reconcile; refusing to publish empty repair." >&2
+            exit 1
+          fi
+          current_data_sha="$(git ls-remote origin refs/heads/data | cut -f1)"
+          if [ "$current_data_sha" != "$expected_data_sha" ]; then
+            echo "data advanced during repair; refusing stale push." >&2
+            exit 1
+          fi
+          git commit -m "fix(data): safely reconcile Emoji.gg import onto latest data"
+          git push origin HEAD:import/emojigg-43687516063-1
