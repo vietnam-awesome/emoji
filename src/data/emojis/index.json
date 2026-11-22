@@ -1,7 +1,7 @@
 {
   "version": 1,
   "taxonomyVersion": 1,
-  "total": 215503,
+  "total": 213997,
   "chunkSize": 2500,
   "chunks": [
     {
@@ -334,23 +334,27 @@
     },
     {
       "file": "chunk-0083.json",
-      "count": 2500
+      "count": 2102
     },
     {
       "file": "chunk-0084.json",
-      "count": 2500
+      "count": 1539
     },
     {
       "file": "chunk-0085.json",
-      "count": 2500
+      "count": 965
     },
     {
       "file": "chunk-0086.json",
-      "count": 1581
+      "count": 1404
     },
     {
       "file": "delta-emojigg-7e3d6faadfd6c2aa8513.json",
       "count": 1422
+    },
+    {
+      "file": "delta-emojigg-495c9d554a7c289f06a8.json",
+      "count": 1565
     }
   ]
 }
