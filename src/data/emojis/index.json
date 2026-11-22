@@ -1,7 +1,7 @@
 {
   "version": 1,
   "taxonomyVersion": 1,
-  "total": 215503,
+  "total": 215578,
   "chunkSize": 2500,
   "chunks": [
     {
@@ -351,6 +351,10 @@
     {
       "file": "delta-emojigg-7e3d6faadfd6c2aa8513.json",
       "count": 1422
+    },
+    {
+      "file": "delta-discords-2920afbb99bc0d3a8cb2.json",
+      "count": 75
     }
   ]
 }
